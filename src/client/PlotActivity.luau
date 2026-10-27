@@ -1,6 +1,6 @@
 -- Makes every plot look busy: goods travel along the production chain and
--- visitors walk to the stall and the attractions, at rates the server
--- publishes as attributes. On the player's own plot, buy buttons glow and
+-- visitors in costume walk to the stall and the attractions, at rates the
+-- server publishes as attributes. On the player's own plot, buy buttons glow and
 -- pulse when the player can pay for them and turn red when they can't, and
 -- rides show a countdown and each round's takings. All of it is cosmetic and
 -- exists only on this client; the server decides and pays for everything.
@@ -15,6 +15,7 @@ local Balance = require(Shared.Config.Balance)
 local Layout = require(Shared.Config.Layout)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
+local Kit = require(Shared.Kit)
 local Sounds = require(script.Parent.Sounds)
 
 -- Shown rates are capped so a busy plot stays readable and cheap to draw.
@@ -32,23 +33,33 @@ local UNAFFORDABLE = Color3.fromRGB(150, 50, 50)
 local PRICE_READY = Color3.fromRGB(255, 214, 102)
 local PRICE_SHORT = Color3.fromRGB(255, 160, 160)
 local PULSES_PER_SECOND = 1.2
+-- Walkers hop along; floaters (ghosts) hover and bob.
+local HOPS_PER_SECOND = 2.5
+local HOP_HEIGHT = 0.3
+local HOVER_HEIGHT = 0.6
+-- Movers further than this from the camera keep moving but aren't redrawn.
+local DRAW_DISTANCE = 250
 
 type Mover = {
-	Instance: PVInstance,
+	Instance: Model,
 	Plot: BasePart,
 	IsVisitor: boolean,
 	Points: { Vector3 },
 	Pauses: { number },
 	Index: number,
 	Position: Vector3,
+	Facing: CFrame,
 	Wait: number,
 	Speed: number,
+	Gait: string?,
+	Phase: number,
 }
 
 local PlotActivity = {}
 
 local player = Players.LocalPlayer
 local random = Random.new()
+local crowdRandom = Kit.random(random:NextInteger(1, 2 ^ 30))
 local upgradesById = {}
 for _, upgrade in Balance.Upgrades do
 	upgradesById[upgrade.Id] = upgrade
@@ -93,23 +104,8 @@ local function anchorOf(station: Instance): BasePart?
 	return nil
 end
 
-local function makeBit(size: Vector3, color: Color3, shape: Enum.PartType, parent: Instance): Part
-	local part = Instance.new("Part")
-	part.Shape = shape
-	part.Size = size
-	part.Color = color
-	part.Material = Enum.Material.SmoothPlastic
-	part.Anchored = true
-	part.CanCollide = false
-	part.CanQuery = false
-	part.CanTouch = false
-	part.CastShadow = false
-	part.Parent = parent
-	return part
-end
-
 local function addMover(mover: Mover)
-	mover.Instance:PivotTo(CFrame.new(mover.Position))
+	mover.Instance:PivotTo(mover.Facing)
 	mover.Instance.Parent = folder
 	table.insert(movers, mover)
 	if mover.IsVisitor then
@@ -118,37 +114,26 @@ local function addMover(mover: Mover)
 end
 
 local function spawnGood(plot: BasePart, item: string, points: { Vector3 })
-	local themed = Theme.Items[item]
-	local color = if themed then Color3.fromHex(themed.Color) else Color3.new(1, 1, 1)
-	local part = makeBit(Vector3.new(1.2, 1.2, 1.2), color, Enum.PartType.Ball, folder)
 	addMover({
-		Instance = part,
+		Instance = Theme.Crowd.good(item),
 		Plot = plot,
 		IsVisitor = false,
 		Points = points,
 		Pauses = {},
 		Index = 2,
 		Position = points[1],
+		Facing = CFrame.new(points[1]),
 		Wait = 0,
 		Speed = GOODS_SPEED,
+		Phase = 0,
 	})
 end
 
 local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { string })
-	local colors = Theme.VisitorColors
-	local model = Instance.new("Model")
-	local body = makeBit(
-		Vector3.new(1.4, 2.6, 1.4),
-		Color3.fromHex(colors[random:NextInteger(1, #colors)]),
-		Enum.PartType.Block,
-		model
-	)
-	local head = makeBit(Vector3.new(1.2, 1.2, 1.2), Color3.fromRGB(240, 220, 200), Enum.PartType.Ball, model)
-	head.CFrame = body.CFrame * CFrame.new(0, 1.9, 0)
-	model.PrimaryPart = body
-
+	-- Visitors in costume, standing on the floor.
+	local model = Theme.Crowd.visitor(crowdRandom)
 	local half = Layout.PlotSize / 2
-	local lift = 1.3
+	local lift = 0
 	local points = { onPlot(plot, random:NextNumber(-14, 14), half - 1, lift) }
 	local pauses = { 0 }
 	if stallId then
@@ -170,8 +155,11 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 		Pauses = pauses,
 		Index = 2,
 		Position = points[1],
+		Facing = CFrame.new(points[1]),
 		Wait = 0,
 		Speed = WALK_SPEED,
+		Gait = model:GetAttribute("Gait"),
+		Phase = random:NextNumber(0, 10),
 	})
 end
 
@@ -238,36 +226,59 @@ local function animatePlot(plot: BasePart, built: Instance, dt: number)
 	end
 end
 
+-- Where a mover is drawn: where it is, turned the way it's going, with a hop
+-- in its step or a hover.
+local function pose(mover: Mover, walking: boolean): CFrame
+	local t = os.clock() + mover.Phase
+	if mover.Gait == "Float" then
+		local bob = math.sin(t * 2.2) * 0.25
+		return mover.Facing * CFrame.new(0, HOVER_HEIGHT + bob, 0) * CFrame.Angles(0, 0, math.sin(t * 1.3) * 0.06)
+	elseif mover.Gait == "Hop" and walking then
+		local step = math.sin(t * HOPS_PER_SECOND * math.pi)
+		return mover.Facing * CFrame.new(0, math.abs(step) * HOP_HEIGHT, 0) * CFrame.Angles(0, 0, step * 0.1)
+	end
+	return mover.Facing
+end
+
 local function moveAll(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else Vector3.zero
 	for index = #movers, 1, -1 do
 		local mover = movers[index]
-		if mover.Wait > 0 then
-			mover.Wait -= dt
-			continue
-		end
-		local target = mover.Points[mover.Index]
-		local offset = target - mover.Position
-		local step = mover.Speed * dt
-		if step >= offset.Magnitude then
-			mover.Position = target
-			mover.Wait = mover.Pauses[mover.Index] or 0
-			mover.Index += 1
-			if mover.Index > #mover.Points then
-				mover.Instance:Destroy()
-				table.remove(movers, index)
-				if mover.IsVisitor then
-					visitorCount[mover.Plot] = (visitorCount[mover.Plot] or 1) - 1
+		local walking = mover.Wait <= 0
+		if walking then
+			local target = mover.Points[mover.Index]
+			local offset = target - mover.Position
+			local step = mover.Speed * dt
+			if step >= offset.Magnitude then
+				mover.Position = target
+				mover.Wait = mover.Pauses[mover.Index] or 0
+				mover.Index += 1
+				if mover.Index > #mover.Points then
+					mover.Instance:Destroy()
+					table.remove(movers, index)
+					if mover.IsVisitor then
+						visitorCount[mover.Plot] = (visitorCount[mover.Plot] or 1) - 1
+					end
+					continue
 				end
+			else
+				mover.Position += offset.Unit * step
+			end
+			local facing = Vector3.new(offset.X, 0, offset.Z)
+			mover.Facing = if facing.Magnitude > 0.01
+				then CFrame.lookAt(mover.Position, mover.Position + facing)
+				else mover.Facing.Rotation + mover.Position
+		else
+			mover.Wait -= dt
+			if mover.Gait ~= "Float" then
+				-- Standing still: nothing to redraw.
 				continue
 			end
-		else
-			mover.Position += offset.Unit * step
 		end
-		local facing = Vector3.new(offset.X, 0, offset.Z)
-		if facing.Magnitude > 0.01 then
-			mover.Instance:PivotTo(CFrame.lookAt(mover.Position, mover.Position + facing))
-		else
-			mover.Instance:PivotTo(CFrame.new(mover.Position))
+		if (mover.Position - eye).Magnitude < DRAW_DISTANCE then
+			-- Lands from its hop as soon as it stops.
+			mover.Instance:PivotTo(pose(mover, mover.Wait <= 0))
 		end
 	end
 end

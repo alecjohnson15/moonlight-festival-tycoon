@@ -5,9 +5,10 @@
 -- Colours are hex strings so this file stays plain data.
 --
 -- The pack's other modules build what players see from this data: Props makes
--- a model for each upgrade, and Scenery dresses the plots, the plaza and the
--- land around them. Both are made from parts in code, so the pack needs no
--- uploaded art. Model, if set on an upgrade, names a model under
+-- a model for each upgrade, Scenery dresses the plots, the plaza and the land
+-- around them, and Crowd makes the visitors in costume and the goods they
+-- buy. All of it is made from parts in code, so the pack needs no uploaded
+-- art. Model, if set on an upgrade, names a model under
 -- ReplicatedStorage.Assets to use instead of the built one.
 
 return {
@@ -45,7 +46,7 @@ return {
 		cooked = { DisplayName = "Pumpkin Pies", Color = "#D9A35B" },
 	},
 
-	-- Clothes colours for the visitors walking around plots.
+	-- Clothes colours for the visitors in costume walking around plots.
 	VisitorColors = { "#5B7DB1", "#9B8EC4", "#4FA37A", "#D9644A", "#E8C547", "#3E8E9E" },
 
 	Upgrades = {
@@ -101,6 +102,12 @@ return {
 		Bat = "#15121C",
 		Mist = "#B9B4D6",
 		EerieGlow = "#7DFF9A",
+		-- The visitors' costumes and faces.
+		Skins = { "#F2CBA8", "#D9A27C", "#B07650", "#7C4E35" },
+		WitchSkin = "#A3D07F",
+		Robes = { "#4B2E63", "#2A2238", "#2C5E36", "#5A1E3A" },
+		Bandage = "#E6DEC6",
+		BandageShade = "#BFB496",
 
 		-- Saturated coloured light thrown on the builds, so each one has its
 		-- own wash of colour in the fog. Each plot also gets one of the plot

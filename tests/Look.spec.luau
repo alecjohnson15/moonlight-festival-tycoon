@@ -16,6 +16,8 @@ local roblox = Loader.roblox
 local Instance, Vector3, CFrame = roblox.Instance, roblox.Vector3, roblox.CFrame
 local Props = Loader.require("src/shared/Themes/MoonlightFestival/Props")
 local Scenery = Loader.require("src/shared/Themes/MoonlightFestival/Scenery")
+local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
+local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
 
@@ -286,6 +288,57 @@ describe("theme scenery", function()
 				end
 			end
 			assert(cleared, `the ground under {floor.Name} is not cleared`)
+		end
+	end)
+end)
+
+describe("theme crowd", function()
+	-- What each client draws many of, so each must be small and cheap.
+	local function checkLight(model: any, what: string, maxParts: number)
+		local parts = partsIn(model)
+		assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
+		for _, part in parts do
+			assert(part.Anchored, `{what}: {part.Name} is not anchored`)
+			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
+			assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
+		end
+		assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
+	end
+
+	it("dresses every kind of visitor in a small costume that faces forward", function()
+		local random = Kit.random(7)
+		for kind = 1, Crowd.KindCount do
+			for _ = 1, 4 do
+				local model = Crowd.visitor(random, kind)
+				local what = `visitor kind {kind}`
+				checkLight(model, what, 20)
+				local gait = model:GetAttribute("Gait")
+				assert(gait == "Hop" or gait == "Float", `{what} has gait {gait}`)
+				local faceZ = math.huge
+				for _, part in partsIn(model) do
+					local lo, hi = boxIn(part, CFrame.new())
+					assert(lo[1] >= -1.6 and hi[1] <= 1.6 and lo[3] >= -1.6 and hi[3] <= 1.6, `{what} is too wide`)
+					assert(lo[2] >= -TOLERANCE and hi[2] <= 4.5, `{what} is too tall or below its feet`)
+					if part.Color == Crowd.FaceColor or part.Material == roblox.Enum.Material.Neon then
+						faceZ = math.min(faceZ, (lo[3] + hi[3]) / 2)
+					end
+				end
+				-- Its face (eyes, or glowing features) is on the front, -Z.
+				assert(faceZ < -0.3, `{what} doesn't face forward`)
+			end
+		end
+	end)
+
+	it("makes a small model for every good", function()
+		for item in Balance.Items do
+			local model = Crowd.good(item)
+			checkLight(model, item, 6)
+			for _, part in partsIn(model) do
+				local lo, hi = boxIn(part, CFrame.new())
+				for axis = 1, 3 do
+					assert(lo[axis] >= -1 and hi[axis] <= 1, `{item} is too big`)
+				end
+			end
 		end
 	end)
 end)
