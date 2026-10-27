@@ -474,6 +474,25 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	-- Mist rolling through the woods behind the plots and beyond the plaza.
 	Pieces.mist(parent, CFrame.new(middleX, 1.5, minZ - 60), Vector2.new(right - left, 90), 18)
 	Pieces.mist(parent, CFrame.new(middleX, 1.5, frontZ + 60), Vector2.new(right - left, 90), 14)
+
+	-- No terrain under the plots or the plaza: their floors are the ground
+	-- there. Terrain sits only half a stud below a floor, so the grass (and its
+	-- animated blades) would otherwise show through it and bury buy buttons.
+	local floors = table.clone(site.Plots)
+	if plaza then
+		table.insert(floors, plaza)
+	end
+	for _, floor in floors do
+		local top = floor.CFrame.Position.Y + floor.Size.Y / 2 + 4
+		local bottom = -24
+		local position = floor.CFrame.Position
+		table.insert(fills, {
+			Shape = "Block",
+			Material = "Air",
+			CFrame = CFrame.new(position.X, (top + bottom) / 2, position.Z) * floor.CFrame.Rotation,
+			Size = V(floor.Size.X, top - bottom, floor.Size.Z),
+		})
+	end
 	return fills
 end
 

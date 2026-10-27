@@ -32,6 +32,7 @@ local DataService = require(script.Parent.DataService)
 
 local FADE = TweenInfo.new(0.6)
 local BUTTON_COLOR = Color3.fromRGB(76, 175, 80)
+local TRIGGER_HEIGHT = 3
 local LABEL_FONT = Enum.Font.FredokaOne
 
 local PlotService = {}
@@ -276,11 +277,26 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 	button.Shape = Enum.PartType.Cylinder
 	button.Material = Enum.Material.Neon
 	button.CanCollide = false
+	button.CanTouch = false
 	button:SetAttribute("Cost", upgrade.Cost)
 	local rim = makePart("Rim", Vector3.new(0.4, size, size), floor * CFrame.new(0, 0.2, 0) * upright, Color3.fromHex(Theme.Palette.ButtonRim), button)
 	rim.Shape = Enum.PartType.Cylinder
 	rim.CanCollide = false
 	rim.CanTouch = false
+	-- The pad and rim are only for show. What's stepped on is an invisible
+	-- column over the pad, from just under the floor to a player's knees, so a
+	-- step anywhere on the pad counts, even one that lands a little high.
+	local trigger = makePart(
+		"Trigger",
+		Vector3.new(TRIGGER_HEIGHT, size, size),
+		floor * CFrame.new(0, TRIGGER_HEIGHT / 2 - 0.5, 0) * upright,
+		BUTTON_COLOR,
+		button
+	)
+	trigger.Shape = Enum.PartType.Cylinder
+	trigger.Transparency = 1
+	trigger.CanCollide = false
+	trigger.CanQuery = false
 
 	local billboard = addBillboard(button, "ButtonLabel", 4, 72)
 	billboard.MaxDistance = 80
@@ -297,7 +313,7 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 		end
 	end
 
-	button.Touched:Connect(function(hit)
+	trigger.Touched:Connect(function(hit)
 		-- Only the owner's own living character can buy from their plot.
 		local character = hit.Parent
 		if not character or Players:GetPlayerFromCharacter(character) ~= player then
@@ -316,7 +332,10 @@ end
 local function retireButton(button: BasePart)
 	button:SetAttribute("Sold", true)
 	button.Name = "Sold"
-	button.CanTouch = false
+	local trigger = button:FindFirstChild("Trigger")
+	if trigger and trigger:IsA("BasePart") then
+		trigger.CanTouch = false
+	end
 	local billboard = button:FindFirstChild("ButtonLabel")
 	if billboard then
 		billboard:Destroy()

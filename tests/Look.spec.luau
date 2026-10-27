@@ -259,6 +259,34 @@ describe("theme scenery", function()
 			assert(roblox.Enum.Material[fill.Material], `unknown terrain material {fill.Material}`)
 			assert(fill.Shape == "Block" or fill.Shape == "Ball" or fill.Shape == "Cylinder", `unknown fill {fill.Shape}`)
 		end
+
+		-- Terrain left under a floor shows through it and buries its buttons,
+		-- so the last fills clear the ground under every plot and the plaza.
+		local floors = table.clone(plots)
+		table.insert(floors, plaza)
+		for _, floor in floors do
+			local cleared = false
+			for index, fill in fills do
+				if fill.Shape == "Block" and fill.Material == "Air" then
+					local lo, hi = boxIn({ CFrame = fill.CFrame, Size = fill.Size }, CFrame.new())
+					local at, half = floor.CFrame.Position, floor.Size / 2
+					cleared = cleared
+						or (
+							lo[1] <= at.X - half.X + TOLERANCE
+							and hi[1] >= at.X + half.X - TOLERANCE
+							and lo[3] <= at.Z - half.Z + TOLERANCE
+							and hi[3] >= at.Z + half.Z - TOLERANCE
+							and lo[2] <= -16
+							and hi[2] >= at.Y + half.Y + 2
+						)
+					-- Nothing fills the ground back in afterwards.
+					for later = index + 1, #fills do
+						assert(fills[later].Material == "Air", "terrain is filled after the floors are cleared")
+					end
+				end
+			end
+			assert(cleared, `the ground under {floor.Name} is not cleared`)
+		end
 	end)
 end)
 
