@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same versions as rokit.toml. The first run compiles them (several
+      # minutes); later runs restore them from the cache.
+      - name: Restore tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/stylua
+            ~/.cargo/bin/selene
+            ~/.cargo/bin/lune
+            ~/.cargo/bin/rojo
+          key: tools-${{ runner.os }}-stylua-2.6.0-selene-0.31.0-lune-0.11.1-rojo-7.7.1
+
+      - name: Install tools
+        if: steps.tools.outputs.cache-hit != 'true'
+        run: cargo install --locked stylua@2.6.0 selene@0.31.0 lune@0.11.1 rojo@7.7.1
+
+      - name: Check formatting
+        run: stylua --check src tests
+
+      - name: Lint
+        run: selene src
+
+      - name: Test
+        run: lune run tests/run
+
+      - name: Build place
+        run: rojo build default.project.json -o build.rbxl
