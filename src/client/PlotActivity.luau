@@ -1,8 +1,9 @@
 -- Makes every plot look busy: goods travel along the production chain and
 -- visitors walk to the stall and the attractions, at rates the server
--- publishes as attributes. On the player's own plot, rides also show a
--- countdown and each round's takings. All of it is cosmetic and exists only
--- on this client; the server decides and pays for everything.
+-- publishes as attributes. On the player's own plot, buy buttons turn green
+-- or red by whether the player can pay for them, and rides show a countdown
+-- and each round's takings. All of it is cosmetic and exists only on this
+-- client; the server decides and pays for everything.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +25,9 @@ local WALK_SPEED = 7
 local STALL_PAUSE = 1.2
 local ATTRACTION_PAUSE = 2.5
 local PAYOUT_SECONDS = 1.5
+local AFFORDABLE = Color3.fromRGB(76, 175, 80)
+local UNAFFORDABLE = Color3.fromRGB(170, 70, 70)
+local PRICE_SHORT = Color3.fromRGB(255, 160, 160)
 
 type Mover = {
 	Instance: PVInstance,
@@ -343,15 +347,41 @@ local function updateRides(built: Instance)
 	end
 end
 
+local function tintButtons(buttons: Instance)
+	local coins = player:GetAttribute("Coins") or 0
+	for _, button in buttons:GetChildren() do
+		local cost = button:GetAttribute("Cost")
+		if button:IsA("BasePart") and cost and button:GetAttribute("Sold") == nil then
+			local affordable = coins >= cost
+			local color = if affordable then AFFORDABLE else UNAFFORDABLE
+			if button.Color ~= color then
+				button.Color = color
+			end
+			local billboard = button:FindFirstChild("ButtonLabel")
+			local price = billboard and billboard:FindFirstChild("Price")
+			if price and price:IsA("TextLabel") then
+				price.TextColor3 = if affordable then Color3.new(1, 1, 1) else PRICE_SHORT
+			end
+		end
+	end
+end
+
 local function onHeartbeat(dt: number)
 	local plots = Workspace:FindFirstChild("Plots")
 	if plots then
 		for _, plot in plots:GetChildren() do
-			local built = plot:FindFirstChild("Built")
-			if plot:IsA("BasePart") and built then
-				animatePlot(plot, built, dt)
-				if plot:GetAttribute("OwnerUserId") == player.UserId then
-					updateRides(built)
+			if plot:IsA("BasePart") then
+				local built = plot:FindFirstChild("Built")
+				local mine = plot:GetAttribute("OwnerUserId") == player.UserId
+				if built then
+					animatePlot(plot, built, dt)
+					if mine then
+						updateRides(built)
+					end
+				end
+				local buttons = plot:FindFirstChild("Buttons")
+				if mine and buttons then
+					tintButtons(buttons)
 				end
 			end
 		end

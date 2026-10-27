@@ -1,13 +1,20 @@
--- Gives each player a plot and builds the upgrades they own on it. If the
--- place has no Workspace.Plots folder, a greybox row of plots and a spawn
--- plaza are generated, so the game runs from an empty place file.
+-- Plots, gates and buy buttons. Each plot has a gate across its front: an
+-- unowned gate is solid and touching it claims the plot, after which it turns
+-- see-through and carries the owner's name. On the owner's plot, a buy button
+-- sits on the floor for every upgrade whose requirement is owned; stepping on
+-- one asks UpgradeService to buy it, and the upgrade is built with a small
+-- effect while the button fades away. If the place has no Workspace.Plots
+-- folder, a greybox row of plots and a spawn plaza are generated, so the game
+-- runs from an empty place file.
 --
 -- Each built station is named by its upgrade id and carries Kind and Type
 -- attributes, plus whatever rates ProductionService and AttractionService
 -- publish on it, so clients can animate it without asking the server.
 
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
@@ -15,14 +22,20 @@ local Balance = require(Shared.Config.Balance)
 local Layout = require(Shared.Config.Layout)
 local Theme = require(Shared.Config.Theme)
 local Earnings = require(Shared.Earnings)
+local Format = require(Shared.Format)
 local Progression = require(Shared.Progression)
 local DataService = require(script.Parent.DataService)
-local EconomyService = require(script.Parent.EconomyService)
+
+local FADE = TweenInfo.new(0.6)
+local GATE_COLOR = Color3.fromRGB(235, 235, 245)
+local BUTTON_COLOR = Color3.fromRGB(76, 175, 80)
 
 local PlotService = {}
 
 local plots: { BasePart } = {}
 local plotOf: { [Player]: BasePart } = {}
+local claimedCallbacks: { (Player) -> () } = {}
+local buttonCallbacks: { (Player, string) -> () } = {}
 
 local upgradesById = {}
 for _, upgrade in Balance.Upgrades do
@@ -56,25 +69,21 @@ local function addTextLine(billboard: BillboardGui, name: string, top: number, h
 	return label
 end
 
-local function addLabel(parent: BasePart, text: string, height: number)
+local function addBillboard(parent: BasePart, name: string, height: number, pixelHeight: number): BillboardGui
 	local billboard = Instance.new("BillboardGui")
-	billboard.Size = UDim2.fromOffset(200, 40)
+	billboard.Name = name
+	billboard.Size = UDim2.fromOffset(220, pixelHeight)
 	billboard.StudsOffset = Vector3.new(0, height, 0)
 	billboard.MaxDistance = 120
-	addTextLine(billboard, "Title", 0, 1, Enum.Font.GothamBold).Text = text
 	billboard.Parent = parent
+	return billboard
 end
 
 -- A name with a caption line underneath, which the services keep up to date.
 local function addStationLabel(parent: BasePart, title: string, height: number)
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "StationLabel"
-	billboard.Size = UDim2.fromOffset(220, 56)
-	billboard.StudsOffset = Vector3.new(0, height, 0)
-	billboard.MaxDistance = 120
+	local billboard = addBillboard(parent, "StationLabel", height, 56)
 	addTextLine(billboard, "Title", 0, 0.6, Enum.Font.GothamBold).Text = title
 	addTextLine(billboard, "Caption", 0.6, 0.4, Enum.Font.GothamMedium).Text = ""
-	billboard.Parent = parent
 end
 
 -- The part labels and effects attach to: the station itself for greybox, or
@@ -86,6 +95,46 @@ local function anchorOf(station: Instance): BasePart?
 		return station.PrimaryPart or station:FindFirstChildWhichIsA("BasePart", true)
 	end
 	return nil
+end
+
+local function partsOf(instance: Instance): { BasePart }
+	if instance:IsA("BasePart") then
+		return { instance }
+	end
+	local parts = {}
+	for _, descendant in instance:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			table.insert(parts, descendant)
+		end
+	end
+	return parts
+end
+
+local function childFolder(plot: BasePart, name: string): Folder
+	local folder = plot:FindFirstChild(name)
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = name
+		folder.Parent = plot
+	end
+	return folder :: Folder
+end
+
+-- Fades a new station in and gives off a burst of sparkles.
+local function celebrate(station: Instance, anchor: BasePart)
+	for _, part in partsOf(station) do
+		local target = part.Transparency
+		part.Transparency = 1
+		TweenService:Create(part, FADE, { Transparency = target }):Play()
+	end
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Rate = 0
+	sparkles.Lifetime = NumberRange.new(0.6, 1)
+	sparkles.Speed = NumberRange.new(8, 14)
+	sparkles.SpreadAngle = Vector2.new(180, 180)
+	sparkles.Parent = anchor
+	sparkles:Emit(30)
+	Debris:AddItem(sparkles, 2)
 end
 
 local function buildGreyboxMap(): Folder
@@ -118,16 +167,6 @@ local function buildGreyboxMap(): Folder
 	return folder
 end
 
-local function builtFolder(plot: BasePart): Folder
-	local folder = plot:FindFirstChild("Built")
-	if not folder then
-		folder = Instance.new("Folder")
-		folder.Name = "Built"
-		folder.Parent = plot
-	end
-	return folder :: Folder
-end
-
 local function moveToPlot(player: Player, character: Model)
 	local plot = plotOf[player]
 	if plot then
@@ -136,31 +175,15 @@ local function moveToPlot(player: Player, character: Model)
 	end
 end
 
-local function addServePrompt(player: Player, target: BasePart)
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = Theme.Strings.ServeAction
-	prompt.ObjectText = Theme.Upgrades[Balance.ServeTask.UpgradeId].DisplayName
-	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 12
-	prompt.RequiresLineOfSight = false
-	prompt.Triggered:Connect(function(triggeredBy)
-		-- Prompts are visible to everyone, but only the owner earns from theirs.
-		if triggeredBy == player then
-			EconomyService.rewardServe(player)
-		end
-	end)
-	prompt.Parent = target
-end
-
 -- Builds one owned upgrade on the player's plot. Boosts have no slot and are
--- not drawn yet.
-function PlotService.build(player: Player, upgradeId: string)
+-- not drawn yet. With withEffect, the station fades in with sparkles.
+function PlotService.build(player: Player, upgradeId: string, withEffect: boolean?)
 	local plot = plotOf[player]
 	local slot = Layout.Slots[upgradeId]
 	if not plot or not slot then
 		return
 	end
-	local folder = builtFolder(plot)
+	local folder = childFolder(plot, "Built")
 	if folder:FindFirstChild(upgradeId) then
 		return
 	end
@@ -198,8 +221,8 @@ function PlotService.build(player: Player, upgradeId: string)
 		light.Brightness = 2
 		light.Parent = anchor
 	end
-	if upgradeId == Balance.ServeTask.UpgradeId then
-		addServePrompt(player, anchor)
+	if withEffect then
+		celebrate(station, anchor)
 	end
 end
 
@@ -230,44 +253,178 @@ function PlotService.updateStation(player: Player, upgradeId: string, caption: s
 	end
 end
 
+local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folder, fadeIn: boolean)
+	local spot = Layout.Buttons[upgrade.Id]
+	local size = Layout.ButtonSize
+	local cframe = plot.CFrame * CFrame.new(spot.X, plot.Size.Y / 2 + 0.3, spot.Z)
+	local button = makePart(upgrade.Id, Vector3.new(size, 0.6, size), cframe, BUTTON_COLOR, folder)
+	button.Material = Enum.Material.Neon
+	button.CanCollide = false
+	button:SetAttribute("Cost", upgrade.Cost)
+
+	local billboard = addBillboard(button, "ButtonLabel", 4, 72)
+	billboard.MaxDistance = 80
+	addTextLine(billboard, "Title", 0, 0.45, Enum.Font.GothamBold).Text = Theme.Upgrades[upgrade.Id].DisplayName
+	addTextLine(billboard, "Price", 0.45, 0.3, Enum.Font.GothamBold).Text = if upgrade.Cost == 0
+		then Theme.Strings.Free
+		else `{upgrade.Cost} {Theme.Strings.Coins}`
+	addTextLine(billboard, "Gain", 0.75, 0.25, Enum.Font.GothamMedium).Text = ""
+
+	if fadeIn then
+		button.Transparency = 1
+		TweenService:Create(button, FADE, { Transparency = 0 }):Play()
+	end
+
+	button.Touched:Connect(function(hit)
+		-- Only the owner's own living character can buy from their plot.
+		local character = hit.Parent
+		if not character or Players:GetPlayerFromCharacter(character) ~= player then
+			return
+		end
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid and humanoid.Health > 0 and button:GetAttribute("Sold") == nil then
+			for _, callback in buttonCallbacks do
+				task.spawn(callback, player, upgrade.Id)
+			end
+		end
+	end)
+end
+
+-- Fades out and removes a button whose upgrade was just bought.
+local function retireButton(button: BasePart)
+	button:SetAttribute("Sold", true)
+	button.Name = "Sold"
+	button.CanTouch = false
+	local billboard = button:FindFirstChild("ButtonLabel")
+	if billboard then
+		billboard:Destroy()
+	end
+	TweenService:Create(button, FADE, { Transparency = 1 }):Play()
+	Debris:AddItem(button, FADE.Time + 0.1)
+end
+
+-- Makes the owner's buttons match what they can buy next: removes buttons for
+-- upgrades they own, adds buttons for newly unlocked ones (fading them in
+-- when fadeIn is set), and updates what each would add per second.
+function PlotService.refreshButtons(player: Player, fadeIn: boolean)
+	local plot = plotOf[player]
+	local data = DataService.get(player)
+	if not plot or not data then
+		return
+	end
+	local folder = childFolder(plot, "Buttons")
+	local available = Progression.available(data.Owned, Balance.Upgrades)
+	local wanted: { [string]: boolean } = {}
+	for _, upgrade in available do
+		wanted[upgrade.Id] = true
+	end
+	for _, button in folder:GetChildren() do
+		if button:IsA("BasePart") and button:GetAttribute("Sold") == nil and not wanted[button.Name] then
+			retireButton(button)
+		end
+	end
+
+	local income = Earnings.perSecond(data.Owned, Balance)
+	for _, upgrade in available do
+		if Layout.Buttons[upgrade.Id] then
+			if not folder:FindFirstChild(upgrade.Id) then
+				makeButton(player, plot, upgrade, folder, fadeIn)
+			end
+			local withUpgrade = table.clone(data.Owned)
+			withUpgrade[upgrade.Id] = true
+			local gain = Earnings.perSecond(withUpgrade, Balance) - income
+			local button = folder:FindFirstChild(upgrade.Id)
+			local billboard = button and button:FindFirstChild("ButtonLabel")
+			local label = billboard and billboard:FindFirstChild("Gain")
+			if label and label:IsA("TextLabel") then
+				label.Text = if gain > 0 then Theme.Strings.UpgradeGain:format(Format.rate(gain)) else ""
+			end
+		end
+	end
+end
+
+-- Runs callback(player, upgradeId) when the owner steps on a buy button.
+function PlotService.onButtonStepped(callback: (Player, string) -> ())
+	table.insert(buttonCallbacks, callback)
+end
+
+-- Runs callback(player) once a player has claimed a plot and it is built.
+function PlotService.onClaimed(callback: (Player) -> ())
+	table.insert(claimedCallbacks, callback)
+end
+
 function PlotService.plotOf(player: Player): BasePart?
 	return plotOf[player]
 end
 
-local function claimPlot(player: Player, data)
-	local taken: { [BasePart]: boolean } = {}
-	for _, plot in plotOf do
-		taken[plot] = true
+local function setGate(plot: BasePart, owner: Player?)
+	local gate = plot:FindFirstChild("Gate")
+	if not gate or not gate:IsA("BasePart") then
+		return
 	end
-	local free: BasePart? = nil
-	for _, plot in plots do
-		if not taken[plot] then
-			free = plot
-			break
-		end
+	gate.CanCollide = owner == nil
+	gate.Transparency = if owner then 0.85 else 0.2
+	local billboard = gate:FindFirstChild("GateLabel")
+	local label = billboard and billboard:FindFirstChild("Title")
+	if label and label:IsA("TextLabel") then
+		label.Text = if owner then Theme.Strings.PlotOwner:format(owner.DisplayName) else Theme.Strings.ClaimGate
 	end
-	if not free then
-		-- Players.MaxPlayers should match Layout.PlotCount so this never happens.
-		player:Kick("This festival is full. Please join another server.")
+end
+
+local function claimPlot(player: Player, plot: BasePart)
+	-- One plot per player, one owner per plot, and only once the save is in.
+	if plotOf[player] or plot:GetAttribute("OwnerUserId") ~= nil then
+		return
+	end
+	local data = DataService.get(player)
+	if not data then
 		return
 	end
 
-	plotOf[player] = free
-	free:SetAttribute("OwnerUserId", player.UserId)
-	addLabel(free, Theme.Strings.PlotOwner:format(player.DisplayName), 12)
+	plotOf[player] = plot
+	plot:SetAttribute("OwnerUserId", player.UserId)
+	player:SetAttribute("HasPlot", true)
+	setGate(plot, player)
 
 	for _, upgrade in Balance.Upgrades do
 		if data.Owned[upgrade.Id] then
-			PlotService.build(player, upgrade.Id)
+			PlotService.build(player, upgrade.Id, false)
 		end
 	end
+	PlotService.refreshButtons(player, false)
 
 	player.CharacterAdded:Connect(function(character)
 		moveToPlot(player, character)
 	end)
-	if player.Character then
-		moveToPlot(player, player.Character)
+	for _, callback in claimedCallbacks do
+		task.spawn(callback, player)
 	end
+end
+
+-- Uses the plot's own Gate part if the place has one, or makes a greybox one.
+local function setUpGate(plot: BasePart)
+	local gate = plot:FindFirstChild("Gate")
+	if not gate or not gate:IsA("BasePart") then
+		local spec = Layout.Gate
+		local width, height, depth = spec.Size[1], spec.Size[2], spec.Size[3]
+		local cframe = plot.CFrame * CFrame.new(spec.X, plot.Size.Y / 2 + height / 2, spec.Z)
+		gate = makePart("Gate", Vector3.new(width, height, depth), cframe, GATE_COLOR, plot)
+		gate.Material = Enum.Material.ForceField
+	end
+	local part = gate :: BasePart
+	if not part:FindFirstChild("GateLabel") then
+		addTextLine(addBillboard(part, "GateLabel", part.Size.Y / 2 + 2, 40), "Title", 0, 1, Enum.Font.GothamBold)
+	end
+	setGate(plot, nil)
+
+	part.Touched:Connect(function(hit)
+		local character = hit.Parent
+		local player = character and Players:GetPlayerFromCharacter(character)
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if player and humanoid and humanoid.Health > 0 then
+			claimPlot(player, plot)
+		end
+	end)
 end
 
 local function releasePlot(player: Player)
@@ -278,11 +435,9 @@ local function releasePlot(player: Player)
 	plotOf[player] = nil
 	plot:SetAttribute("OwnerUserId", nil)
 	plot:SetAttribute("VisitorsPerSecond", nil)
-	builtFolder(plot):ClearAllChildren()
-	local label = plot:FindFirstChildWhichIsA("BillboardGui")
-	if label then
-		label:Destroy()
-	end
+	childFolder(plot, "Built"):ClearAllChildren()
+	childFolder(plot, "Buttons"):ClearAllChildren()
+	setGate(plot, nil)
 end
 
 function PlotService.init()
@@ -295,6 +450,9 @@ function PlotService.init()
 	table.sort(plots, function(a, b)
 		return a.Name < b.Name
 	end)
+	for _, plot in plots do
+		setUpGate(plot)
+	end
 
 	-- Catch config mistakes at startup rather than mid-game.
 	for _, problem in Progression.validate(Balance.Upgrades) do
@@ -304,7 +462,6 @@ function PlotService.init()
 		warn(`Balance config: {problem}`)
 	end
 
-	DataService.onLoaded(claimPlot)
 	Players.PlayerRemoving:Connect(releasePlot)
 end
 

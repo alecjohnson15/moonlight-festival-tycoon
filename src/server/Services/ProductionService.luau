@@ -1,7 +1,7 @@
--- Runs the production chain on every plot. Each tick it pays for the goods
--- that reached the stall and keeps each station's caption and rate attributes
--- in step with what it is making. Earnings does the maths; coins only change
--- through EconomyService.
+-- Runs the production chain on every claimed plot. Each tick it pays for the
+-- goods that reached the stall and keeps each station's caption and rate
+-- attributes in step with what it is making. Earnings does the maths; coins
+-- only change through EconomyService.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -56,10 +56,7 @@ function ProductionService.refresh(player: Player)
 end
 
 function ProductionService.init()
-	-- PlotService registered first, so the plot is built by the time this runs.
-	DataService.onLoaded(function(player)
-		ProductionService.refresh(player)
-	end)
+	PlotService.onClaimed(ProductionService.refresh)
 	Players.PlayerRemoving:Connect(function(player)
 		carry[player] = nil
 	end)
@@ -70,7 +67,7 @@ function ProductionService.start()
 		local elapsed = task.wait(Balance.IncomeTickSeconds)
 		for _, player in Players:GetPlayers() do
 			local data = DataService.get(player)
-			if data then
+			if data and PlotService.plotOf(player) then
 				local chain = Earnings.chain(data.Owned, Balance)
 				local earned = chain.CoinsPerSecond * elapsed + (carry[player] or 0)
 				local whole = math.floor(earned)

@@ -1,6 +1,6 @@
--- Brings visitors to every plot and runs its attractions. Walkthroughs earn on
--- every tick and rides pay when each round ends. Earnings does the maths;
--- coins only change through EconomyService.
+-- Brings visitors to every claimed plot and runs its attractions. Walkthroughs
+-- earn on every tick and rides pay when each round ends. Earnings does the
+-- maths; coins only change through EconomyService.
 --
 -- Attributes for clients: the plot carries VisitorsPerSecond, each attraction
 -- carries the visitors it serves, and a ride carries NextRoundAt (server time)
@@ -110,10 +110,7 @@ local function tick(player: Player, owned: { [string]: boolean }, elapsed: numbe
 end
 
 function AttractionService.init()
-	-- PlotService registered first, so the plot is built by the time this runs.
-	DataService.onLoaded(function(player)
-		AttractionService.refresh(player)
-	end)
+	PlotService.onClaimed(AttractionService.refresh)
 	Players.PlayerRemoving:Connect(function(player)
 		clocks[player] = nil
 		carry[player] = nil
@@ -125,7 +122,7 @@ function AttractionService.start()
 		local elapsed = task.wait(Balance.IncomeTickSeconds)
 		for _, player in Players:GetPlayers() do
 			local data = DataService.get(player)
-			if data then
+			if data and PlotService.plotOf(player) then
 				tick(player, data.Owned, elapsed)
 			end
 		end

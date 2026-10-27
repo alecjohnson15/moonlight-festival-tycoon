@@ -34,16 +34,9 @@ return {
 	-- Visitors a plot gets before it has any attractions.
 	BaseVisitorsPerSecond = 1,
 
-	-- The hands-on task on the starter stall: a small reward with a cooldown
-	-- so tapping it helps early on without replacing passive income.
-	ServeTask = {
-		UpgradeId = "starter_stall",
-		Reward = 5,
-		CooldownSeconds = 2,
-	},
-
-	-- Listed in the order players unlock them. The first paid upgrade should be
-	-- affordable within the first minute from the free stall plus serving.
+	-- Listed in the order players unlock them. Each upgrade has a buy button on
+	-- the plot that appears once its Requires is owned. The first upgrade is
+	-- free, and the first paid one should be affordable within a minute.
 	Upgrades = {
 		{ Id = "starter_stall", Kind = "Stall", Cost = 0, Makes = "handmade", PerSecond = 1 },
 		{ Id = "stall_counter", Kind = "Boost", Cost = 15, Target = "starter_stall", Multiplier = 2, Requires = "starter_stall" },

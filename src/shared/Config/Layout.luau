@@ -1,6 +1,6 @@
 --!strict
--- Map geometry: how many plots there are and where each station and
--- attraction is built on a plot, in studs from the plot's centre. Plain
+-- Map geometry: how many plots there are and where each plot's gate, buy
+-- buttons, stations and attractions go, in studs from the plot's centre. Plain
 -- numbers so this file loads in tests as well as in Studio.
 --
 -- The plot's front (+Z) faces the plaza. The production chain runs down the
@@ -13,6 +13,27 @@ return {
 
 	-- Where a player stands after being moved to their plot.
 	ArrivalOffset = { X = 0, Z = 40 },
+
+	-- The gate across the front of each plot. Touching an unowned gate claims
+	-- the plot; once claimed it turns see-through and lets anyone walk in.
+	-- Size is { width, height, depth }.
+	Gate = { X = 0, Z = 46, Size = { 14, 8, 1 } },
+
+	-- Buy buttons on the plot floor, one per upgrade. A button shows once its
+	-- requirement is owned, and stepping on it buys the upgrade. Each sits
+	-- beside what it builds, along a walkway down the middle of the plot.
+	ButtonSize = 5,
+	Buttons = {
+		starter_stall = { X = -12, Z = 26 },
+		stall_counter = { X = -12, Z = 18 },
+		kitchen_boost = { X = -12, Z = 6 },
+		kitchen = { X = -12, Z = -2 },
+		grower_boost = { X = -12, Z = -20 },
+		grower = { X = -12, Z = -28 },
+		attraction_1 = { X = 10, Z = 26 },
+		attraction_2 = { X = 10, Z = -2 },
+		attraction_3 = { X = 10, Z = -30 },
+	},
 
 	-- Size is { width, height, depth } for the greybox block drawn when the
 	-- theme has no model for that upgrade.

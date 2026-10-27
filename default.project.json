@@ -8,13 +8,7 @@
       },
       "Remotes": {
         "$className": "Folder",
-        "RequestUpgrade": {
-          "$className": "RemoteFunction"
-        },
         "RequestPurchase": {
-          "$className": "RemoteEvent"
-        },
-        "StateSync": {
           "$className": "RemoteEvent"
         }
       }

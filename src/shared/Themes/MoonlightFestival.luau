@@ -12,15 +12,13 @@ return {
 
 	Strings = {
 		PlotOwner = "%s's Festival",
-		ServeAction = "Serve visitor",
+		ClaimGate = "Touch to claim",
+		ClaimHint = "Walk into a free gate to claim your festival",
 		Coins = "Coins",
 		IncomePerSecond = "+%d / sec",
 		VisitorsPerSecond = "%s visitors / sec",
 		UpgradeGain = "+%s / sec",
 		Free = "Free",
-		TooExpensive = "Not enough coins yet",
-		TooFast = "One moment...",
-		NotLoaded = "Still loading your festival",
 
 		-- Labels over the stations and attractions on a plot.
 		StallSelling = "Selling %s / sec",
