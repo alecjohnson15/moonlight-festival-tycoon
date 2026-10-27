@@ -13,4 +13,12 @@ function Format.rate(value: number): string
 	return string.format("%.1f", rounded)
 end
 
+-- A whole number with commas between thousands, such as "12,345".
+function Format.whole(value: number): string
+	local digits = string.format("%d", math.floor(math.abs(value) + 0.5))
+	local grouped = string.reverse((string.gsub(string.reverse(digits), "(%d%d%d)", "%1,")))
+	grouped = string.gsub(grouped, "^,", "")
+	return if value < 0 then `-{grouped}` else grouped
+end
+
 return Format

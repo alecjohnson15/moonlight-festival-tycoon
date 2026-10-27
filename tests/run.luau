@@ -1,5 +1,6 @@
--- Runs the pure-logic test suite with Lune: `lune run tests/run`.
--- Modules under test use no Roblox APIs, so they load here unchanged.
+-- Runs the test suite with Lune: `lune run tests/run`. Most modules under
+-- test use no Roblox APIs, so they load here unchanged; the theme's builders
+-- load through RobloxLoader, which supplies Lune's Roblox library.
 
 local process = require("@lune/process")
 local TestKit = require("./TestKit")
@@ -7,6 +8,7 @@ local TestKit = require("./TestKit")
 require("./Progression.spec")
 require("./Earnings.spec")
 require("./Config.spec")
+require("./Look.spec")
 require("./Saves.spec")
 require("./RateLimiter.spec")
 

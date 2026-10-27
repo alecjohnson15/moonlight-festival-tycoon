@@ -24,6 +24,11 @@
           "$path": "src/client"
         }
       }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
     }
   }
 }

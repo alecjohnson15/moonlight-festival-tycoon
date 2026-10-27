@@ -2,14 +2,18 @@
 -- unowned gate is solid and touching it claims the plot, after which it turns
 -- see-through and carries the owner's name. On the owner's plot, a buy button
 -- sits on the floor for every upgrade whose requirement is owned; stepping on
--- one asks UpgradeService to buy it, and the upgrade is built with a small
--- effect while the button fades away. If the place has no Workspace.Plots
--- folder, a greybox row of plots and a spawn plaza are generated, so the game
--- runs from an empty place file.
+-- one asks UpgradeService to buy it, and the upgrade is built while the button
+-- fades away. If the place has no Workspace.Plots folder, a row of plots and a
+-- spawn plaza are generated, so the game runs from an empty place file;
+-- WorldService then dresses them.
 --
--- Each built station is named by its upgrade id and carries Kind and Type
--- attributes, plus whatever rates ProductionService and AttractionService
--- publish on it, so clients can animate it without asking the server.
+-- Each upgrade is built from the theme's model for it (see the theme pack's
+-- Props), or as a greybox block if the theme has none. A built station is
+-- named by its upgrade id and carries Kind and Type attributes, plus whatever
+-- rates ProductionService and AttractionService publish on it, so clients can
+-- animate it without asking the server. Anything just bought also carries
+-- BuiltAt, the server time it was built, which clients use to play its
+-- build-up animation.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -27,8 +31,8 @@ local Progression = require(Shared.Progression)
 local DataService = require(script.Parent.DataService)
 
 local FADE = TweenInfo.new(0.6)
-local GATE_COLOR = Color3.fromRGB(235, 235, 245)
 local BUTTON_COLOR = Color3.fromRGB(76, 175, 80)
+local LABEL_FONT = Enum.Font.FredokaOne
 
 local PlotService = {}
 
@@ -63,7 +67,7 @@ local function addTextLine(billboard: BillboardGui, name: string, top: number, h
 	label.BackgroundTransparency = 1
 	label.TextScaled = true
 	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0.4
+	label.TextStrokeTransparency = 0.2
 	label.Font = font
 	label.Parent = billboard
 	return label
@@ -82,8 +86,8 @@ end
 -- A name with a caption line underneath, which the services keep up to date.
 local function addStationLabel(parent: BasePart, title: string, height: number)
 	local billboard = addBillboard(parent, "StationLabel", height, 56)
-	addTextLine(billboard, "Title", 0, 0.6, Enum.Font.GothamBold).Text = title
-	addTextLine(billboard, "Caption", 0.6, 0.4, Enum.Font.GothamMedium).Text = ""
+	addTextLine(billboard, "Title", 0, 0.6, LABEL_FONT).Text = title
+	addTextLine(billboard, "Caption", 0.6, 0.4, Enum.Font.GothamBold).Text = ""
 end
 
 -- The part labels and effects attach to: the station itself for greybox, or
@@ -97,19 +101,6 @@ local function anchorOf(station: Instance): BasePart?
 	return nil
 end
 
-local function partsOf(instance: Instance): { BasePart }
-	if instance:IsA("BasePart") then
-		return { instance }
-	end
-	local parts = {}
-	for _, descendant in instance:GetDescendants() do
-		if descendant:IsA("BasePart") then
-			table.insert(parts, descendant)
-		end
-	end
-	return parts
-end
-
 local function childFolder(plot: BasePart, name: string): Folder
 	local folder = plot:FindFirstChild(name)
 	if not folder then
@@ -118,23 +109,6 @@ local function childFolder(plot: BasePart, name: string): Folder
 		folder.Parent = plot
 	end
 	return folder :: Folder
-end
-
--- Fades a new station in and gives off a burst of sparkles.
-local function celebrate(station: Instance, anchor: BasePart)
-	for _, part in partsOf(station) do
-		local target = part.Transparency
-		part.Transparency = 1
-		TweenService:Create(part, FADE, { Transparency = target }):Play()
-	end
-	local sparkles = Instance.new("ParticleEmitter")
-	sparkles.Rate = 0
-	sparkles.Lifetime = NumberRange.new(0.6, 1)
-	sparkles.Speed = NumberRange.new(8, 14)
-	sparkles.SpreadAngle = Vector2.new(180, 180)
-	sparkles.Parent = anchor
-	sparkles:Emit(30)
-	Debris:AddItem(sparkles, 2)
 end
 
 local function buildGreyboxMap(): Folder
@@ -175,54 +149,92 @@ local function moveToPlot(player: Player, character: Model)
 	end
 end
 
--- Builds one owned upgrade on the player's plot. Boosts have no slot and are
--- not drawn yet. With withEffect, the station fades in with sparkles.
+-- The point on the plot floor under the middle of a slot.
+local function slotOrigin(plot: BasePart, slot): CFrame
+	return plot.CFrame * CFrame.new(slot.X, plot.Size.Y / 2, slot.Z)
+end
+
+-- Marks something just built, so clients play its build-up animation. Whole
+-- models stream to clients at once, so the animation never starts half-built.
+local function finish(built: Instance, withEffect: boolean?)
+	if built:IsA("Model") then
+		built.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	end
+	if withEffect then
+		built:SetAttribute("BuiltAt", Workspace:GetServerTimeNow())
+	end
+end
+
+-- Boosts have no slot of their own. If the theme draws one, it is added to
+-- the station it boosts, so it goes when that station does.
+local function buildBoost(plot: BasePart, folder: Folder, upgrade, withEffect: boolean?)
+	local builder = Theme.Props[upgrade.Id]
+	local station = folder:FindFirstChild(upgrade.Target)
+	local slot = Layout.Slots[upgrade.Target]
+	if not builder or not station or not slot or station:FindFirstChild(upgrade.Id) then
+		return
+	end
+	local size = Vector3.new(slot.Size[1], slot.Size[2], slot.Size[3])
+	local model = builder(slotOrigin(plot, slot), size)
+	model.Name = upgrade.Id
+	finish(model, withEffect)
+	model.Parent = station
+end
+
+-- Builds one owned upgrade on the player's plot: an artist's model from
+-- ReplicatedStorage.Assets if the theme names one, else the theme's built
+-- model, else a greybox block. With withEffect, clients animate it in.
 function PlotService.build(player: Player, upgradeId: string, withEffect: boolean?)
 	local plot = plotOf[player]
-	local slot = Layout.Slots[upgradeId]
-	if not plot or not slot then
+	local upgrade = upgradesById[upgradeId]
+	if not plot or not upgrade then
 		return
 	end
 	local folder = childFolder(plot, "Built")
-	if folder:FindFirstChild(upgradeId) then
+	if upgrade.Kind == "Boost" then
+		buildBoost(plot, folder, upgrade, withEffect)
+		return
+	end
+	local slot = Layout.Slots[upgradeId]
+	if not slot or folder:FindFirstChild(upgradeId) then
 		return
 	end
 
-	local upgrade = upgradesById[upgradeId]
 	local themed = Theme.Upgrades[upgradeId]
-	local width, height, depth = slot.Size[1], slot.Size[2], slot.Size[3]
-	local cframe = plot.CFrame * CFrame.new(slot.X, plot.Size.Y / 2 + height / 2, slot.Z)
+	local size = Vector3.new(slot.Size[1], slot.Size[2], slot.Size[3])
+	local origin = slotOrigin(plot, slot)
+	local middle = origin * CFrame.new(0, size.Y / 2, 0)
 
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local template = themed.Model and assets and assets:FindFirstChild(themed.Model)
+	local builder = Theme.Props[upgradeId]
 	local station: Instance
 	if template and template:IsA("Model") then
 		local model = template:Clone()
-		model.Name = upgradeId
-		model:PivotTo(cframe)
+		model:PivotTo(middle)
 		station = model
+	elseif builder then
+		station = builder(origin, size)
 	else
-		station = makePart(upgradeId, Vector3.new(width, height, depth), cframe, Color3.fromHex(themed.Color), folder)
+		station = makePart(upgradeId, size, middle, Color3.fromHex(themed.Color), folder)
+		if upgrade.Type == "Showpiece" then
+			-- Greybox showpieces glow so they read as the plot's landmark.
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromHex(themed.Color)
+			light.Range = 28
+			light.Brightness = 2
+			light.Parent = station
+		end
 	end
+	station.Name = upgradeId
 	station:SetAttribute("Kind", upgrade.Kind)
 	station:SetAttribute("Type", upgrade.Type)
+	finish(station, withEffect)
 	station.Parent = folder
 
 	local anchor = anchorOf(station)
-	if not anchor then
-		return
-	end
-	addStationLabel(anchor, themed.DisplayName, height / 2 + 3)
-	if upgrade.Type == "Showpiece" and not template then
-		-- Greybox showpieces glow so they read as the plot's landmark.
-		local light = Instance.new("PointLight")
-		light.Color = Color3.fromHex(themed.Color)
-		light.Range = 28
-		light.Brightness = 2
-		light.Parent = anchor
-	end
-	if withEffect then
-		celebrate(station, anchor)
+	if anchor then
+		addStationLabel(anchor, themed.DisplayName, size.Y / 2 + 3)
 	end
 end
 
@@ -256,23 +268,33 @@ end
 local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folder, fadeIn: boolean)
 	local spot = Layout.Buttons[upgrade.Id]
 	local size = Layout.ButtonSize
-	local cframe = plot.CFrame * CFrame.new(spot.X, plot.Size.Y / 2 + 0.3, spot.Z)
-	local button = makePart(upgrade.Id, Vector3.new(size, 0.6, size), cframe, BUTTON_COLOR, folder)
+	-- A round, glowing pad on a dark rim. Cylinders lie along X, so it is
+	-- turned upright.
+	local upright = CFrame.Angles(0, 0, math.pi / 2)
+	local floor = plot.CFrame * CFrame.new(spot.X, plot.Size.Y / 2, spot.Z)
+	local button = makePart(upgrade.Id, Vector3.new(0.6, size - 0.6, size - 0.6), floor * CFrame.new(0, 0.3, 0) * upright, BUTTON_COLOR, folder)
+	button.Shape = Enum.PartType.Cylinder
 	button.Material = Enum.Material.Neon
 	button.CanCollide = false
 	button:SetAttribute("Cost", upgrade.Cost)
+	local rim = makePart("Rim", Vector3.new(0.4, size, size), floor * CFrame.new(0, 0.2, 0) * upright, Color3.fromHex(Theme.Palette.ButtonRim), button)
+	rim.Shape = Enum.PartType.Cylinder
+	rim.CanCollide = false
+	rim.CanTouch = false
 
 	local billboard = addBillboard(button, "ButtonLabel", 4, 72)
 	billboard.MaxDistance = 80
-	addTextLine(billboard, "Title", 0, 0.45, Enum.Font.GothamBold).Text = Theme.Upgrades[upgrade.Id].DisplayName
-	addTextLine(billboard, "Price", 0.45, 0.3, Enum.Font.GothamBold).Text = if upgrade.Cost == 0
+	addTextLine(billboard, "Title", 0, 0.45, LABEL_FONT).Text = Theme.Upgrades[upgrade.Id].DisplayName
+	addTextLine(billboard, "Price", 0.45, 0.3, LABEL_FONT).Text = if upgrade.Cost == 0
 		then Theme.Strings.Free
 		else `{upgrade.Cost} {Theme.Strings.Coins}`
-	addTextLine(billboard, "Gain", 0.75, 0.25, Enum.Font.GothamMedium).Text = ""
+	addTextLine(billboard, "Gain", 0.75, 0.25, Enum.Font.GothamBold).Text = ""
 
 	if fadeIn then
-		button.Transparency = 1
-		TweenService:Create(button, FADE, { Transparency = 0 }):Play()
+		for _, part in { button, rim } do
+			part.Transparency = 1
+			TweenService:Create(part, FADE, { Transparency = 0 }):Play()
+		end
 	end
 
 	button.Touched:Connect(function(hit)
@@ -300,6 +322,10 @@ local function retireButton(button: BasePart)
 		billboard:Destroy()
 	end
 	TweenService:Create(button, FADE, { Transparency = 1 }):Play()
+	local rim = button:FindFirstChild("Rim")
+	if rim then
+		TweenService:Create(rim, FADE, { Transparency = 1 }):Play()
+	end
 	Debris:AddItem(button, FADE.Time + 0.1)
 end
 
@@ -408,12 +434,12 @@ local function setUpGate(plot: BasePart)
 		local spec = Layout.Gate
 		local width, height, depth = spec.Size[1], spec.Size[2], spec.Size[3]
 		local cframe = plot.CFrame * CFrame.new(spec.X, plot.Size.Y / 2 + height / 2, spec.Z)
-		gate = makePart("Gate", Vector3.new(width, height, depth), cframe, GATE_COLOR, plot)
+		gate = makePart("Gate", Vector3.new(width, height, depth), cframe, Color3.fromHex(Theme.Palette.Gate), plot)
 		gate.Material = Enum.Material.ForceField
 	end
 	local part = gate :: BasePart
 	if not part:FindFirstChild("GateLabel") then
-		addTextLine(addBillboard(part, "GateLabel", part.Size.Y / 2 + 2, 40), "Title", 0, 1, Enum.Font.GothamBold)
+		addTextLine(addBillboard(part, "GateLabel", part.Size.Y / 2 + 2, 40), "Title", 0, 1, LABEL_FONT)
 	end
 	setGate(plot, nil)
 

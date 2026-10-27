@@ -35,14 +35,15 @@ return {
 		attraction_3 = { X = 10, Z = -30 },
 	},
 
-	-- Size is { width, height, depth } for the greybox block drawn when the
-	-- theme has no model for that upgrade.
+	-- Where each station and attraction is built. Size is { width, height,
+	-- depth }: the theme's model fits inside it, and it is the size of the
+	-- greybox block drawn when the theme has no model for that upgrade.
 	Slots = {
-		starter_stall = { X = -26, Z = 26, Size = { 8, 6, 6 } },
-		kitchen = { X = -26, Z = -2, Size = { 12, 8, 10 } },
-		grower = { X = -26, Z = -28, Size = { 18, 2, 18 } },
+		starter_stall = { X = -26, Z = 26, Size = { 12, 8, 8 } },
+		kitchen = { X = -26, Z = -2, Size = { 14, 10, 12 } },
+		grower = { X = -26, Z = -28, Size = { 18, 3, 18 } },
 		attraction_1 = { X = 24, Z = 26, Size = { 18, 6, 18 } },
 		attraction_2 = { X = 24, Z = -2, Size = { 14, 14, 14 } },
-		attraction_3 = { X = 24, Z = -30, Size = { 18, 10, 14 } },
+		attraction_3 = { X = 24, Z = -30, Size = { 20, 10, 16 } },
 	},
 }

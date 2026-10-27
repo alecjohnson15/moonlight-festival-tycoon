@@ -1,9 +1,9 @@
 -- Makes every plot look busy: goods travel along the production chain and
 -- visitors walk to the stall and the attractions, at rates the server
--- publishes as attributes. On the player's own plot, buy buttons turn green
--- or red by whether the player can pay for them, and rides show a countdown
--- and each round's takings. All of it is cosmetic and exists only on this
--- client; the server decides and pays for everything.
+-- publishes as attributes. On the player's own plot, buy buttons glow and
+-- pulse when the player can pay for them and turn red when they can't, and
+-- rides show a countdown and each round's takings. All of it is cosmetic and
+-- exists only on this client; the server decides and pays for everything.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +15,7 @@ local Balance = require(Shared.Config.Balance)
 local Layout = require(Shared.Config.Layout)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
+local Sounds = require(script.Parent.Sounds)
 
 -- Shown rates are capped so a busy plot stays readable and cheap to draw.
 local MAX_GOODS_PER_SECOND = 1.5
@@ -26,8 +27,11 @@ local STALL_PAUSE = 1.2
 local ATTRACTION_PAUSE = 2.5
 local PAYOUT_SECONDS = 1.5
 local AFFORDABLE = Color3.fromRGB(76, 175, 80)
-local UNAFFORDABLE = Color3.fromRGB(170, 70, 70)
+local AFFORDABLE_PEAK = Color3.fromRGB(190, 255, 150)
+local UNAFFORDABLE = Color3.fromRGB(150, 50, 50)
+local PRICE_READY = Color3.fromRGB(255, 214, 102)
 local PRICE_SHORT = Color3.fromRGB(255, 160, 160)
+local PULSES_PER_SECOND = 1.2
 
 type Mover = {
 	Instance: PVInstance,
@@ -291,6 +295,7 @@ end
 local function showPayout(anchor: BasePart, height: number, coins: number)
 	local billboard, label = makeBillboard(anchor, height, Color3.fromRGB(255, 214, 102))
 	label.Text = Theme.Strings.Payout:format(Format.rate(coins))
+	Sounds.play("Payout")
 	local started = os.clock()
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
@@ -349,18 +354,31 @@ end
 
 local function tintButtons(buttons: Instance)
 	local coins = player:GetAttribute("Coins") or 0
+	local pulse = (math.sin(os.clock() * PULSES_PER_SECOND * math.pi * 2) + 1) / 2
 	for _, button in buttons:GetChildren() do
 		local cost = button:GetAttribute("Cost")
 		if button:IsA("BasePart") and cost and button:GetAttribute("Sold") == nil then
 			local affordable = coins >= cost
-			local color = if affordable then AFFORDABLE else UNAFFORDABLE
-			if button.Color ~= color then
-				button.Color = color
+			button.Color = if affordable then AFFORDABLE:Lerp(AFFORDABLE_PEAK, pulse) else UNAFFORDABLE
+			-- A light under affordable buttons, made here so only the owner
+			-- sees it.
+			local glow = button:FindFirstChild("Glow") :: PointLight?
+			if not glow then
+				local light = Instance.new("PointLight")
+				light.Name = "Glow"
+				light.Color = AFFORDABLE_PEAK
+				light.Range = 10
+				light.Shadows = false
+				light.Parent = button
+				glow = light
 			end
+			local light = glow :: PointLight
+			light.Enabled = affordable
+			light.Brightness = 1 + pulse * 2
 			local billboard = button:FindFirstChild("ButtonLabel")
 			local price = billboard and billboard:FindFirstChild("Price")
 			if price and price:IsA("TextLabel") then
-				price.TextColor3 = if affordable then Color3.new(1, 1, 1) else PRICE_SHORT
+				price.TextColor3 = if affordable then PRICE_READY else PRICE_SHORT
 			end
 		end
 	end
