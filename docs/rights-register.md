@@ -20,9 +20,9 @@ Nothing third-party ships inside the game yet. These tools are used only to buil
 | Asset | Creator | Source | License | Commercial use | Attribution | Proof |
 | --- | --- | --- | --- | --- | --- | --- |
 | Plots, plaza, buy pads and greybox upgrade blocks | This project | Generated in code (PlotService) | Original | Yes | None needed | This repository |
-| Goods and visitor figures | This project | Generated in code (PlotActivity) | Original | Yes | None needed | This repository |
+| Goods and costumed visitors (ghosts, pumpkin kids, skeletons, witches, mummies) | This project | Built from parts in code (`Themes/MoonlightFestival/Crowd.luau`) | Original | Yes | None needed | This repository |
 | Upgrade models, plot dressing and surrounding scenery | This project | Built from parts in code (`src/shared/Kit.luau`, `Themes/MoonlightFestival/Props.luau`, `Pieces.luau`, `Scenery.luau`) | Original | Yes | None needed | This repository |
-| Music, ambience and sound effects (`assets/audio/*.ogg`) | This project | Synthesised from sine waves and noise by `tools/make_sounds.py` | Original | Yes | None needed | This repository; rerun the script to reproduce them |
+| Music, ambience and sound effects (`assets/audio/*.ogg`) | This project | Synthesised from sine waves and noise by `tools/make_sounds.py`. The two songs, "Moonlit Mischief" (`music.ogg`) and "Haunted Arcade" (`music2.ogg`), are original melodies written for this project in a general pop style; they are not covers, remixes or soundalikes of any existing song | Original | Yes | None needed | This repository; rerun the script to reproduce them |
 | Night sky, moon and stars | Roblox | The engine's default `Sky` textures, with settings changed | Roblox platform terms | Within Roblox | None needed | Engine-provided |
 | Particle textures (default sparkle, `rbxasset://textures/particles/smoke_main.dds`) and the Fire and Smoke effects | Roblox | Built into the Roblox engine | Roblox platform terms | Within Roblox | None needed | Engine-provided |
 | Part and terrain materials (grass, cobblestone, slate, wood planks and so on) | Roblox | Built into the Roblox engine | Roblox platform terms | Within Roblox | None needed | Engine-provided |

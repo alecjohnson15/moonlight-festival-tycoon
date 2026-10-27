@@ -181,9 +181,11 @@ return {
 
 	-- Sounds and music, as Roblox asset ids ("rbxassetid://123"). Empty means
 	-- silent. The original sounds for this pack are in assets/audio; upload
-	-- them and paste their ids here (see the README). Volume is 0 to 1.
+	-- them and paste their ids here (see the README). Volume is 0 to 1. Music
+	-- and Music2 are two songs that play in turn.
 	Sounds = {
 		Music = { Id = "", Volume = 0.3 },
+		Music2 = { Id = "", Volume = 0.3 },
 		Ambience = { Id = "", Volume = 0.35 },
 		Claim = { Id = "", Volume = 0.6 },
 		Purchase = { Id = "", Volume = 0.6 },

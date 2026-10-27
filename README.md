@@ -10,9 +10,9 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 - **Production chain:** the pumpkin patch grows goods, the kitchen cooks as many as it has room for, and the stall sells everything that reaches it, plus what it makes itself. Cooked goods sell for more, so a full kitchen is the next thing to upgrade, and its label says "(full)" when goods are going past it.
 - **Visitors and attractions:** every attraction draws visitors, and there are three types. A walkthrough charges each visitor up to its capacity, a ride runs in rounds and pays per seat filled, and a showpiece is free to visit and earns by drawing a crowd for the others.
 - **Economy:** the server pays income on a tick into the Coins leaderstat and owns every coin change. A button touch only names the upgrade the player wants, and only the plot's owner can buy from it. Button gains are worked out with the same code the server pays from.
-- **Plot activity:** goods roll along the chain and simple visitor figures walk to the stall and the attractions. Rides on your own plot show a countdown and each round's takings. All of this is drawn on each client and changes nothing.
+- **Plot activity:** pumpkins, pies and toffee apples travel along the chain, and visitors in Halloween costume (sheet ghosts, pumpkin kids, skeletons, witches and mummies) hop or float to the stall and the attractions. Rides on your own plot show a countdown and each round's takings. All of this is drawn on each client and changes nothing.
 - **The look:** a haunted night under a huge moon, in thick coloured fog. Every upgrade is a model built from parts in code: a treat stall with a shelf of glowing potions, a misty pumpkin patch with a scarecrow, a witch's cottage with green windows and a smoking chimney, a bubbling cauldron, a hedge maze with a hooded reaper statue, a giant grinning pumpkin with bats circling it, and a ghost train looping through a haunted house. Each build is washed in red, green or purple light. Plots have fences, lantern posts lit in the plot's own colour, string lights, an arch over the gate, gravestones, skeletons and cobwebs. Around them are dead woods, a graveyard with a crypt, a bonfire, a pond with floating lanterns, a windmill and drifting mist. Ghosts and the pumpkin float, the train runs round its track, bats circle and lights flicker, all moved on each client.
-- **HUD and sound:** a cash counter with a moon coin that counts up and pops "+N" as you earn (the Coins leaderstat stays), income and visitors per second, and a music button. The theme has slots for music, an eerie ambience and sounds for claiming, buying, building and ride payouts. The original audio is in `assets/audio` and plays once it is uploaded (see Getting started).
+- **HUD and sound:** a cash counter with a moon coin that counts up and pops "+N" as you earn (the Coins leaderstat stays), income and visitors per second, and a music button. The theme has slots for two songs that play in turn, an eerie ambience and sounds for claiming, buying, building and ride payouts. The songs are original upbeat Halloween instrumentals with a pop shape: "Moonlit Mischief" (a theremin hook in A minor, 124 bpm) and "Haunted Arcade" (an arcade lead and harpsichord in D minor, 116 bpm). The original audio is in `assets/audio` and plays once it is uploaded (see Getting started).
 - **Rating:** spooky rather than gory, aimed at Roblox's **Mild** maturity label (mild fear) for players aged 9 to 12: dark, foggy lighting, ghosts, skeletons, gravestones and a reaper statue, with no blood, gore or violence. Answer the Maturity & Compliance questionnaire to match before publishing.
 - **Saves:** session-locked DataStore saves with a versioned schema, autosave every 60 seconds, and a final save on leave and on shutdown.
 - **Purchases:** cosmetics only. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice.
@@ -31,6 +31,7 @@ src/
         init.luau         names, colours, the night's look, sounds
         Props.luau        a model for each upgrade
         Scenery.luau      plot dressing and the land around the plots
+        Crowd.luau        visitors in costume and the goods on the move
         Pieces.luau       pumpkins, lanterns, ghosts, fences and the rest
     Kit.luau              helpers for building models from parts
     Progression.luau      what can be bought, when (pure)
@@ -64,7 +65,7 @@ The one remote, `RequestPurchase` for the cosmetic shop, is declared in `default
 3. Run `rojo serve`, open a new Baseplate place in Studio (or delete the baseplate) and connect from the Rojo plugin.
 4. In Game Settings, set **Max Players** to 6 to match `Layout.PlotCount`, and turn on **Security > Enable Studio Access to API Services** if you want saves to work in Studio. Without it, progress lives in memory for that session and the output says so.
 5. Press Play, walk off the plaza into a plot's gate to claim it, then step on the glowing **Creepy Treat Stall** pad.
-6. Optional, for sound: upload the six files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau` as `"rbxassetid://<id>"`. Until then the game is silent and the music button stays hidden.
+6. Optional, for sound: upload the seven files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau` as `"rbxassetid://<id>"`. Until then the game is silent and the music button stays hidden.
 
 ## Checks
 
@@ -90,4 +91,4 @@ A fully built plot is about 1,200 parts and 43 lights, and the land around the p
 
 ## Not built yet
 
-The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Visitors are a rate, not individual characters: the walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
+The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.

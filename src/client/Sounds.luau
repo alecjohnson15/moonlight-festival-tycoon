@@ -1,36 +1,75 @@
--- Plays the theme's sounds on this client: one-off effects by name, and the
--- music and eerie ambience on a loop, which the player can turn off. A sound
--- whose id is empty in the theme is silent, so the game runs before any audio
--- is uploaded.
+-- Plays the theme's sounds on this client: one-off effects by name, the
+-- music as a playlist that goes round the theme's songs in turn, and the
+-- eerie ambience on a loop. The player can turn the music and ambience off. A
+-- sound whose id is empty in the theme is silent, so the game runs before any
+-- audio is uploaded.
 
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
 
-local LOOPS = { "Music", "Ambience" }
+local PLAYLIST = { "Music", "Music2" }
+local AMBIENCE = "Ambience"
 
 local Sounds = {}
 
 local made: { [string]: Sound } = {}
 local loopsOn = true
+-- Which of the songs with an id is playing, by its place in that list.
+local current = 0
+local playNextSong: () -> ()
+
+local function hasId(name: string): boolean
+	local spec = Theme.Sounds[name]
+	return spec ~= nil and spec.Id ~= ""
+end
 
 local function get(name: string): Sound?
 	local sound = made[name]
 	if sound then
 		return sound
 	end
-	local spec = Theme.Sounds[name]
-	if not spec or spec.Id == "" then
+	if not hasId(name) then
 		return nil
 	end
+	local spec = Theme.Sounds[name]
 	local created = Instance.new("Sound")
 	created.Name = name
 	created.SoundId = spec.Id
 	created.Volume = spec.Volume
 	created.Parent = SoundService
+	if table.find(PLAYLIST, name) then
+		created.Ended:Connect(playNextSong)
+	end
 	made[name] = created
 	return created
+end
+
+-- The songs that have been uploaded, in playlist order.
+local function songs(): { string }
+	local list = {}
+	for _, name in PLAYLIST do
+		if hasId(name) then
+			table.insert(list, name)
+		end
+	end
+	return list
+end
+
+function playNextSong()
+	local list = songs()
+	if not loopsOn or #list == 0 then
+		return
+	end
+	current = current % #list + 1
+	local sound = get(list[current])
+	if sound then
+		-- A single song repeats; more than one take turns.
+		sound.Looped = #list == 1
+		sound.TimePosition = 0
+		sound:Play()
+	end
 end
 
 function Sounds.play(name: string)
@@ -43,12 +82,7 @@ end
 
 -- Whether the theme has any music or ambience to turn on and off.
 function Sounds.hasLoops(): boolean
-	for _, name in LOOPS do
-		if Theme.Sounds[name] and Theme.Sounds[name].Id ~= "" then
-			return true
-		end
-	end
-	return false
+	return #songs() > 0 or hasId(AMBIENCE)
 end
 
 function Sounds.loopsOn(): boolean
@@ -57,16 +91,27 @@ end
 
 function Sounds.setLoops(on: boolean)
 	loopsOn = on
-	for _, name in LOOPS do
-		local sound = get(name)
-		if sound then
-			sound.Looped = true
-			if on and not sound.IsPlaying then
-				sound:Play()
-			elseif not on then
-				sound:Stop()
-			end
+	local ambience = get(AMBIENCE)
+	if ambience then
+		ambience.Looped = true
+		if on and not ambience.IsPlaying then
+			ambience:Play()
+		elseif not on then
+			ambience:Stop()
 		end
+	end
+
+	local playing = false
+	for _, name in songs() do
+		local song = get(name)
+		if song and not on then
+			song:Stop()
+		elseif song and song.IsPlaying then
+			playing = true
+		end
+	end
+	if on and not playing then
+		playNextSong()
 	end
 end
 

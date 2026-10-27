@@ -369,7 +369,7 @@ describe("theme look", function()
 	end)
 
 	it("gives every sound an asset id or nothing, and a volume", function()
-		for _, name in { "Music", "Ambience", "Claim", "Purchase", "Build", "Payout" } do
+		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout" } do
 			local sound = Theme.Sounds[name]
 			assert(sound, `the theme has no {name} sound`)
 			assert(sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"), `{name} must be rbxassetid://<number> or ""`)
