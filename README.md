@@ -6,7 +6,10 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 
 - **Plots:** each player gets a plot when their save loads. With no `Workspace.Plots` folder in the place, the server generates a greybox row of plots and a spawn plaza, so the game runs from an empty place file.
 - **First minute:** the starter stall is free, its "Serve visitor" prompt pays a small reward on a cooldown, and the first paid upgrade is affordable within a minute. A test enforces that last part.
-- **Economy:** the server pays income on a tick and owns every coin change. The client only names the upgrade it wants.
+- **Production chain:** the pumpkin patch grows goods, the kitchen cooks as many as it has room for, and the stall sells everything that reaches it, plus what it makes itself. Cooked goods sell for more, so a full kitchen is the next thing to upgrade, and its label says "(full)" when goods are going past it.
+- **Visitors and attractions:** every attraction draws visitors, and there are three types. A walkthrough charges each visitor up to its capacity, a ride runs in rounds and pays per seat filled, and a showpiece is free to visit and earns by drawing a crowd for the others.
+- **Economy:** the server pays income on a tick and owns every coin change. The client only names the upgrade it wants. The HUD shows what each upgrade would add per second, worked out with the same code the server pays from.
+- **Plot activity:** goods roll along the chain and greybox visitors walk to the stall and the attractions. Rides on your own plot show a countdown and each round's takings. All of this is drawn on each client and changes nothing.
 - **Saves:** session-locked DataStore saves with a versioned schema, autosave every 60 seconds, and a final save on leave and on shutdown.
 - **Purchases:** cosmetics only. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice.
 - **Theme packs:** every player-facing name and colour lives in `src/shared/Themes/`. Swapping themes is a new file plus one line in `Config/Theme.luau`.
@@ -21,15 +24,19 @@ src/
       Theme.luau          picks the active theme pack
     Themes/
       MoonlightFestival.luau
-    Progression.luau      upgrade rules and income math (pure)
+    Progression.luau      what can be bought, when (pure)
+    Earnings.luau         production chain, visitors, attractions (pure)
+    Format.luau           number formatting for labels
   server/                 ServerScriptService.Server
     init.server.luau      starts services in order
     Services/             DataService, EconomyService, PlotService,
+                          ProductionService, AttractionService,
                           UpgradeService, PurchaseService
     Lib/                  Migrations, SessionLock, ReceiptLedger,
                           RateLimiter (pure)
   client/                 StarterPlayerScripts.Client
-    Hud.luau              coins, income and the next upgrades
+    Hud.luau              coins, income, visitors and the next upgrades
+    PlotActivity.luau     goods and visitors moving on every plot
 tests/                    Lune tests for the pure modules
 docs/rights-register.md   every external asset and dependency
 ```
@@ -57,11 +64,12 @@ CI runs the same four on every pull request. Services that call Roblox APIs (Dat
 
 ## Common changes
 
-- **Add an upgrade:** add it to `Config/Balance.luau`, give it a name and colour in the theme pack, and, for a producer, a slot in `Config/Layout.luau`. The tests fail until all three agree.
+- **Add an upgrade:** add it to `Config/Balance.luau` (the comment at the top explains each kind and its fields), give it a name and colour in the theme pack, and, for anything but a boost, a slot in `Config/Layout.luau`. The tests fail until all three agree, and also if the upgrade earns nothing when it first becomes available or leaves a gap of more than two minutes before the next one.
+- **Add a good:** add it to `Items` in `Config/Balance.luau` with its sale value, and to `Items` in the theme pack with a plural name and colour.
 - **Swap the theme:** copy `Themes/MoonlightFestival.luau`, rename everything in it, and point `Config/Theme.luau` at the new file. Models go in `ReplicatedStorage.Assets` and are named by each upgrade's `Model` field; upgrades without a model stay greybox.
 - **Change the save shape:** bump `Migrations.CURRENT_VERSION` and append a step. Never edit a step that has shipped.
 - **Sell a cosmetic:** fill in its id in `Config/Catalog.luau` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
 
 ## Not built yet
 
-The cosmetic shop UI, the tutorial, real art, visitors, decoration placement, and attraction behaviour beyond income. Upgrades currently earn coins directly; the production chain is expressed through unlock order and can be deepened later.
+The cosmetic shop UI, the tutorial, real art and decoration placement. Visitors are a rate, not individual characters: the walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.

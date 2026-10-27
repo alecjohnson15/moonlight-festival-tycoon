@@ -7,9 +7,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Progression = require(ReplicatedStorage.Shared.Progression)
 local RateLimiter = require(script.Parent.Parent.Lib.RateLimiter)
+local AttractionService = require(script.Parent.AttractionService)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local PlotService = require(script.Parent.PlotService)
+local ProductionService = require(script.Parent.ProductionService)
 
 local Remotes = ReplicatedStorage.Remotes
 local RequestUpgrade = Remotes.RequestUpgrade :: RemoteFunction
@@ -47,6 +49,8 @@ local function onRequestUpgrade(player: Player, upgradeId: unknown): (boolean, s
 	end
 	PlotService.build(player, upgradeId)
 	EconomyService.publish(player)
+	ProductionService.refresh(player)
+	AttractionService.refresh(player)
 	StateSync:FireClient(player, ownedIds(data))
 	return true, nil
 end

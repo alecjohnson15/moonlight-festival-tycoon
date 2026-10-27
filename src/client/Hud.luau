@@ -1,7 +1,8 @@
--- The heads-up display: coins, income and the next upgrades to buy. It shows
--- what the server reports and sends upgrade requests; the server decides
--- every outcome. There is deliberately no shop here yet: the brief wants
--- players to see progress before any shop appears.
+-- The heads-up display: coins, income, visitors and the next upgrades to buy,
+-- each with what it would add per second. It shows what the server reports
+-- and sends upgrade requests; the server decides every outcome. There is
+-- deliberately no shop here yet: the brief wants players to see progress
+-- before any shop appears.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Balance = require(Shared.Config.Balance)
 local Theme = require(Shared.Config.Theme)
+local Earnings = require(Shared.Earnings)
+local Format = require(Shared.Format)
 local Progression = require(Shared.Progression)
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -46,14 +49,14 @@ local gui = make("ScreenGui", { Name = "Hud", ResetOnSpawn = false })
 local topBar = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 8),
-	Size = UDim2.fromOffset(260, 64),
+	Size = UDim2.fromOffset(260, 84),
 	BackgroundColor3 = Color3.fromRGB(24, 24, 36),
 	BackgroundTransparency = 0.2,
 }, gui)
 make("UICorner", { CornerRadius = UDim.new(0, 12) }, topBar)
 
 local coinsLabel = make("TextLabel", {
-	Size = UDim2.fromScale(1, 0.6),
+	Size = UDim2.fromScale(1, 0.5),
 	BackgroundTransparency = 1,
 	Font = Enum.Font.GothamBold,
 	TextScaled = true,
@@ -61,12 +64,21 @@ local coinsLabel = make("TextLabel", {
 }, topBar)
 
 local incomeLabel = make("TextLabel", {
-	Position = UDim2.fromScale(0, 0.6),
-	Size = UDim2.fromScale(1, 0.4),
+	Position = UDim2.fromScale(0, 0.5),
+	Size = UDim2.fromScale(1, 0.27),
 	BackgroundTransparency = 1,
 	Font = Enum.Font.Gotham,
 	TextScaled = true,
 	TextColor3 = Color3.new(1, 1, 1),
+}, topBar)
+
+local visitorsLabel = make("TextLabel", {
+	Position = UDim2.fromScale(0, 0.77),
+	Size = UDim2.fromScale(1, 0.23),
+	BackgroundTransparency = 1,
+	Font = Enum.Font.Gotham,
+	TextScaled = true,
+	TextColor3 = Color3.fromRGB(200, 200, 230),
 }, topBar)
 
 local choices = make("Frame", {
@@ -119,6 +131,7 @@ end
 local function refreshLabels()
 	coinsLabel.Text = `{coins()} {Theme.Strings.Coins}`
 	incomeLabel.Text = Theme.Strings.IncomePerSecond:format(math.floor(player:GetAttribute("IncomePerSecond") or 0))
+	visitorsLabel.Text = Theme.Strings.VisitorsPerSecond:format(Format.rate(player:GetAttribute("VisitorsPerSecond") or 0))
 	for id, button in buttons do
 		local upgrade = Progression.find(Balance.Upgrades, id)
 		button.BackgroundColor3 = if upgrade and coins() >= upgrade.Cost then AFFORDABLE else UNAFFORDABLE
@@ -132,9 +145,14 @@ local function rebuildChoices()
 	table.clear(buttons)
 
 	local available = Progression.available(owned, Balance.Upgrades)
+	local income = Earnings.perSecond(owned, Balance)
 	for index = 1, math.min(#available, MAX_CHOICES) do
 		local upgrade = available[index]
 		local cost = if upgrade.Cost == 0 then Theme.Strings.Free else `{upgrade.Cost} {Theme.Strings.Coins}`
+		local withUpgrade = table.clone(owned)
+		withUpgrade[upgrade.Id] = true
+		local gain = Earnings.perSecond(withUpgrade, Balance) - income
+		local details = if gain > 0 then `{cost}  {Theme.Strings.UpgradeGain:format(Format.rate(gain))}` else cost
 		local button = make("TextButton", {
 			Name = upgrade.Id,
 			LayoutOrder = index,
@@ -142,7 +160,7 @@ local function rebuildChoices()
 			Font = Enum.Font.GothamBold,
 			TextScaled = true,
 			TextColor3 = Color3.new(1, 1, 1),
-			Text = `{Theme.Upgrades[upgrade.Id].DisplayName}\n{cost}`,
+			Text = `{Theme.Upgrades[upgrade.Id].DisplayName}\n{details}`,
 			AutoButtonColor = true,
 		}, choices)
 		make("UICorner", { CornerRadius = UDim.new(0, 10) }, button)
@@ -167,6 +185,7 @@ function Hud.mount()
 	end)
 	player:GetAttributeChangedSignal("Coins"):Connect(refreshLabels)
 	player:GetAttributeChangedSignal("IncomePerSecond"):Connect(refreshLabels)
+	player:GetAttributeChangedSignal("VisitorsPerSecond"):Connect(refreshLabels)
 	refreshLabels()
 end
 

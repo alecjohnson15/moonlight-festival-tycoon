@@ -5,6 +5,7 @@ local process = require("@lune/process")
 local TestKit = require("./TestKit")
 
 require("./Progression.spec")
+require("./Earnings.spec")
 require("./Config.spec")
 require("./Saves.spec")
 require("./RateLimiter.spec")

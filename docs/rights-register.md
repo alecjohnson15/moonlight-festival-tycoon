@@ -18,6 +18,7 @@ Nothing third-party ships inside the game yet. These tools are used only to buil
 | Asset | Creator | Source | License | Commercial use | Attribution | Proof |
 | --- | --- | --- | --- | --- | --- | --- |
 | Greybox plots, plaza and upgrade blocks | This project | Generated in code (PlotService) | Original | Yes | None needed | This repository |
+| Greybox goods and visitor figures | This project | Generated in code (PlotActivity) | Original | Yes | None needed | This repository |
 | UI fonts (Gotham family) | Roblox | Built into the Roblox engine | Roblox platform terms | Within Roblox | None needed | Engine-provided |
 
-No models, images, audio or music are in the game yet. The festival names in `src/shared/Themes/MoonlightFestival.luau` are original placeholders and need the same review before launch.
+No models, images, audio or music are in the game yet. The festival names in `src/shared/Themes/MoonlightFestival.luau` (stations, goods and attractions) are original placeholders and need the same review before launch.
