@@ -1,11 +1,12 @@
 -- Plots, gates and buy buttons. Each plot has a gate across its front: an
 -- unowned gate is solid and touching it claims the plot, after which it turns
 -- see-through and carries the owner's name. On the owner's plot, a buy button
--- sits on the floor for every upgrade whose requirement is owned; stepping on
--- one asks UpgradeService to buy it, and the upgrade is built while the button
--- fades away. If the place has no Workspace.Plots folder, a row of plots and a
--- spawn plaza are generated, so the game runs from an empty place file;
--- WorldService then dresses them.
+-- sits on the floor for every upgrade they can buy next; stepping on one asks
+-- UpgradeService to buy it, and the upgrade is built while the button fades
+-- away. Where a building forks into paths, a pad for each path appears side
+-- by side, and buying one takes the others away for good. If the place has
+-- no Workspace.Plots folder, a row of plots and a spawn plaza are generated,
+-- so the game runs from an empty place file; WorldService then dresses them.
 --
 -- Each upgrade is built from the theme's model for it (see the theme pack's
 -- Props), or as a greybox block if the theme has none. A built station is
@@ -32,6 +33,8 @@ local DataService = require(script.Parent.DataService)
 
 local FADE = TweenInfo.new(0.6)
 local BUTTON_COLOR = Color3.fromRGB(76, 175, 80)
+local WARNING_COLOR = Color3.fromRGB(255, 170, 120)
+local PATH_LABEL_WIDTH = 7
 local TRIGGER_HEIGHT = 3
 local LABEL_FONT = Enum.Font.FredokaOne
 
@@ -166,12 +169,12 @@ local function finish(built: Instance, withEffect: boolean?)
 	end
 end
 
--- Boosts have no slot of their own. If the theme draws one, it is added to
--- the station it boosts, so it goes when that station does.
-local function buildBoost(plot: BasePart, folder: Folder, upgrade, withEffect: boolean?)
+-- Boosts and vendors have no slot of their own. If the theme draws one, it
+-- is added to the building it improves, so it goes when that building does.
+local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: boolean?)
 	local builder = Theme.Props[upgrade.Id]
-	local station = folder:FindFirstChild(upgrade.Target)
-	local slot = Layout.Slots[upgrade.Target]
+	local station = folder:FindFirstChild(upgrade.Building)
+	local slot = Layout.Slots[upgrade.Building]
 	if not builder or not station or not slot or station:FindFirstChild(upgrade.Id) then
 		return
 	end
@@ -192,8 +195,8 @@ function PlotService.build(player: Player, upgradeId: string, withEffect: boolea
 		return
 	end
 	local folder = childFolder(plot, "Built")
-	if upgrade.Kind == "Boost" then
-		buildBoost(plot, folder, upgrade, withEffect)
+	if upgrade.Building then
+		buildAddOn(plot, folder, upgrade, withEffect)
 		return
 	end
 	local slot = Layout.Slots[upgradeId]
@@ -266,8 +269,72 @@ function PlotService.updateStation(player: Player, upgradeId: string, caption: s
 	end
 end
 
-local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folder, fadeIn: boolean)
-	local spot = Layout.Buttons[upgrade.Id]
+-- Where an upgrade's buy button goes: a building's own spot, its shared
+-- upgrades' spot, or its path's spot (see Config/Layout).
+local function spotFor(upgrade): { X: number, Z: number }?
+	local spots = Layout.Buttons[upgrade.Building or upgrade.Id]
+	if not spots then
+		return nil
+	elseif not upgrade.Building then
+		return spots.Build
+	elseif upgrade.Path then
+		return spots.Paths and spots.Paths[upgrade.Path]
+	end
+	return spots.Upgrades
+end
+
+-- The lines over a pad. A path's pads say which path they're on: the first
+-- pads, side by side, pitch each path and warn the choice is for good.
+local function labelButton(billboard: BillboardGui, upgrade, owned: { [string]: boolean })
+	local path = upgrade.Path and Theme.Paths[upgrade.Building][upgrade.Path]
+	local price = if upgrade.Cost == 0 then Theme.Strings.Free else `{Format.short(upgrade.Cost)} {Theme.Strings.Coins}`
+	if not path then
+		billboard.Size = UDim2.fromOffset(220, 72)
+		addTextLine(billboard, "Title", 0, 0.45, LABEL_FONT).Text = Theme.Upgrades[upgrade.Id].DisplayName
+		addTextLine(billboard, "Price", 0.45, 0.3, LABEL_FONT).Text = price
+		addTextLine(billboard, "Gain", 0.75, 0.25, Enum.Font.GothamBold).Text = ""
+		return
+	end
+
+	-- Sized in studs, not pixels, so pads side by side never overlap their
+	-- labels however far away the player stands.
+	local tier, count = Progression.pathTier(Balance.Upgrades, upgrade.Id)
+	local choosing = Progression.chosenPaths(owned, Balance.Upgrades)[upgrade.Building] == nil
+	billboard.Size = UDim2.fromScale(PATH_LABEL_WIDTH, if choosing then 4.5 else 3.6)
+	billboard.StudsOffset = Vector3.new(0, if choosing then 5 else 4.5, 0)
+	local share = if choosing then 1 / 5 else 1 / 4
+	local heading = addTextLine(billboard, "Path", 0, share, LABEL_FONT)
+	heading.TextColor3 = Color3.fromHex(path.Color)
+	if choosing then
+		heading.Text = path.DisplayName
+		addTextLine(billboard, "Title", share, share, Enum.Font.GothamBold).Text = path.Blurb
+	else
+		heading.Text = Theme.Strings.PathTier:format(path.DisplayName, tier or 0, count or 0)
+		addTextLine(billboard, "Title", share, share, LABEL_FONT).Text = Theme.Upgrades[upgrade.Id].DisplayName
+	end
+	addTextLine(billboard, "Price", share * 2, share, LABEL_FONT).Text = price
+	addTextLine(billboard, "Gain", share * 3, share, Enum.Font.GothamBold).Text = ""
+	if choosing then
+		local warning = addTextLine(billboard, "Warning", share * 4, share, Enum.Font.GothamBold)
+		warning.Text = Theme.Strings.PathChoice
+		warning.TextColor3 = WARNING_COLOR
+	end
+end
+
+-- Whether the owner's character is standing over a pad, so a pad that just
+-- appeared under them doesn't buy before they step off and back on.
+local function standingOn(player: Player, floor: CFrame): boolean
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return false
+	end
+	local offset = floor:PointToObjectSpace(root.Position)
+	return Vector2.new(offset.X, offset.Z).Magnitude < Layout.ButtonSize / 2 + 1.5
+end
+
+local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folder, fadeIn: boolean, owned)
+	local spot = spotFor(upgrade) :: { X: number, Z: number }
 	local size = Layout.ButtonSize
 	-- A round, glowing pad on a dark rim. Cylinders lie along X, so it is
 	-- turned upright.
@@ -300,11 +367,7 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 
 	local billboard = addBillboard(button, "ButtonLabel", 4, 72)
 	billboard.MaxDistance = 80
-	addTextLine(billboard, "Title", 0, 0.45, LABEL_FONT).Text = Theme.Upgrades[upgrade.Id].DisplayName
-	addTextLine(billboard, "Price", 0.45, 0.3, LABEL_FONT).Text = if upgrade.Cost == 0
-		then Theme.Strings.Free
-		else `{upgrade.Cost} {Theme.Strings.Coins}`
-	addTextLine(billboard, "Gain", 0.75, 0.25, Enum.Font.GothamBold).Text = ""
+	labelButton(billboard, upgrade, owned)
 
 	if fadeIn then
 		for _, part in { button, rim } do
@@ -313,10 +376,22 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 		end
 	end
 
+	-- A pad that appears under the owner, where they just bought the one
+	-- before it, waits for them to step off first.
+	local waitingForStepOff = standingOn(player, floor)
+	if waitingForStepOff then
+		task.spawn(function()
+			while button.Parent and standingOn(player, floor) do
+				task.wait(0.2)
+			end
+			waitingForStepOff = false
+		end)
+	end
+
 	trigger.Touched:Connect(function(hit)
 		-- Only the owner's own living character can buy from their plot.
 		local character = hit.Parent
-		if not character or Players:GetPlayerFromCharacter(character) ~= player then
+		if waitingForStepOff or not character or Players:GetPlayerFromCharacter(character) ~= player then
 			return
 		end
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -371,9 +446,9 @@ function PlotService.refreshButtons(player: Player, fadeIn: boolean)
 
 	local income = Earnings.perSecond(data.Owned, Balance)
 	for _, upgrade in available do
-		if Layout.Buttons[upgrade.Id] then
+		if spotFor(upgrade) then
 			if not folder:FindFirstChild(upgrade.Id) then
-				makeButton(player, plot, upgrade, folder, fadeIn)
+				makeButton(player, plot, upgrade, folder, fadeIn, data.Owned)
 			end
 			local withUpgrade = table.clone(data.Owned)
 			withUpgrade[upgrade.Id] = true

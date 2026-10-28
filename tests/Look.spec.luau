@@ -102,7 +102,7 @@ local plotParts, plotLights = 0, 0
 describe("theme props", function()
 	it("has a model for every station and attraction that fits its slot", function()
 		for _, upgrade in Balance.Upgrades do
-			if upgrade.Kind ~= "Boost" then
+			if not upgrade.Building then
 				local builder = Props[upgrade.Id]
 				assert(builder, `the theme has no model for {upgrade.Id}`)
 				local slot = Layout.Slots[upgrade.Id]
@@ -121,12 +121,12 @@ describe("theme props", function()
 		end
 	end)
 
-	it("adds each drawn boost inside the slot of the station it boosts", function()
+	it("adds each drawn upgrade inside the slot of the building it improves", function()
 		for id, builder in Props do
 			local upgrade = Progression.find(Balance.Upgrades, id)
 			assert(upgrade, `the theme has a model for unknown upgrade {id}`)
-			if upgrade.Kind == "Boost" then
-				local slot = Layout.Slots[upgrade.Target]
+			if upgrade.Building then
+				local slot = Layout.Slots[upgrade.Building]
 				local origin, size = slotOrigin(slot), slotSize(slot)
 				local model = builder(origin, size)
 				expect(model.PrimaryPart).toBe(nil)
@@ -185,8 +185,15 @@ describe("theme scenery", function()
 			table.insert(keepOut, { `slot {id}`, { slot.X - w / 2, 0, slot.Z - d / 2, slot.X + w / 2, h, slot.Z + d / 2 } })
 		end
 		local half = Layout.ButtonSize / 2
-		for id, spot in Layout.Buttons do
-			table.insert(keepOut, { `button {id}`, { spot.X - half, 0, spot.Z - half, spot.X + half, 6, spot.Z + half } })
+		for building, spots in Layout.Buttons do
+			local list = { Build = spots.Build, Upgrades = spots.Upgrades }
+			for path, spot in spots.Paths or {} do
+				list[path] = spot
+			end
+			for name, spot in list do
+				local zone = { spot.X - half, 0, spot.Z - half, spot.X + half, 6, spot.Z + half }
+				table.insert(keepOut, { `button {building} {name}`, zone })
+			end
 		end
 		local gate = Layout.Gate
 		local gw, gh, gd = gate.Size[1] / 2, gate.Size[2], gate.Size[3] / 2
