@@ -16,10 +16,9 @@ return {
 
 	Strings = {
 		PlotOwner = "%s's Haunt",
-		ClaimGate = "Touch to claim",
+		ClaimGate = "Free! Walk in to claim",
 		-- The arrows by the spawn, pointing along the plaza to the plots.
 		ClaimSign = "Claim a haunt",
-		ClaimHint = "Walk into a free gate to claim your haunted festival",
 		Coins = "Coins",
 		IncomePerSecond = "+%d / sec",
 		VisitorsPerSecond = "%s visitors / sec",
@@ -35,6 +34,23 @@ return {
 		RideRound = "%s riders every %s sec",
 		RideNext = "Next ride in %s",
 		Payout = "+%s",
+
+		-- The guide: the goal line at the bottom of the screen, the beam that
+		-- points the way, and the notes that pop up over it.
+		GoalClaim = "Walk into a glowing gate to claim your own haunt",
+		GoalBuy = "Step on the glowing pad to build: %s",
+		GoalSave = "Next: %s",
+		GoalProgress = "%s / %s coins",
+		GoalPick = "Pick a path for your %s. Step on a pad to see what it does",
+		GoalConfirm = "Step off and on %s again to pick it",
+		GoalDone = "Your haunt is complete!",
+		Welcome = "Welcome to your haunt!",
+		WelcomeHint = "Your festival starts here. Step on the glowing pad",
+		ShortCoins = "Need %s more coins for %s",
+		ShortHint = "Your festival keeps earning while you wait",
+		PathLocks = "Locks for good: %s",
+		PathGain = "%s now",
+		PathConfirm = "Step off, then on again, to pick it",
 
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
@@ -343,6 +359,8 @@ return {
 		Purchase = { Id = "", Volume = 0.6 },
 		Build = { Id = "", Volume = 0.5 },
 		Payout = { Id = "", Volume = 0.5 },
+		-- A pad that can't be afforded yet.
+		Deny = { Id = "", Volume = 0.5 },
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
 		Thump = { Id = "", Volume = 0.6 },
 		Whoosh = { Id = "", Volume = 0.5 },

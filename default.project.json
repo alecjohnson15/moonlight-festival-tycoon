@@ -22,6 +22,9 @@
         },
         "ArenaEffect": {
           "$className": "RemoteEvent"
+        },
+        "Notice": {
+          "$className": "RemoteEvent"
         }
       }
     },

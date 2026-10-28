@@ -354,6 +354,12 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 	button.CanCollide = false
 	button.CanTouch = false
 	button:SetAttribute("Cost", upgrade.Cost)
+	button:SetAttribute("Building", upgrade.Building)
+	button:SetAttribute("Path", upgrade.Path)
+	-- The first pad of each path, while the building has no path yet. Picking
+	-- one locks the others for good, so the first step only previews it.
+	local choosing = upgrade.Path ~= nil and Progression.chosenPaths(owned, Balance.Upgrades)[upgrade.Building] == nil
+	button:SetAttribute("Choice", choosing or nil)
 	local rim = makePart(
 		"Rim",
 		Vector3.new(0.4, size, size),
@@ -392,14 +398,18 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 
 	-- A pad that appears under the owner, where they just bought the one
 	-- before it, waits for them to step off first.
-	local waitingForStepOff = standingOn(player, floor)
-	if waitingForStepOff then
+	local waitingForStepOff = false
+	local function waitForStepOff()
+		waitingForStepOff = true
 		task.spawn(function()
 			while button.Parent and standingOn(player, floor) do
 				task.wait(0.2)
 			end
 			waitingForStepOff = false
 		end)
+	end
+	if standingOn(player, floor) then
+		waitForStepOff()
 	end
 
 	trigger.Touched:Connect(function(hit)
@@ -409,10 +419,28 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 			return
 		end
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 and button:GetAttribute("Sold") == nil then
-			for _, callback in buttonCallbacks do
-				task.spawn(callback, player, upgrade.Id)
+		if not humanoid or humanoid.Health <= 0 or button:GetAttribute("Sold") ~= nil then
+			return
+		end
+		if choosing then
+			-- The first step arms the pad, and the owner's screen shows what
+			-- the path does and what it locks. Stepping off and back on
+			-- within Layout.ConfirmSeconds picks it.
+			local now = Workspace:GetServerTimeNow()
+			local armedAt = button:GetAttribute("ArmedAt")
+			if armedAt == nil or now - armedAt > Layout.ConfirmSeconds then
+				for _, other in folder:GetChildren() do
+					if other ~= button and other:GetAttribute("Building") == upgrade.Building then
+						other:SetAttribute("ArmedAt", nil)
+					end
+				end
+				button:SetAttribute("ArmedAt", now)
+				waitForStepOff()
+				return
 			end
+		end
+		for _, callback in buttonCallbacks do
+			task.spawn(callback, player, upgrade.Id)
 		end
 	end)
 end

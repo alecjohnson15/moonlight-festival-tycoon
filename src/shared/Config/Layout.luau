@@ -44,8 +44,11 @@ return {
 	-- Paths has a spot that holds that path's tiers, one after another. The
 	-- path spots sit in a row in front of the building, so the choice shows
 	-- as two or three pads side by side. After a pad is bought, the next one
-	-- on the same spot only works once the owner has stepped off.
+	-- on the same spot only works once the owner has stepped off. The first
+	-- step on a path's first pad only previews the path, and a second step
+	-- within ConfirmSeconds picks it.
 	ButtonSize = 5,
+	ConfirmSeconds = 12,
 	Buttons = {
 		starter_stall = {
 			Build = { X = -12, Z = 26 },

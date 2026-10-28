@@ -1,6 +1,7 @@
 -- Buys upgrades when an owner steps on a buy button on their plot. The server
 -- checks the purchase, charges for it and builds it; touching a button only
--- names the upgrade the player wants.
+-- names the upgrade the player wants. A player who steps on a pad they can't
+-- afford yet is told how many more coins it needs, through the Notice remote.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,17 +16,34 @@ local EconomyService = require(script.Parent.EconomyService)
 local PlotService = require(script.Parent.PlotService)
 local ProductionService = require(script.Parent.ProductionService)
 
+local Notice = ReplicatedStorage.Remotes.Notice :: RemoteEvent
+
 local UpgradeService = {}
 
 -- Touched fires many times while a player stands on a button.
 local limiter = RateLimiter.new(0.25)
+-- And a player waiting on a pad they can't afford hears so once in a while.
+local shortLimiter = RateLimiter.new(2.5)
+
+local upgradesById = {}
+for _, upgrade in Balance.Upgrades do
+	upgradesById[upgrade.Id] = upgrade
+end
 
 local function onButtonStepped(player: Player, upgradeId: string)
 	if not limiter:allow(player) then
 		return
 	end
 	local data = DataService.get(player)
-	if not data or not Progression.purchase(data, Balance.Upgrades, upgradeId) then
+	if not data then
+		return
+	end
+	local bought, reason = Progression.purchase(data, Balance.Upgrades, upgradeId)
+	if not bought then
+		local upgrade = upgradesById[upgradeId]
+		if reason == "TooExpensive" and upgrade and shortLimiter:allow(player) then
+			Notice:FireClient(player, { Kind = "Short", Upgrade = upgradeId, Need = upgrade.Cost - data.Coins })
+		end
 		return
 	end
 	PlotService.build(player, upgradeId, true)
@@ -40,6 +58,7 @@ function UpgradeService.init()
 	PlotService.onButtonStepped(onButtonStepped)
 	Players.PlayerRemoving:Connect(function(player)
 		limiter:forget(player)
+		shortLimiter:forget(player)
 	end)
 end
 
