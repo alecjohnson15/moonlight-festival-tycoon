@@ -68,7 +68,8 @@ local function glow(cframe: CFrame, size: Vector3, color: Color3, shape: Enum.Pa
 end
 
 local function tween(instance: Instance, seconds: number, goal: { [string]: any }, style: Enum.EasingStyle?)
-	TweenService:Create(instance, TweenInfo.new(seconds, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal)
+	TweenService
+		:Create(instance, TweenInfo.new(seconds, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal)
 		:Play()
 end
 
@@ -158,11 +159,8 @@ local function bolt(a: Vector3, b: Vector3, color: Color3, width: number)
 	table.insert(points, b)
 	for i = 1, #points - 1 do
 		local from, to = points[i], points[i + 1]
-		local piece = glow(
-			CFrame.lookAt((from + to) / 2, to),
-			Vector3.new(width, width, (to - from).Magnitude + width),
-			color
-		)
+		local piece =
+			glow(CFrame.lookAt((from + to) / 2, to), Vector3.new(width, width, (to - from).Magnitude + width), color)
 		fadeAway(piece, 0.35)
 	end
 end
@@ -235,7 +233,8 @@ local function orbit(character: Model, count: number, radius: number, seconds: n
 		local spread = 1.5 + (radius - 1.5) * t
 		for i, part in parts do
 			local angle = i / count * math.pi * 2 + t * math.pi * 6
-			part.CFrame = CFrame.new(root.Position + Vector3.new(math.cos(angle) * spread, 0.5, math.sin(angle) * spread))
+			part.CFrame =
+				CFrame.new(root.Position + Vector3.new(math.cos(angle) * spread, 0.5, math.sin(angle) * spread))
 		end
 	end, function()
 		for _, part in parts do
@@ -296,11 +295,8 @@ end
 -- Three claw marks slashed into the air in front of frame.
 local function clawMarks(frame: CFrame, color: Color3)
 	for i = -1, 1 do
-		local piece = glow(
-			frame * CFrame.new(i * 0.8, 2.5, -3) * CFrame.Angles(0, 0, 0.5),
-			Vector3.new(0.25, 4, 0.1),
-			color
-		)
+		local piece =
+			glow(frame * CFrame.new(i * 0.8, 2.5, -3) * CFrame.Angles(0, 0, 0.5), Vector3.new(0.25, 4, 0.1), color)
 		fadeAway(piece, 0.4, { Size = Vector3.new(0.05, 5, 0.1) })
 	end
 end
@@ -365,7 +361,12 @@ function ArenaEffects.special(character: Model, weaponId: string, start: Vector3
 		trail(character, look.Color, move.Delay)
 		if flair == "Lightning" then
 			-- Lightning strikes the hammer as it's raised.
-			bolt(start + Vector3.new(random:NextNumber(-6, 6), 70, random:NextNumber(-6, 6)), start + Vector3.new(0, 4, 0), look.Accent, 0.6)
+			bolt(
+				start + Vector3.new(random:NextNumber(-6, 6), 70, random:NextNumber(-6, 6)),
+				start + Vector3.new(0, 4, 0),
+				look.Accent,
+				0.6
+			)
 			flash(start, look.Color, 30, 6, 0.4)
 			sound("Thunder", start)
 		end
@@ -389,7 +390,13 @@ function ArenaEffects.special(character: Model, weaponId: string, start: Vector3
 					local ground = root.Position - Vector3.new(0, 3, 0)
 					for i = 0, 2 do
 						local angle = i / 3 * math.pi * 2
-						column(ground + Vector3.new(math.cos(angle) * 4, 0, math.sin(angle) * 4), look.Color, 14, 3, 0.8)
+						column(
+							ground + Vector3.new(math.cos(angle) * 4, 0, math.sin(angle) * 4),
+							look.Color,
+							14,
+							3,
+							0.8
+						)
 					end
 					ring(ground, look.Accent, 10, 0.6)
 				end
@@ -459,7 +466,12 @@ function ArenaEffects.impact(weaponId: string, at: Vector3)
 			local distance = random:NextNumber(3, move.Radius)
 			local strike = ground + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
 			task.delay(i * 0.05, function()
-				bolt(strike + Vector3.new(random:NextNumber(-4, 4), 60, random:NextNumber(-4, 4)), strike, look.Accent, 0.5)
+				bolt(
+					strike + Vector3.new(random:NextNumber(-4, 4), 60, random:NextNumber(-4, 4)),
+					strike,
+					look.Accent,
+					0.5
+				)
 				burst(strike, look.Color, 8, 12)
 			end)
 		end

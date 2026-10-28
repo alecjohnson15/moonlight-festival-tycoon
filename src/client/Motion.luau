@@ -96,7 +96,8 @@ local function onRenderStep(dt: number)
 			local lead = now / lap * math.pi * 2
 			for index, car in cars do
 				local angle = lead - (index - 1) * gap
-				local spot = centre:PointToWorldSpace(Vector3.new(math.cos(angle) * radiusX, 0, math.sin(angle) * radiusZ))
+				local spot =
+					centre:PointToWorldSpace(Vector3.new(math.cos(angle) * radiusX, 0, math.sin(angle) * radiusZ))
 				local heading =
 					centre:VectorToWorldSpace(Vector3.new(-math.sin(angle) * radiusX, 0, math.cos(angle) * radiusZ))
 				car:PivotTo(CFrame.lookAt(spot, spot + heading))

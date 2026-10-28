@@ -43,7 +43,8 @@ local function boxIn(part: any, frame: any): (any, any)
 	for _, sx in { -1, 1 } do
 		for _, sy in { -1, 1 } do
 			for _, sz in { -1, 1 } do
-				local corner = frame:PointToObjectSpace(part.CFrame * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z))
+				local corner =
+					frame:PointToObjectSpace(part.CFrame * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z))
 				local values = { corner.X, corner.Y, corner.Z }
 				for axis = 1, 3 do
 					lo[axis] = math.min(lo[axis], values[axis])
@@ -182,7 +183,10 @@ describe("theme scenery", function()
 		local keepOut: { { any } } = {}
 		for id, slot in Layout.Slots do
 			local w, h, d = slot.Size[1], slot.Size[2], slot.Size[3]
-			table.insert(keepOut, { `slot {id}`, { slot.X - w / 2, 0, slot.Z - d / 2, slot.X + w / 2, h, slot.Z + d / 2 } })
+			table.insert(
+				keepOut,
+				{ `slot {id}`, { slot.X - w / 2, 0, slot.Z - d / 2, slot.X + w / 2, h, slot.Z + d / 2 } }
+			)
 		end
 		local half = Layout.ButtonSize / 2
 		for building, spots in Layout.Buttons do
@@ -266,7 +270,10 @@ describe("theme scenery", function()
 		assert(#fills > 0, "no terrain to fill")
 		for _, fill in fills do
 			assert(roblox.Enum.Material[fill.Material], `unknown terrain material {fill.Material}`)
-			assert(fill.Shape == "Block" or fill.Shape == "Ball" or fill.Shape == "Cylinder", `unknown fill {fill.Shape}`)
+			assert(
+				fill.Shape == "Block" or fill.Shape == "Ball" or fill.Shape == "Cylinder",
+				`unknown fill {fill.Shape}`
+			)
 		end
 
 		-- Terrain left under a floor shows through it and buries its buttons,
@@ -379,7 +386,10 @@ describe("theme look", function()
 		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout" } do
 			local sound = Theme.Sounds[name]
 			assert(sound, `the theme has no {name} sound`)
-			assert(sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"), `{name} must be rbxassetid://<number> or ""`)
+			assert(
+				sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"),
+				`{name} must be rbxassetid://<number> or ""`
+			)
 			assert(sound.Volume >= 0 and sound.Volume <= 1, `{name} volume must be 0 to 1`)
 		end
 	end)

@@ -244,7 +244,8 @@ end
 
 local function refresh()
 	incomeLabel.Text = Theme.Strings.IncomePerSecond:format(math.floor(player:GetAttribute("IncomePerSecond") or 0))
-	visitorsLabel.Text = Theme.Strings.VisitorsPerSecond:format(Format.rate(player:GetAttribute("VisitorsPerSecond") or 0))
+	visitorsLabel.Text =
+		Theme.Strings.VisitorsPerSecond:format(Format.rate(player:GetAttribute("VisitorsPerSecond") or 0))
 	claimHint.Visible = player:GetAttribute("HasPlot") ~= true
 end
 

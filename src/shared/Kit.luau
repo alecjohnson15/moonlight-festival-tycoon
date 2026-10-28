@@ -56,7 +56,14 @@ function Kit.model(parent: Instance?, name: string): Model
 	return model
 end
 
-local function decor(className: string, parent: Instance, cframe: CFrame, size: Vector3, color: Color3, material: Enum.Material?): any
+local function decor(
+	className: string,
+	parent: Instance,
+	cframe: CFrame,
+	size: Vector3,
+	color: Color3,
+	material: Enum.Material?
+): any
 	local part = Instance.new(className)
 	part.Anchored = true
 	part.CanCollide = false
@@ -96,7 +103,14 @@ function Kit.ball(parent: Instance, cframe: CFrame, size: Vector3, color: Color3
 end
 
 -- A cylinder standing upright, centred on cframe.
-function Kit.post(parent: Instance, cframe: CFrame, height: number, diameter: number, color: Color3, material: Enum.Material?): Part
+function Kit.post(
+	parent: Instance,
+	cframe: CFrame,
+	height: number,
+	diameter: number,
+	color: Color3,
+	material: Enum.Material?
+): Part
 	local part = decor(
 		"Part",
 		parent,
@@ -110,7 +124,14 @@ function Kit.post(parent: Instance, cframe: CFrame, height: number, diameter: nu
 end
 
 -- A cylinder lying along cframe's X axis, like a log.
-function Kit.log(parent: Instance, cframe: CFrame, length: number, diameter: number, color: Color3, material: Enum.Material?): Part
+function Kit.log(
+	parent: Instance,
+	cframe: CFrame,
+	length: number,
+	diameter: number,
+	color: Color3,
+	material: Enum.Material?
+): Part
 	local part = decor("Part", parent, cframe, Vector3.new(length, diameter, diameter), color, material)
 	part.Shape = Enum.PartType.Cylinder
 	return part
@@ -162,8 +183,16 @@ end
 
 -- A coloured spotlight on a small fixture at from, aimed at to, for washing a
 -- build in colour the way a stage light would.
-function Kit.wash(parent: Instance, from: Vector3, to: Vector3, color: Color3, range: number, brightness: number): SpotLight
-	local fixture = decor("Part", parent, CFrame.lookAt(from, to), Vector3.new(0.5, 0.5, 0.6), Color3.fromRGB(30, 28, 36))
+function Kit.wash(
+	parent: Instance,
+	from: Vector3,
+	to: Vector3,
+	color: Color3,
+	range: number,
+	brightness: number
+): SpotLight
+	local fixture =
+		decor("Part", parent, CFrame.lookAt(from, to), Vector3.new(0.5, 0.5, 0.6), Color3.fromRGB(30, 28, 36))
 	fixture.Name = "Wash"
 	local light = Instance.new("SpotLight")
 	light.Face = Enum.NormalId.Front

@@ -340,13 +340,25 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 	-- turned upright.
 	local upright = CFrame.Angles(0, 0, math.pi / 2)
 	local floor = plot.CFrame * CFrame.new(spot.X, plot.Size.Y / 2, spot.Z)
-	local button = makePart(upgrade.Id, Vector3.new(0.6, size - 0.6, size - 0.6), floor * CFrame.new(0, 0.3, 0) * upright, BUTTON_COLOR, folder)
+	local button = makePart(
+		upgrade.Id,
+		Vector3.new(0.6, size - 0.6, size - 0.6),
+		floor * CFrame.new(0, 0.3, 0) * upright,
+		BUTTON_COLOR,
+		folder
+	)
 	button.Shape = Enum.PartType.Cylinder
 	button.Material = Enum.Material.Neon
 	button.CanCollide = false
 	button.CanTouch = false
 	button:SetAttribute("Cost", upgrade.Cost)
-	local rim = makePart("Rim", Vector3.new(0.4, size, size), floor * CFrame.new(0, 0.2, 0) * upright, Color3.fromHex(Theme.Palette.ButtonRim), button)
+	local rim = makePart(
+		"Rim",
+		Vector3.new(0.4, size, size),
+		floor * CFrame.new(0, 0.2, 0) * upright,
+		Color3.fromHex(Theme.Palette.ButtonRim),
+		button
+	)
 	rim.Shape = Enum.PartType.Cylinder
 	rim.CanCollide = false
 	rim.CanTouch = false

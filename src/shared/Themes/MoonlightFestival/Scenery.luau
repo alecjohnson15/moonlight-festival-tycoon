@@ -144,7 +144,12 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	for _, x in { -10, 8 } do
 		Pieces.pumpkin(model, at(x, 0, -43, random.number(0, 3)), random.number(1, 1.5))
 	end
-	Pieces.cobweb(model, point(-pillarX + 1, pillarHeight, gate.Z + 1.1), point(-pillarX + 1, pillarHeight - 2.4, gate.Z + 1.1), point(-pillarX + 3.2, pillarHeight + 1.6, gate.Z + 1.1))
+	Pieces.cobweb(
+		model,
+		point(-pillarX + 1, pillarHeight, gate.Z + 1.1),
+		point(-pillarX + 1, pillarHeight - 2.4, gate.Z + 1.1),
+		point(-pillarX + 3.2, pillarHeight + 1.6, gate.Z + 1.1)
+	)
 
 	-- Ground mist, and green wisps drifting over the grass.
 	Pieces.mist(model, at(0, 1, 0), Vector2.new(90, 90), 4)
@@ -217,7 +222,13 @@ local function windmill(parent: Instance, base: CFrame)
 		local turn = hub * CFrame.Angles(0, 0, blade * math.pi / 2)
 		local length = if blade == 2 then 5 else 9
 		Kit.block(sails, turn * CFrame.new(0, length / 2 + 0.5, 0.3), V(0.3, length, 0.2), P.DarkWood, M.Wood)
-		Kit.block(sails, turn * CFrame.new(0.9, length / 2 + 1, 0.3), V(1.6, length - 1, 0.1), P.Plaster:Lerp(P.Bat, 0.4), M.Fabric)
+		Kit.block(
+			sails,
+			turn * CFrame.new(0.9, length / 2 + 1, 0.3),
+			V(1.6, length - 1, 0.1),
+			P.Plaster:Lerp(P.Bat, 0.4),
+			M.Fabric
+		)
 	end
 	Kit.float(sails, hub, 0, 1, 24, Vector3.new(0, 0, 1))
 end
@@ -290,13 +301,22 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	})
 	for i = 0, 6 do
 		local x = left + (right - left) * i / 6 + random.number(-30, 30)
-		table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, back - 20), Radius = random.number(70, 95) })
-		table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, front + 20), Radius = random.number(70, 95) })
+		table.insert(
+			fills,
+			{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, back - 20), Radius = random.number(70, 95) }
+		)
+		table.insert(
+			fills,
+			{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, front + 20), Radius = random.number(70, 95) }
+		)
 	end
 	for _, x in { left - 20, right + 20 } do
 		for i = 0, 3 do
 			local z = back + (front - back) * i / 3
-			table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, z), Radius = random.number(70, 95) })
+			table.insert(
+				fills,
+				{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, z), Radius = random.number(70, 95) }
+			)
 		end
 	end
 
@@ -311,7 +331,13 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 			local lit = i % 2 == 0
 			table.insert(
 				tops,
-				Pieces.lanternPost(parent, at(x, backEdge - 1.5, math.pi, plazaTop), 8, P.Candle, if lit then 22 else nil)
+				Pieces.lanternPost(
+					parent,
+					at(x, backEdge - 1.5, math.pi, plazaTop),
+					8,
+					P.Candle,
+					if lit then 22 else nil
+				)
 			)
 			if i % 3 == 1 then
 				Pieces.corn(parent, at(x + 6, backEdge - 2, 0, plazaTop), 4.5, random)
@@ -327,13 +353,27 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	-- A gateway out of the plaza towards the bonfire, with the festival's name.
 	local gateZ = frontZ + 4
 	for side = -1, 1, 2 do
-		Kit.solid(Kit.block(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 6, 0), V(1.6, 12, 1.6), P.DarkWood, M.Wood))
+		Kit.solid(
+			Kit.block(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 6, 0), V(1.6, 12, 1.6), P.DarkWood, M.Wood)
+		)
 		Pieces.jackOLantern(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 12, 0), 1.8, true)
 	end
 	for _, yaw in { 0, math.pi } do
-		Pieces.sign(parent, at(middleX, gateZ, yaw) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
+		Pieces.sign(
+			parent,
+			at(middleX, gateZ, yaw) * CFrame.new(0, 10.5, 0.15),
+			Vector2.new(12, 2.2),
+			Theme.Name,
+			P.Candle
+		)
 	end
-	Kit.block(parent, at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0), V(8, 0.1, 12), Kit.color(Theme.Look.Path), M.Cobblestone)
+	Kit.block(
+		parent,
+		at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0),
+		V(8, 0.1, 12),
+		Kit.color(Theme.Look.Path),
+		M.Cobblestone
+	)
 	claim(middleX, gateZ, 9, 3)
 
 	-- The bonfire, with log benches round it and a guest who never left.
@@ -342,7 +382,13 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	claim(middleX, fireZ, 14, 14)
 	for i = 0, 9 do
 		local angle = i * math.pi / 5
-		Kit.ball(parent, fire * CFrame.new(math.cos(angle) * 4.5, 0.4, math.sin(angle) * 4.5), V(1.4, 0.9, 1.2), P.DarkStone, M.Slate)
+		Kit.ball(
+			parent,
+			fire * CFrame.new(math.cos(angle) * 4.5, 0.4, math.sin(angle) * 4.5),
+			V(1.4, 0.9, 1.2),
+			P.DarkStone,
+			M.Slate
+		)
 	end
 	for i = 0, 3 do
 		Kit.log(parent, fire * CFrame.new(0, 0.6, 0) * CFrame.Angles(0, i * math.pi / 4, 0.25), 5, 0.6, P.Trunk, M.Wood)
@@ -397,15 +443,34 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		Pieces.reaper(parent, yard(side * 6, -hd + 3, math.pi), 7)
 		Pieces.bareTree(parent, yard(side * (hw - 4), hd - 4), 18, random)
 		Pieces.lanternPost(parent, yard(side * 4, -hd - 1, math.pi), 6, W.Toxic, 16)
-		Kit.wash(parent, yard(side * (hw - 1), -hd + 1).Position + V(0, 0.4, 0), yard(0, 0).Position + V(0, 3, 0), W.Toxic, 40, 2)
+		Kit.wash(
+			parent,
+			yard(side * (hw - 1), -hd + 1).Position + V(0, 0.4, 0),
+			yard(0, 0).Position + V(0, 3, 0),
+			W.Toxic,
+			40,
+			2
+		)
 	end
 	Pieces.mist(parent, yard(0, 0) * CFrame.new(0, 1, 0), Vector2.new(yardWidth, yardDepth), 6)
 
 	-- A pond off to the other side, with lanterns floating on it.
 	local pondX, pondZ, pondRadius = middleX + 72, fireZ + 18, 18
 	claim(pondX, pondZ, pondRadius + 6, pondRadius + 6)
-	table.insert(fills, { Shape = "Cylinder", Material = "Mud", CFrame = CFrame.new(pondX, -1, pondZ), Height = 2, Radius = pondRadius + 4 })
-	table.insert(fills, { Shape = "Cylinder", Material = "Water", CFrame = CFrame.new(pondX, -2.5, pondZ), Height = 5, Radius = pondRadius })
+	table.insert(fills, {
+		Shape = "Cylinder",
+		Material = "Mud",
+		CFrame = CFrame.new(pondX, -1, pondZ),
+		Height = 2,
+		Radius = pondRadius + 4,
+	})
+	table.insert(fills, {
+		Shape = "Cylinder",
+		Material = "Water",
+		CFrame = CFrame.new(pondX, -2.5, pondZ),
+		Height = 5,
+		Radius = pondRadius,
+	})
 	for i = 0, 4 do
 		local angle = i * math.pi * 2 / 5 + random.number(-0.3, 0.3)
 		local distance = random.number(4, pondRadius - 4)

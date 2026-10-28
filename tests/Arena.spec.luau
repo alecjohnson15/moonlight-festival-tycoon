@@ -108,7 +108,10 @@ describe("arena weapons", function()
 				end
 				assert(near(weapon[stat], expected), `premium {id} has {stat} {weapon[stat]}, not {expected}`)
 			end
-			assert(near(weapon.Special.Damage, Weapons.Specials[weapon.Special.Kind].Damage * Weapons.Tiers.Elite), `premium {id}'s special hits harder than Elite`)
+			assert(
+				near(weapon.Special.Damage, Weapons.Specials[weapon.Special.Kind].Damage * Weapons.Tiers.Elite),
+				`premium {id}'s special hits harder than Elite`
+			)
 			-- At most one fewer swing to win than the Elite version.
 			local hits = math.ceil(Arena.Health / weapon.Damage)
 			assert(hits >= math.ceil(Arena.Health / elite.Damage) - 1, `premium {id} wins in far fewer hits`)
@@ -147,7 +150,8 @@ describe("arena combat", function()
 	end)
 
 	it("finds everyone round a point and along a path, nearest first", function()
-		local fighters = { fighter("a", 0, 3, -10), fighter("b", 1, 3, -3), fighter("c", 6, 3, -6), fighter("d", 0, 3, 5) }
+		local fighters =
+			{ fighter("a", 0, 3, -10), fighter("b", 1, 3, -3), fighter("c", 6, 3, -6), fighter("d", 0, 3, 5) }
 		local around = Combat.within(origin, fighters, 7, 6)
 		expect(#around).toBe(2)
 		local path = Combat.along(origin, Vector3.new(0, 3, -20), fighters, 5, 6)
@@ -226,11 +230,17 @@ describe("arena look", function()
 		for id in Weapons do
 			local look = ArenaLook.Specials[id]
 			assert(look and look.Name ~= "", `the theme has no special move look for {id}`)
-			assert(string.match(look.Color, "^#%x%x%x%x%x%x$") and string.match(look.Accent, "^#%x%x%x%x%x%x$"), `{id}'s colours must be #RRGGBB`)
+			assert(
+				string.match(look.Color, "^#%x%x%x%x%x%x$") and string.match(look.Accent, "^#%x%x%x%x%x%x$"),
+				`{id}'s colours must be #RRGGBB`
+			)
 			assert(FLAIRS[look.Flair], `{id} has unknown flair {look.Flair}`)
 		end
 		for _, sound in ArenaLook.Sounds do
-			assert(sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"), "arena sounds must be rbxassetid://<number> or \"\"")
+			assert(
+				sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"),
+				'arena sounds must be rbxassetid://<number> or ""'
+			)
 		end
 	end)
 
@@ -301,7 +311,10 @@ describe("arena look", function()
 		assert(handle and handle:IsA("BasePart"), "the bonker has no Handle")
 		local welded = {}
 		for _, part in partsIn(tool) do
-			assert(not part.Anchored and not part.CanCollide and part.Massless, `{part.Name} would weigh down or snag its holder`)
+			assert(
+				not part.Anchored and not part.CanCollide and part.Massless,
+				`{part.Name} would weigh down or snag its holder`
+			)
 			local weld = part:FindFirstChildOfClass("Weld")
 			if weld then
 				expect(weld.Part0).toBe(handle)

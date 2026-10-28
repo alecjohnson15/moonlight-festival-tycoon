@@ -91,13 +91,20 @@ The remotes are declared in `default.project.json`: `RequestPurchase` (open a pu
 ## Checks
 
 ```sh
-stylua --check src tests   # formatting
-selene src                 # lint
-lune run tests/run         # tests, including the theme's models
+stylua --check src tests tools   # formatting
+selene src                       # lint
+lune run tests/run               # tests, including the theme's models
 rojo build default.project.json -o build.rbxl
 ```
 
-CI runs the same four on every pull request. The theme's models and scenery are built in the tests with Lune's Roblox library, which checks every property they set and that each model fits its slot. Services that call Roblox APIs (DataStores, MarketplaceService, terrain, players) are tested by playing in Studio.
+StyLua must be built with its `luau` feature: `cargo install stylua --features luau` (the release binaries Rokit downloads are built with it). Without it StyLua skips every `.luau` file and the check passes having read nothing, which is what CI did until October 2026. CI now checks that StyLua passes a tidy Luau file and fails an untidy one before trusting the result.
+
+CI runs the same four on every pull request. What they cover, and what they don't:
+
+- **Formatting and lint** read every Luau file under `src`, `tests` and `tools` (lint: `src` only).
+- **Tests** run the pure modules (`Progression`, `Earnings`, `Wardrobe`, `Combat`, the save schema, the receipt ledger and rate limiter) and the config, including every route through the upgrade tree against the pacing rule. They also build the theme's models and scenery with Lune's Roblox library, which catches bad property names and types, and check that models fit their slots and stay clear of pads, gates and walkways.
+- **The build** checks that Rojo can assemble the place.
+- **Not covered:** the server services and client scripts never run in CI, because they need a live Roblox engine (DataStores, MarketplaceService, terrain, touches, physics, the camera and UI). Nothing measures fun, readability, frame rate, memory or mobile layout. Those are checked by playing in Studio and on real devices; see [docs/playtest.md](docs/playtest.md).
 
 A fully built plot is about 1,200 parts and 43 lights, and the land around the plots about 3,300 parts; a test keeps a plot under 1,500 parts and 60 lights. `Lighting.Technology` is set to Future in `default.project.json`, as scripts can't change it.
 

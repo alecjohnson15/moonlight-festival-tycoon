@@ -118,7 +118,12 @@ function Props.stall_counter(origin: CFrame): Model
 		Kit.block(model, at(side * 5.1, 2.3, 1.4), V(1.9, 0.2, 2.4), P.DarkWood, M.Wood)
 		Kit.post(model, at(side * 5.6, 2.8, 0.6), 0.8, 0.3, P.Bone)
 		Kit.glow(model, at(side * 5.6, 3.3, 0.6), V(0.2, 0.3, 0.2), P.Candle)
-		Pieces.cobweb(model, point(at, side * 3.9, 2.4, 0.3), point(at, side * 3.9, 0.3, 0.3), point(at, side * 5.9, 2.4, 0.3))
+		Pieces.cobweb(
+			model,
+			point(at, side * 3.9, 2.4, 0.3),
+			point(at, side * 3.9, 0.3, 0.3),
+			point(at, side * 5.9, 2.4, 0.3)
+		)
 	end
 
 	-- Left: a heap of witch apples. Right: a stack of pies.
@@ -170,7 +175,13 @@ function Props.grower(origin: CFrame, size: Vector3): Model
 	Kit.block(model, scarecrow * CFrame.new(0, 3.9, 0), V(3.4, 0.25, 0.25), P.DarkWood, M.Wood)
 	Kit.block(model, scarecrow * CFrame.new(0, 3.3, 0), V(1.4, 1.8, 0.7), rag, M.Fabric)
 	for side = -1, 1, 2 do
-		Kit.block(model, scarecrow * CFrame.new(side * 1.15, 3.85, 0) * CFrame.Angles(0, 0, side * 0.15), V(1.1, 0.5, 0.5), rag, M.Fabric)
+		Kit.block(
+			model,
+			scarecrow * CFrame.new(side * 1.15, 3.85, 0) * CFrame.Angles(0, 0, side * 0.15),
+			V(1.1, 0.5, 0.5),
+			rag,
+			M.Fabric
+		)
 		Kit.glow(model, scarecrow * CFrame.new(side * 0.2, 4.95, 0.5), V(0.18, 0.12, 0.05), W.Red)
 	end
 	Kit.ball(model, scarecrow * CFrame.new(0, 4.9, 0), V(1.1, 1.1, 1.1), P.Hay, M.Fabric)
@@ -230,11 +241,29 @@ function Props.kitchen(origin: CFrame, size: Vector3): Model
 	Kit.solid(Kit.block(model, house(0, 0.3, 0), V(width + 0.6, 0.6, depth + 0.6), P.DarkStone, M.Slate))
 	Kit.solid(Kit.block(model, house(0, floor + wall / 2, -depth / 2 + 0.25), V(width, wall, 0.5), plaster, M.Plaster))
 	for side = -1, 1, 2 do
-		Kit.solid(Kit.block(model, house(side * (width / 2 - 0.25), floor + wall / 2, 0), V(0.5, wall, depth), plaster, M.Plaster))
+		Kit.solid(
+			Kit.block(
+				model,
+				house(side * (width / 2 - 0.25), floor + wall / 2, 0),
+				V(0.5, wall, depth),
+				plaster,
+				M.Plaster
+			)
+		)
 		-- The front wall either side of the door.
-		Kit.solid(Kit.block(model, house(side * 3, floor + wall / 2, depth / 2 - 0.25), V(4, wall, 0.5), plaster, M.Plaster))
+		Kit.solid(
+			Kit.block(model, house(side * 3, floor + wall / 2, depth / 2 - 0.25), V(4, wall, 0.5), plaster, M.Plaster)
+		)
 	end
-	Kit.solid(Kit.block(model, house(0, floor + 3.6 + (wall - 3.6) / 2, depth / 2 - 0.25), V(2, wall - 3.6, 0.5), plaster, M.Plaster))
+	Kit.solid(
+		Kit.block(
+			model,
+			house(0, floor + 3.6 + (wall - 3.6) / 2, depth / 2 - 0.25),
+			V(2, wall - 3.6, 0.5),
+			plaster,
+			M.Plaster
+		)
+	)
 	Kit.block(model, house(0, floor + 1.8, depth / 2 - 0.35), V(2, 3.6, 0.25), P.DarkWood, M.WoodPlanks)
 	Kit.ball(model, house(0.7, floor + 1.7, depth / 2 - 0.2), V(0.2, 0.2, 0.2), P.Metal, M.Metal)
 
@@ -252,7 +281,13 @@ function Props.kitchen(origin: CFrame, size: Vector3): Model
 		Kit.glow(model, window * CFrame.new(0, 0, 0.02), V(1.6, 1.4, 0.1), W.Toxic)
 		Kit.block(model, window * CFrame.new(0, 0, 0.1), V(0.12, 1.5, 0.08), P.DarkWood, M.Wood)
 		Kit.block(model, window * CFrame.new(0, 0, 0.1), V(1.7, 0.12, 0.08), P.DarkWood, M.Wood)
-		Kit.block(model, window * CFrame.new(side * 1.2, -0.1, 0.12) * CFrame.Angles(0, 0, side * 0.2), V(0.6, 1.5, 0.08), P.DarkWood, M.WoodPlanks)
+		Kit.block(
+			model,
+			window * CFrame.new(side * 1.2, -0.1, 0.12) * CFrame.Angles(0, 0, side * 0.2),
+			V(0.6, 1.5, 0.08),
+			P.DarkWood,
+			M.WoodPlanks
+		)
 	end
 	Pieces.roof(model, house(0, 0, 0), width, depth, floor + wall, 3, P.Roof, 0.4)
 
@@ -272,14 +307,25 @@ function Props.kitchen(origin: CFrame, size: Vector3): Model
 	for side = -1, 1, 2 do
 		Kit.post(model, house(side * 1.5, floor + 2, depth / 2 + 0.6), 4, 0.25, P.DarkWood, M.Wood)
 	end
-	Kit.block(model, house(0, floor + 4.1, depth / 2 + 0.3) * CFrame.Angles(0.3, 0, 0), V(3.6, 0.2, 1.1), P.Roof, M.Slate)
+	Kit.block(
+		model,
+		house(0, floor + 4.1, depth / 2 + 0.3) * CFrame.Angles(0.3, 0, 0),
+		V(3.6, 0.2, 1.1),
+		P.Roof,
+		M.Slate
+	)
 	Pieces.sign(model, house(0, floor + 4.95, depth / 2 + 0.15), Vector2.new(2.6, 0.75), Theme.Items.cooked.DisplayName)
 
 	-- Vines creeping up the front, and a cobweb in the corner.
 	for _, x in { -4.4, -1.6, 4.2 } do
 		Kit.block(model, house(x, floor + 1.6, depth / 2 + 0.03), V(0.35, 3.2, 0.06), P.Leaf, M.Grass)
 	end
-	Pieces.cobweb(model, house(-4.7, floor + wall - 0.2, depth / 2 + 0.35).Position, house(-4.7, floor + 2.6, depth / 2 + 0.35).Position, house(-2.4, floor + wall - 0.4, depth / 2 + 0.35).Position)
+	Pieces.cobweb(
+		model,
+		house(-4.7, floor + wall - 0.2, depth / 2 + 0.35).Position,
+		house(-4.7, floor + 2.6, depth / 2 + 0.35).Position,
+		house(-2.4, floor + wall - 0.4, depth / 2 + 0.35).Position
+	)
 
 	local inside = Kit.block(model, house(0, 3, 0), V(0.2, 0.2, 0.2), P.Bat)
 	inside.Transparency = 1
@@ -294,7 +340,13 @@ function Props.kitchen_boost(origin: CFrame): Model
 	local spot = at(5.5, 0, 0)
 	for i = 0, 5 do
 		local angle = i * math.pi / 3
-		Kit.ball(model, spot * CFrame.new(math.cos(angle) * 1.25, 0.2, math.sin(angle) * 1.25), V(0.6, 0.4, 0.5), P.DarkStone, M.Slate)
+		Kit.ball(
+			model,
+			spot * CFrame.new(math.cos(angle) * 1.25, 0.2, math.sin(angle) * 1.25),
+			V(0.6, 0.4, 0.5),
+			P.DarkStone,
+			M.Slate
+		)
 	end
 	for _, yaw in { 0.6, -0.6 } do
 		Kit.log(model, spot * CFrame.new(0, 0.3, 0) * CFrame.Angles(0, yaw, 0), 2.2, 0.35, P.Trunk, M.Wood)
@@ -309,11 +361,18 @@ function Props.kitchen_boost(origin: CFrame): Model
 	})
 	for i = 0, 2 do
 		local angle = i * math.pi * 2 / 3
-		Kit.block(model, spot * CFrame.new(math.cos(angle) * 0.9, 0.6, math.sin(angle) * 0.9), V(0.25, 1.2, 0.25), P.Bat, M.Metal)
+		Kit.block(
+			model,
+			spot * CFrame.new(math.cos(angle) * 0.9, 0.6, math.sin(angle) * 0.9),
+			V(0.25, 1.2, 0.25),
+			P.Bat,
+			M.Metal
+		)
 	end
 	Kit.solid(Kit.ball(model, spot * CFrame.new(0, 1.9, 0), V(2.6, 2, 2.6), P.Bat, M.Metal))
 	Kit.post(model, spot * CFrame.new(0, 2.75, 0), 0.25, 2.4, P.Bat, M.Metal)
-	local brew = Kit.glow(model, spot * CFrame.new(0, 2.8, 0) * CFrame.Angles(0, 0, math.pi / 2), V(0.1, 2.1, 2.1), W.Toxic)
+	local brew =
+		Kit.glow(model, spot * CFrame.new(0, 2.8, 0) * CFrame.Angles(0, 0, math.pi / 2), V(0.1, 2.1, 2.1), W.Toxic)
 	brew.Shape = Enum.PartType.Cylinder
 	Kit.light(brew, W.Toxic, 14, 1.6, true)
 	Kit.new("ParticleEmitter", brew, {

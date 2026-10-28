@@ -10,7 +10,6 @@ local DataService = require(script.Parent.DataService)
 
 local EconomyService = {}
 
-
 local function setLeaderstat(player: Player, coins: number)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
