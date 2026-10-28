@@ -62,6 +62,8 @@ src/
     Swing.luau            the thump and dust when a weapon lands
 tests/                    Lune tests, including the theme's models
 tools/make_sounds.py      makes the original audio in assets/audio
+tools/tune_balance.luau   picks upgrade costs to hit the pacing target
+docs/progression.md       the upgrade paths and the 90 minute pacing rule
 docs/rights-register.md   every external asset and dependency
 ```
 
@@ -91,7 +93,7 @@ A fully built plot is about 1,200 parts and 43 lights, and the land around the p
 
 ## Common changes
 
-- **Add an upgrade:** add it to `Config/Balance.luau` (the comment at the top explains each kind and its fields), give it a name and colour in the theme pack, and give it a buy button in `Config/Layout.luau`, plus a slot for anything but a boost. Give it a model in the theme's `Props.luau`, built inside its slot (a boost's model is added inside the slot of the station it boosts). The tests fail until all of these agree, and also if the upgrade earns nothing when it first becomes available or leaves a gap of more than two minutes before the next one.
+- **Add an upgrade:** add it to `Config/Balance.luau` (the comment at the top explains each kind and its fields), give it a name and colour in the theme pack, and give it a buy button in `Config/Layout.luau`, plus a slot for a new building. Give it a model in the theme's `Props.luau`, built inside its slot (an upgrade to a building is added inside that building's slot). The tests fail until all of these agree, and also if any route through the upgrade paths breaks the pacing rule in `docs/progression.md`.
 - **Add a good:** add it to `Items` in `Config/Balance.luau` with its sale value, and to `Items` in the theme pack with a plural name and colour.
 - **Swap the theme:** copy the `Themes/MoonlightFestival` folder, change its names, colours, look, sounds, models and scenery, and point `Config/Theme.luau` at the new folder. An artist's model can replace a built one: put it in `ReplicatedStorage.Assets` and name it in the upgrade's `Model` field. An upgrade with neither stays a greybox block.
 - **Change the sounds:** edit `tools/make_sounds.py` and run it (Python 3 with numpy, and ffmpeg), then upload the new files and update the ids.
