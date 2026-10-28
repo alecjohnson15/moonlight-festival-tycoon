@@ -34,9 +34,38 @@ return {
 		RideNext = "Next ride in %s",
 		Payout = "+%s",
 
+		-- Buy pads on a path. A building's first pads for each path say the
+		-- choice is for good; later pads show the path and the tier.
+		PathChoice = "Pick one: locks the other paths",
+		PathTier = "%s %d/%d",
+
 		-- Hover text on the music button in the corner of the screen.
 		MusicOn = "Music on",
 		MusicOff = "Music off",
+
+		-- The wardrobe, where players put on what they have unlocked or bought.
+		WardrobeButton = "Wardrobe",
+		WardrobeTitle = "Haunted Wardrobe",
+		WardrobeWear = "Wear",
+		WardrobeWearing = "Wearing",
+		WardrobeLocked = "Locked",
+		WardrobeSoon = "Coming soon",
+		WardrobeBuy = "Buy",
+		WardrobePrice = "R$ %s",
+		WardrobeOwns = "Build the %s",
+		WardrobeOwnsAll = "Build all of: %s",
+		WardrobeCount = "Build %d upgrades",
+		WardrobePick = "Pick a path for the %s",
+		WardrobeTier = "Reach tier %d on the %s",
+		WardrobeFinish = "Finish a path of the %s",
+		WardrobePath = "Finish the %s path of the %s",
+		WardrobePathTier = "Reach tier %d of the %s path of the %s",
+		WardrobeUnlocked = "New flex unlocked: %s!",
+		WardrobeNowWearing = "Everyone can see it on you now",
+		WardrobeOpenToWear = "Open the Wardrobe to wear it",
+		WardrobeArenaEdge = "Arena edge",
+		WardrobeNote = "Paid items are looks only, except Legendary weapons, which are a little stronger in the PvP arena. Nothing here changes your coins.",
+		WardrobeStudio = "Studio test: paid items are free to try here, and only here.",
 
 		-- The PvP arena. ArenaKOs is the leaderboard column counting each
 		-- player's knockouts.
@@ -65,16 +94,119 @@ return {
 	-- Clothes colours for the visitors in costume walking around plots.
 	VisitorColors = { "#5B7DB1", "#9B8EC4", "#4FA37A", "#D9644A", "#E8C547", "#3E8E9E" },
 
+	-- Names for every upgrade in Config/Balance. Path tiers share their
+	-- path's colour.
 	Upgrades = {
 		starter_stall = { DisplayName = "Creepy Treat Stall", Color = "#E8A33D" },
 		stall_counter = { DisplayName = "Cobweb Counter", Color = "#C98A2E" },
+		stall_boost_2 = { DisplayName = "Glowing Potion Shelf", Color = "#9B59B6" },
+		stall_output_1 = { DisplayName = "Toffee Apple Cauldron", Color = "#FF6FB5" },
+		stall_output_2 = { DisplayName = "Candy Floss Spinner", Color = "#FF6FB5" },
+		stall_output_3 = { DisplayName = "Sugar Skull Molds", Color = "#FF6FB5" },
+		stall_output_4 = { DisplayName = "Midnight Fudge Factory", Color = "#FF6FB5" },
+		stall_vendor_1 = { DisplayName = "Ghoul Grub Bar", Color = "#5CFF4A" },
+		stall_vendor_2 = { DisplayName = "Bat Wing Fries", Color = "#5CFF4A" },
+		stall_vendor_3 = { DisplayName = "Slime Slushies", Color = "#5CFF4A" },
+		stall_vendor_4 = { DisplayName = "Monster Mega Meals", Color = "#5CFF4A" },
+		stall_markup_1 = { DisplayName = "Night Market Banners", Color = "#F2C94C" },
+		stall_markup_2 = { DisplayName = "Haunted Price Tags", Color = "#F2C94C" },
+		stall_markup_3 = { DisplayName = "Moonlight Auction", Color = "#F2C94C" },
+		stall_markup_4 = { DisplayName = "Grand Night Bazaar", Color = "#F2C94C" },
+
 		grower = { DisplayName = "Haunted Pumpkin Patch", Color = "#E07B24" },
-		kitchen = { DisplayName = "Witch's Pie Kitchen", Color = "#B5651D" },
 		grower_boost = { DisplayName = "Swamp Sprinklers", Color = "#5FAF6A" },
+		grower_boost_2 = { DisplayName = "Scarecrow Guards", Color = "#C9A54A" },
+		grower_output_1 = { DisplayName = "Glowing Compost", Color = "#E67E22" },
+		grower_output_2 = { DisplayName = "Full Moon Fertiliser", Color = "#E67E22" },
+		grower_output_3 = { DisplayName = "Vine Monster Helpers", Color = "#E67E22" },
+		grower_output_4 = { DisplayName = "Endless Pumpkin Fields", Color = "#E67E22" },
+		grower_vendor_1 = { DisplayName = "Pick-Your-Own Patch", Color = "#4FA37A" },
+		grower_vendor_2 = { DisplayName = "Wheelbarrow Rides", Color = "#4FA37A" },
+		grower_vendor_3 = { DisplayName = "Pumpkin Carving Tables", Color = "#4FA37A" },
+		grower_vendor_4 = { DisplayName = "Haunted Hayride", Color = "#4FA37A" },
+
+		kitchen = { DisplayName = "Witch's Pie Kitchen", Color = "#B5651D" },
 		kitchen_boost = { DisplayName = "Cauldron Oven", Color = "#A0522D" },
+		kitchen_boost_2 = { DisplayName = "Enchanted Rolling Pins", Color = "#D9A35B" },
+		kitchen_value_1 = { DisplayName = "Spell-Baked Crusts", Color = "#B98BFF" },
+		kitchen_value_2 = { DisplayName = "Golden Pumpkin Pies", Color = "#B98BFF" },
+		kitchen_value_3 = { DisplayName = "Moonberry Glaze", Color = "#B98BFF" },
+		kitchen_value_4 = { DisplayName = "Legendary Witch Pies", Color = "#B98BFF" },
+		kitchen_vendor_1 = { DisplayName = "Creepy Café", Color = "#FF9F43" },
+		kitchen_vendor_2 = { DisplayName = "Hot Cocoa Cauldrons", Color = "#FF9F43" },
+		kitchen_vendor_3 = { DisplayName = "Pie-Eating Contest", Color = "#FF9F43" },
+		kitchen_vendor_4 = { DisplayName = "Midnight Feast Hall", Color = "#FF9F43" },
+
 		attraction_1 = { DisplayName = "Lost Lantern Maze", Color = "#F2C94C" },
+		attraction_1_boost = { DisplayName = "Fog Machines", Color = "#B9B4D6" },
+		attraction_1_boost_2 = { DisplayName = "Extra Hedge Rows", Color = "#3E8E5A" },
+		attraction_1_capacity_1 = { DisplayName = "Secret Passages", Color = "#3FBF6A" },
+		attraction_1_capacity_2 = { DisplayName = "Hedge Labyrinth", Color = "#3FBF6A" },
+		attraction_1_capacity_3 = { DisplayName = "Twisting Tunnels", Color = "#3FBF6A" },
+		attraction_1_capacity_4 = { DisplayName = "Never-Ending Maze", Color = "#3FBF6A" },
+		attraction_1_ticket_1 = { DisplayName = "Jump-Scare Hedges", Color = "#FF2A2A" },
+		attraction_1_ticket_2 = { DisplayName = "Howling Corridors", Color = "#FF2A2A" },
+		attraction_1_ticket_3 = { DisplayName = "Shadow Puppets", Color = "#FF2A2A" },
+		attraction_1_ticket_4 = { DisplayName = "Nightmare Maze", Color = "#FF2A2A" },
+
 		attraction_2 = { DisplayName = "Grinning Giant Pumpkin", Color = "#FF9F43" },
+		attraction_2_boost = { DisplayName = "Bat Swarm", Color = "#6D35A0" },
+		attraction_2_boost_2 = { DisplayName = "Wishing Well", Color = "#7FD3FF" },
+		attraction_2_draw_1 = { DisplayName = "Lantern Crown", Color = "#CFE0FF" },
+		attraction_2_draw_2 = { DisplayName = "Moonbeam Spotlights", Color = "#CFE0FF" },
+		attraction_2_draw_3 = { DisplayName = "Firefly Swarm", Color = "#CFE0FF" },
+		attraction_2_draw_4 = { DisplayName = "Harvest Moon Beacon", Color = "#CFE0FF" },
+		attraction_2_ticket_1 = { DisplayName = "Crystal Ball Booth", Color = "#8A3DFF" },
+		attraction_2_ticket_2 = { DisplayName = "Fortune Cookie Stand", Color = "#8A3DFF" },
+		attraction_2_ticket_3 = { DisplayName = "Palm Reading Parlour", Color = "#8A3DFF" },
+		attraction_2_ticket_4 = { DisplayName = "Grand Pumpkin Oracle", Color = "#8A3DFF" },
+
 		attraction_3 = { DisplayName = "Phantom Ghost Train", Color = "#9B8EC4" },
+		attraction_3_boost = { DisplayName = "Rattling Chains", Color = "#A3A6B3" },
+		attraction_3_boost_2 = { DisplayName = "Extra Carriages", Color = "#9B8EC4" },
+		attraction_3_seats_1 = { DisplayName = "Double Carriages", Color = "#2FE0C0" },
+		attraction_3_seats_2 = { DisplayName = "Sleeper Cars", Color = "#2FE0C0" },
+		attraction_3_seats_3 = { DisplayName = "Express Tracks", Color = "#2FE0C0" },
+		attraction_3_seats_4 = { DisplayName = "Midnight Express", Color = "#2FE0C0" },
+		attraction_3_ticket_1 = { DisplayName = "Screaming Tunnel", Color = "#FF7A1A" },
+		attraction_3_ticket_2 = { DisplayName = "Phantom Conductor", Color = "#FF7A1A" },
+		attraction_3_ticket_3 = { DisplayName = "Haunted Loop-the-Loop", Color = "#FF7A1A" },
+		attraction_3_ticket_4 = { DisplayName = "Terror Train Deluxe", Color = "#FF7A1A" },
+		attraction_3_draw_1 = { DisplayName = "Spooky Whistle", Color = "#EEF3FF" },
+		attraction_3_draw_2 = { DisplayName = "Skeleton Marching Band", Color = "#EEF3FF" },
+		attraction_3_draw_3 = { DisplayName = "Ghostly Fireworks", Color = "#EEF3FF" },
+		attraction_3_draw_4 = { DisplayName = "Grand Ghost Parade", Color = "#EEF3FF" },
+	},
+
+	-- Each building's paths (see Config/Balance), by building and path id.
+	-- Blurb is the short pitch on the pad that picks the path.
+	Paths = {
+		starter_stall = {
+			output = { DisplayName = "Sweet Shop", Color = "#FF6FB5", Blurb = "Heaps more witch apples" },
+			vendor = { DisplayName = "Ghoul Grub Bar", Color = "#5CFF4A", Blurb = "Every visitor buys a snack" },
+			markup = { DisplayName = "Night Market", Color = "#F2C94C", Blurb = "Everything sells for more" },
+		},
+		grower = {
+			output = { DisplayName = "Bumper Crop", Color = "#E67E22", Blurb = "Way more pumpkins" },
+			vendor = { DisplayName = "Pick-Your-Own", Color = "#4FA37A", Blurb = "Visitors pay to pick pumpkins" },
+		},
+		kitchen = {
+			value = { DisplayName = "Enchanted Pies", Color = "#B98BFF", Blurb = "Every pie is worth more" },
+			vendor = { DisplayName = "Creepy Café", Color = "#FF9F43", Blurb = "Every visitor buys pie" },
+		},
+		attraction_1 = {
+			capacity = { DisplayName = "Endless Maze", Color = "#3FBF6A", Blurb = "Bigger, with room for crowds" },
+			ticket = { DisplayName = "Scream Maze", Color = "#FF2A2A", Blurb = "Scarier, so tickets cost more" },
+		},
+		attraction_2 = {
+			draw = { DisplayName = "Moon Beacon", Color = "#CFE0FF", Blurb = "Draws crowds to everything" },
+			ticket = { DisplayName = "Fortune Teller", Color = "#8A3DFF", Blurb = "Every visitor pays for a fortune" },
+		},
+		attraction_3 = {
+			seats = { DisplayName = "Midnight Express", Color = "#2FE0C0", Blurb = "Longer trains, more riders" },
+			ticket = { DisplayName = "Terror Train", Color = "#FF7A1A", Blurb = "Scarier rides cost more" },
+			draw = { DisplayName = "Ghost Parade", Color = "#EEF3FF", Blurb = "Pulls in visitors for everything" },
+		},
 	},
 
 	-- Colours the built models and scenery are painted with.
@@ -207,5 +339,147 @@ return {
 		Purchase = { Id = "", Volume = 0.6 },
 		Build = { Id = "", Volume = 0.5 },
 		Payout = { Id = "", Volume = 0.5 },
+		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
+		Thump = { Id = "", Volume = 0.6 },
+		Whoosh = { Id = "", Volume = 0.5 },
+	},
+
+	-- Names for the wardrobe: its slots, its lines (one tab each) and every
+	-- cosmetic in Config/Cosmetics. Color tints the item's card.
+	CosmeticSlots = {
+		Head = "Head",
+		Back = "Back",
+		Hand = "Held",
+		Pet = "Pet",
+		Aura = "Aura",
+		Trail = "Trail",
+	},
+	CosmeticLines = {
+		Earned = "Earned",
+		Deluxe = "Deluxe",
+		Brainrot = "Brainrot Buddies",
+		Legendary = "Legendary",
+	},
+	Cosmetics = {
+		lantern = {
+			DisplayName = "Trick-or-Treat Lantern",
+			Color = "#F28A1E",
+			Blurb = "A candy-striped pole with a glowing lantern.",
+		},
+		witch_cape = {
+			DisplayName = "Witch's Cape",
+			Color = "#5B2A86",
+			Blurb = "A starry purple cape that swishes behind you.",
+		},
+		pumpkin_head = {
+			DisplayName = "Pumpkin Head",
+			Color = "#EE7A1C",
+			Blurb = "Swap your head for a grinning, glowing jack-o'-lantern.",
+		},
+		wooden_mallet = {
+			DisplayName = "Big Wooden Mallet",
+			Color = "#B5753F",
+			Blurb = "A huge mallet. Click to swing it down with a thump.",
+		},
+		ember_trail = {
+			DisplayName = "Ember Trail",
+			Color = "#FF7A1A",
+			Blurb = "Leave glowing embers wherever you run.",
+		},
+		witch_broom = {
+			DisplayName = "Witch's Broom",
+			Color = "#D9B45A",
+			Blurb = "A crooked broom for smacking things.",
+		},
+		pumpkling = {
+			DisplayName = "Pumpkling",
+			Color = "#FF9F43",
+			Blurb = "A tiny floating pumpkin that follows you everywhere.",
+		},
+		werewolf_claws = {
+			DisplayName = "Werewolf Claws",
+			Color = "#8A6A50",
+			Blurb = "Furry gauntlets with big curved claws.",
+		},
+		phantom_aura = {
+			DisplayName = "Phantom Aura",
+			Color = "#8A3DFF",
+			Blurb = "Ghostly purple wisps rise all around you.",
+		},
+		moon_saber = {
+			DisplayName = "Crescent Moon Blade",
+			Color = "#CFE3FF",
+			Blurb = "A glowing crescent sword: the best weapon you can earn.",
+		},
+		moonstone_mallet = {
+			DisplayName = "Moonstone Mallet",
+			Color = "#8FB4FF",
+			Blurb = "The Big Wooden Mallet in glowing moonstone. Same swing, fancier thump.",
+		},
+		bat_wings = {
+			DisplayName = "Neon Bat Wings",
+			Color = "#9B4DFF",
+			Blurb = "Glowing purple bat wings on your back.",
+		},
+		ghostfire_crown = {
+			DisplayName = "Ghostfire Crown",
+			Color = "#6CFF5A",
+			Blurb = "A golden crown with green ghostfire on every point.",
+		},
+		toxic_aura = {
+			DisplayName = "Toxic Ghostfire Aura",
+			Color = "#5CFF4A",
+			Blurb = "Green ghostfire flickers all around you.",
+		},
+		rainbow_trail = {
+			DisplayName = "Spooky Rainbow Trail",
+			Color = "#FF2A2A",
+			Blurb = "A ribbon of every colour of the night.",
+		},
+		pizza_bat = {
+			DisplayName = "Pipistrello Pizzetta",
+			Color = "#F2C94C",
+			Blurb = "Half pizza slice, half bat, all nonsense.",
+		},
+		gelato_ghost = {
+			DisplayName = "Fantasmino Gelatino",
+			Color = "#A8F0D0",
+			Blurb = "A ghost who is also a scoop of mint gelato.",
+		},
+		candle_buddy = {
+			DisplayName = "Candelino Wobblino",
+			Color = "#FFB347",
+			Blurb = "A wobbly candle with googly eyes and tiny feet.",
+		},
+		zombie_zucchini = {
+			DisplayName = "Zucchino Zombino",
+			Color = "#6FA35A",
+			Blurb = "A zucchini that came back. Arms out, always.",
+		},
+		thunder_hammer = {
+			DisplayName = "Storm-Stone Hammer",
+			Color = "#5FC8FF",
+			Blurb = "A rune-carved warhammer crackling with lightning.",
+		},
+		ghost_blade = {
+			DisplayName = "Ghostlight Blade",
+			Color = "#7FF7FF",
+			Blurb = "A see-through spirit sword with a bat-wing guard.",
+		},
+		reaper_scythe = {
+			DisplayName = "Reaper's Scythe",
+			Color = "#B26BFF",
+			Blurb = "A huge scythe with a glowing purple edge.",
+		},
+		drowned_trident = {
+			DisplayName = "Drowned Trident",
+			Color = "#3DF5D0",
+			Blurb = "A sea-green trident glowing with sunken light.",
+		},
+		foxfire_fan = {
+			DisplayName = "Foxfire Fan",
+			Color = "#4FA8FF",
+			Blurb = "A folding fan with blue fox-fire on every tip.",
+		},
 	},
 }

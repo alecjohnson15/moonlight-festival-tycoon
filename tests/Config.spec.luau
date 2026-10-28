@@ -24,6 +24,22 @@ describe("theme pack", function()
 		end
 	end)
 
+	it("names every path of every building, and only real ones", function()
+		local paths = Progression.paths(Balance.Upgrades)
+		for building, byPath in paths do
+			for path in byPath do
+				local entry = Theme.Paths[building] and Theme.Paths[building][path]
+				assert(entry and entry.DisplayName and entry.Blurb, `theme has no entry for {building} path {path}`)
+				assert(string.match(entry.Color, "^#%x%x%x%x%x%x$"), `{building} path {path} colour must be #RRGGBB`)
+			end
+		end
+		for building, byPath in Theme.Paths do
+			for path in byPath do
+				assert(paths[building] and paths[building][path], `theme names unknown path {building} {path}`)
+			end
+		end
+	end)
+
 	it("names every good in the production chain, and only real ones", function()
 		for item in Balance.Items do
 			local entry = Theme.Items[item]
@@ -61,16 +77,43 @@ describe("theme pack", function()
 	end)
 end)
 
+-- Where an upgrade's buy button goes: a building's own spot, its shared
+-- upgrades' spot, or its path's spot. PlotService looks them up the same way.
+local function spotFor(upgrade): { X: number, Z: number }?
+	local spots = Layout.Buttons[upgrade.Building or upgrade.Id]
+	if not spots then
+		return nil
+	elseif not upgrade.Building then
+		return spots.Build
+	elseif upgrade.Path then
+		return spots.Paths and spots.Paths[upgrade.Path]
+	end
+	return spots.Upgrades
+end
+
+-- Every buy button spot as { name, spot }.
+local function allSpots(): { { any } }
+	local result = {}
+	for building, spots in Layout.Buttons do
+		table.insert(result, { `{building} build`, spots.Build })
+		table.insert(result, { `{building} upgrades`, spots.Upgrades })
+		for path, spot in spots.Paths or {} do
+			table.insert(result, { `{building} path {path}`, spot })
+		end
+	end
+	return result
+end
+
 describe("layout", function()
-	it("has a slot for every station and attraction, and none for boosts", function()
+	it("has a slot for every building, and none for anything else", function()
 		for _, upgrade in Balance.Upgrades do
-			if upgrade.Kind ~= "Boost" then
+			if not upgrade.Building then
 				assert(Layout.Slots[upgrade.Id], `no layout slot for {upgrade.Id}`)
 			end
 		end
 		for id in Layout.Slots do
 			local upgrade = Progression.find(Balance.Upgrades, id)
-			assert(upgrade and upgrade.Kind ~= "Boost", `layout slot {id} is not a station or attraction`)
+			assert(upgrade and not upgrade.Building, `layout slot {id} is not a building`)
 		end
 	end)
 
@@ -83,12 +126,15 @@ describe("layout", function()
 		end
 	end)
 
-	it("has a buy button for every upgrade, and none for anything else", function()
+	it("has a buy button for every upgrade, and no spot nothing uses", function()
+		local used = {}
 		for _, upgrade in Balance.Upgrades do
-			assert(Layout.Buttons[upgrade.Id], `no buy button for {upgrade.Id}`)
+			local spot = spotFor(upgrade)
+			assert(spot, `no buy button for {upgrade.Id}`)
+			used[spot] = true
 		end
-		for id in Layout.Buttons do
-			assert(Progression.find(Balance.Upgrades, id), `buy button {id} is not an upgrade`)
+		for _, entry in allSpots() do
+			assert(entry[2] and used[entry[2]], `buy button spot {entry[1]} is not used by any upgrade`)
 		end
 	end)
 
@@ -100,8 +146,9 @@ describe("layout", function()
 		end
 		local gate = Layout.Gate
 		table.insert(footprints, { "gate", gate.X, gate.Z, gate.Size[1], gate.Size[3] })
-		for id, spot in Layout.Buttons do
-			table.insert(footprints, { `button {id}`, spot.X, spot.Z, Layout.ButtonSize, Layout.ButtonSize })
+		for _, entry in allSpots() do
+			local spot = entry[2]
+			table.insert(footprints, { `button {entry[1]}`, spot.X, spot.Z, Layout.ButtonSize, Layout.ButtonSize })
 		end
 
 		local half = Layout.PlotSize / 2
@@ -112,6 +159,19 @@ describe("layout", function()
 				local apartX = math.abs(a[2] - b[2]) >= (a[4] + b[4]) / 2
 				local apartZ = math.abs(a[3] - b[3]) >= (a[5] + b[5]) / 2
 				assert(apartX or apartZ, `{a[1]} overlaps {b[1]}`)
+			end
+		end
+	end)
+
+	it("keeps a path's pads apart, so picking one can't step on another", function()
+		for building, spots in Layout.Buttons do
+			for path, a in spots.Paths or {} do
+				for other, b in spots.Paths do
+					if path < other then
+						local apart = math.max(math.abs(a.X - b.X), math.abs(a.Z - b.Z)) - Layout.ButtonSize
+						assert(apart >= 2, `{building}'s {path} and {other} pads are only {apart} studs apart`)
+					end
+				end
 			end
 		end
 	end)

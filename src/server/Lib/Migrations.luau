@@ -9,6 +9,8 @@ export type Save = {
 	LifetimeCoins: number,
 	Owned: { [string]: boolean },
 	Cosmetics: { [string]: boolean },
+	-- The cosmetic chosen for each wardrobe slot, by slot name.
+	Equipped: { [string]: string },
 	Receipts: { Ids: { [string]: number }, Order: { string } },
 	Stats: { ServeCount: number },
 	Arena: { KOs: number },
@@ -30,6 +32,7 @@ local function template(): Save
 		LifetimeCoins = 0,
 		Owned = {},
 		Cosmetics = {},
+		Equipped = {},
 		Receipts = { Ids = {}, Order = {} },
 		Stats = { ServeCount = 0 },
 		Arena = { KOs = 0 },

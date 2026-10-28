@@ -16,7 +16,10 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 - **PvP arena:** a raised round stage past the bonfire, through the gateway at the back of the plaza. Fighting is opt-in: walking onto the stage makes you a fighter, walking off makes you safe, and nobody outside can hit or be hit. Anyone who walks in empty-handed is lent a Pumpkin Bonker, and a weapon from the cosmetics (a Tool with a `Weapon` attribute) is used instead when you have one. Click to swing, and press **E** (gamepad X, or the on-screen button) for your weapon's special move: a ground slam, a charge, a whirl or a flying wave, each drawn with its own effects. The server decides every hit. Knocking someone out throws them out of the ring dizzy (nobody dies, and no coins change hands) and scores a KO, saved and shown on the leaderboard. Weapons and their balance are in `Config/Weapons.luau`, and the design is in [docs/arena.md](docs/arena.md).
 - **Rating:** spooky rather than gory, aimed at Roblox's **Mild** maturity label for players aged 9 to 12: dark, foggy lighting, ghosts, skeletons, gravestones and a reaper statue (mild fear), and cartoon bonks in the opt-in arena (repeated mild violence, with knockback and dizzy stars but no blood or gore). Answer the Maturity & Compliance questionnaire to match before publishing.
 - **Saves:** session-locked DataStore saves with a versioned schema, autosave every 60 seconds, and a final save on leave and on shutdown.
-- **Purchases:** cosmetics only. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice.
+- **Flex items:** ten things to wear, hold or have follow you, spread over the whole 90 minute run so other players can see how far you've got. They come from milestones every route reaches: the Trick-or-Treat Lantern with the first stall, a Witch's Cape and a Pumpkin Head for picking the stall's and the patch's paths, the Big Wooden Mallet with the maze, Werewolf Claws with the giant pumpkin, a Witch's Broom for finishing the stall's path, an Ember Trail with the ghost train, a Pumpkling pet and a Phantom Aura for finishing the patch's and the maze's paths and, for the last purchase of the run, the Crescent Moon Blade. A new item goes straight on if its slot is empty, a note pops up, and everyone on the server sees it. There are six slots (head, back, held, pet, aura, trail), one item each, and the choice is saved.
+- **Wardrobe:** a button on the left (shown once you've earned your first item) opens a panel with a turning preview of every item, in four tabs: Earned, Deluxe, Brainrot Buddies and Legendary. Earned items say what to build to unlock them; paid ones show their price and exactly what they are.
+- **Held items and weapons:** the held item is a Roblox Tool in your hotbar. Weapons swing with the built-in Slash or Lunge tool animation when clicked, and every player hears a thump or whoosh and sees a dust puff where it lands. Each weapon carries a `Weapon` attribute that the PvP arena reads its stats from (`Config/Weapons.luau`).
+- **Purchases:** direct game-pass purchases with the contents stated up front, and no loot boxes, rerolls, timers or repeat prompts. Deluxe looks (a Moonstone Mallet that swings exactly like the wooden one, Neon Bat Wings, a Ghostfire Crown, an aura and a trail) and Brainrot Buddies (four original nonsense pets: Pipistrello Pizzetta, Fantasmino Gelatino, Candelino Wobblino and Zucchino Zombino) are looks only. The five Legendary weapons (Storm-Stone Hammer, Ghostlight Blade, Reaper's Scythe, Drowned Trident, Foxfire Fan) are a little stronger than the best earned weapon in the PvP arena only; that was the project owner's call, and their edge lives in `Config/Weapons.luau`. Nothing paid changes coins or income. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice. In Studio, every paid item counts as owned so it can be tried on; live servers never do this.
 - **Theme packs:** every player-facing name, colour, sound and model lives in a theme pack under `src/shared/Themes/`. Swapping themes is a new pack folder plus one line in `Config/Theme.luau`.
 
 ```
@@ -25,6 +28,7 @@ src/
     Config/
       Balance.luau        upgrade costs, income, goods and visitors
       Layout.luau         plot size, gate, buy buttons and build slots
+      Cosmetics.luau      everything players can wear, and how it unlocks
       Catalog.luau        Robux cosmetics (ids are 0 until set up)
       Theme.luau          picks the active theme pack
       Arena.luau          the arena's size, place and rules of a fight
@@ -35,11 +39,13 @@ src/
         Props.luau        a model for each upgrade
         Scenery.luau      plot dressing and the land around the plots
         Crowd.luau        visitors in costume and the goods on the move
+        Wearables.luau    a model or effect for each cosmetic
         Pieces.luau       pumpkins, lanterns, ghosts, fences and the rest
         Arena.luau        the arena's dressing, the bonker, special moves' looks
     Kit.luau              helpers for building models from parts
     Progression.luau      what can be bought, when (pure)
     Earnings.luau         production chain, visitors, attractions (pure)
+    Wardrobe.luau         who owns which cosmetic, what goes where (pure)
     Combat.luau           who an arena hit reaches, and how it throws
     Format.luau           number formatting for labels
   server/                 ServerScriptService.Server
@@ -47,7 +53,7 @@ src/
     Services/             DataService, EconomyService, PlotService,
                           ArenaService, WorldService, ProductionService,
                           AttractionService, UpgradeService,
-                          PurchaseService
+                          PurchaseService, CosmeticService
     Lib/                  Migrations, SessionLock, ReceiptLedger,
                           RateLimiter (pure)
   client/                 StarterPlayerScripts.Client
@@ -56,15 +62,21 @@ src/
     Motion.luau           floating, spinning, the ghost train, flicker
     BuildEffects.luau     the build-up when something is bought
     Sounds.luau           music, ambience and sound effects
+    Wardrobe.luau         the wardrobe panel and unlock notes
+    Pets.luau             every player's pet, following them
+    Swing.luau            the thump and dust when a weapon lands
     Arena.luau            the arena panel, special move button, knockback
     ArenaEffects.luau     hit sparks, knockouts and special move effects
 tests/                    Lune tests, including the theme's models
 tools/make_sounds.py      makes the original audio in assets/audio
 tools/make_arena_sounds.py  makes the arena's sounds in assets/audio
+tools/tune_balance.luau   picks upgrade costs to hit the pacing target
+docs/progression.md       the upgrade paths and the 90 minute pacing rule
+docs/arena.md             the arena's rules, weapons and the paid edge
 docs/rights-register.md   every external asset and dependency
 ```
 
-The remotes are declared in `default.project.json`: `RequestPurchase` for the cosmetic shop, `ArenaAction` for a fighter's special move, and `ArenaEffect` for the server to tell clients what to draw. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
+The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item), `CosmeticSwung` (the server telling clients a weapon swung), `ArenaAction` (a fighter's special move) and `ArenaEffect` (the server telling clients what to draw in the arena). A client only names what it wants; the server checks it. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
 
 ## Getting started
 
@@ -73,7 +85,7 @@ The remotes are declared in `default.project.json`: `RequestPurchase` for the co
 3. Run `rojo serve`, open a new Baseplate place in Studio (or delete the baseplate) and connect from the Rojo plugin.
 4. In Game Settings, set **Max Players** to 6 to match `Layout.PlotCount`, and turn on **Security > Enable Studio Access to API Services** if you want saves to work in Studio. Without it, progress lives in memory for that session and the output says so.
 5. Press Play, walk off the plaza into a plot's gate to claim it, then step on the glowing **Creepy Treat Stall** pad.
-6. Optional, for sound: upload the files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it as `"rbxassetid://<id>"` into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau`, or for the four `arena_*` files, into `Sounds` in `Themes/MoonlightFestival/Arena.luau`. Until then the game is silent and the music button stays hidden.
+6. Optional, for sound: upload the thirteen files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it as `"rbxassetid://<id>"` into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau`, or for the four `arena_*` files, into `Sounds` in `Themes/MoonlightFestival/Arena.luau`. Until then the game is silent and the music button stays hidden.
 7. To try the arena, walk through the gateway behind the spawn, past the bonfire and up the ramp. With **Test > Clients and Servers** set to 2 players you can fight yourself.
 
 ## Checks
@@ -91,14 +103,15 @@ A fully built plot is about 1,200 parts and 43 lights, and the land around the p
 
 ## Common changes
 
-- **Add an upgrade:** add it to `Config/Balance.luau` (the comment at the top explains each kind and its fields), give it a name and colour in the theme pack, and give it a buy button in `Config/Layout.luau`, plus a slot for anything but a boost. Give it a model in the theme's `Props.luau`, built inside its slot (a boost's model is added inside the slot of the station it boosts). The tests fail until all of these agree, and also if the upgrade earns nothing when it first becomes available or leaves a gap of more than two minutes before the next one.
+- **Add an upgrade:** add it to `Config/Balance.luau` (the comment at the top explains each kind and its fields), give it a name and colour in the theme pack, and give it a buy button in `Config/Layout.luau`, plus a slot for a new building. Give it a model in the theme's `Props.luau`, built inside its slot (an upgrade to a building is added inside that building's slot). The tests fail until all of these agree, and also if any route through the upgrade paths breaks the pacing rule in `docs/progression.md`.
 - **Add a good:** add it to `Items` in `Config/Balance.luau` with its sale value, and to `Items` in the theme pack with a plural name and colour.
 - **Swap the theme:** copy the `Themes/MoonlightFestival` folder, change its names, colours, look, sounds, models and scenery, and point `Config/Theme.luau` at the new folder. An artist's model can replace a built one: put it in `ReplicatedStorage.Assets` and name it in the upgrade's `Model` field. An upgrade with neither stays a greybox block.
 - **Change the sounds:** edit `tools/make_sounds.py` and run it (Python 3 with numpy, and ffmpeg), then upload the new files and update the ids.
 - **Change the save shape:** bump `Migrations.CURRENT_VERSION` and append a step. Never edit a step that has shipped.
+- **Add a cosmetic:** add it to `Config/Cosmetics.luau` with its slot, line and unlock (or `Premium = true` and a matching `Config/Catalog.luau` entry), name it in the theme pack's `Cosmetics`, and give it a look in `Wearables.luau`. The tests check each item fits the body, can't touch or collide, that every paid look of a weapon fights like an earned one, and that every route through the upgrade tree earns every free item in the order they're listed. Unlock free items from things every route buys, or from `Building` with no `Path` (any path of that building), since an item that needs one path can't be earned on the others.
 - **Tune the arena:** fight rules (health, shield time, knockout time, knockback lift) are in `Config/Arena.luau`; weapon styles, tiers, special moves and the premium edge are in `Config/Weapons.luau`, and the tests fail if a paid weapon gets more than a slight edge. To add a weapon, add it to `Roster` there and give its special a look in the theme's `Arena.luau`.
-- **Sell a cosmetic:** fill in its id in `Config/Catalog.luau` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
+- **Sell a cosmetic:** create a game pass on the Roblox website for each item in `Config/Catalog.luau` (`SuggestedRobux` is a starting price), and paste its id into `PassId` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
 
 ## Not built yet
 
-The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Arena weapons swing with Roblox's built-in tool slash animation until custom animations are uploaded. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
+The tutorial, emotes and plot decorations for the shop, and uploaded art: every model is built from parts in code until an artist's models replace them. Arena weapons swing with Roblox's built-in tool slash animation until custom animations are uploaded. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.

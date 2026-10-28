@@ -19,20 +19,66 @@ return {
 	-- Size is { width, height, depth }.
 	Gate = { X = 0, Z = 46, Size = { 14, 8, 1 } },
 
-	-- Buy buttons on the plot floor, one per upgrade. A button shows once its
-	-- requirement is owned, and stepping on it buys the upgrade. Each sits
-	-- beside what it builds, along a walkway down the middle of the plot.
+	-- Buy buttons on the plot floor. A button shows once its requirement is
+	-- owned, and stepping on it buys the upgrade. Each building has three
+	-- kinds of spot, in plot-local studs: Build buys the building itself;
+	-- Upgrades holds its shared upgrades, one after another; and each of its
+	-- Paths has a spot that holds that path's tiers, one after another. The
+	-- path spots sit in a row in front of the building, so the choice shows
+	-- as two or three pads side by side. After a pad is bought, the next one
+	-- on the same spot only works once the owner has stepped off.
 	ButtonSize = 5,
 	Buttons = {
-		starter_stall = { X = -12, Z = 26 },
-		stall_counter = { X = -12, Z = 18 },
-		kitchen_boost = { X = -12, Z = 6 },
-		kitchen = { X = -12, Z = -2 },
-		grower_boost = { X = -12, Z = -20 },
-		grower = { X = -12, Z = -28 },
-		attraction_1 = { X = 10, Z = 26 },
-		attraction_2 = { X = 10, Z = -2 },
-		attraction_3 = { X = 10, Z = -30 },
+		starter_stall = {
+			Build = { X = -12, Z = 26 },
+			Upgrades = { X = -12, Z = 18 },
+			Paths = {
+				output = { X = -30, Z = 36 },
+				vendor = { X = -22, Z = 36 },
+				markup = { X = -14, Z = 36 },
+			},
+		},
+		kitchen = {
+			Build = { X = -12, Z = -2 },
+			Upgrades = { X = -12, Z = 6 },
+			Paths = {
+				value = { X = -29, Z = 12 },
+				vendor = { X = -21, Z = 12 },
+			},
+		},
+		grower = {
+			Build = { X = -12, Z = -28 },
+			Upgrades = { X = -12, Z = -20 },
+			Paths = {
+				output = { X = -29, Z = -13 },
+				vendor = { X = -21, Z = -13 },
+			},
+		},
+		attraction_1 = {
+			Build = { X = 10, Z = 26 },
+			Upgrades = { X = 10, Z = 18 },
+			Paths = {
+				capacity = { X = 20, Z = 40 },
+				ticket = { X = 28, Z = 40 },
+			},
+		},
+		attraction_2 = {
+			Build = { X = 10, Z = -2 },
+			Upgrades = { X = 10, Z = 6 },
+			Paths = {
+				draw = { X = 20, Z = 11 },
+				ticket = { X = 28, Z = 11 },
+			},
+		},
+		attraction_3 = {
+			Build = { X = 10, Z = -30 },
+			Upgrades = { X = 10, Z = -22 },
+			Paths = {
+				seats = { X = 16, Z = -16 },
+				ticket = { X = 24, Z = -16 },
+				draw = { X = 32, Z = -16 },
+			},
+		},
 	},
 
 	-- Where each station and attraction is built. Size is { width, height,

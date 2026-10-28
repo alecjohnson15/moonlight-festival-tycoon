@@ -11,6 +11,7 @@ require("./Config.spec")
 require("./Look.spec")
 require("./Saves.spec")
 require("./RateLimiter.spec")
+require("./Wardrobe.spec")
 require("./Arena.spec")
 
 local failures = TestKit.run()

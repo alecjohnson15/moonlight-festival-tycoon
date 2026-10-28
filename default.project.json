@@ -11,6 +11,12 @@
         "RequestPurchase": {
           "$className": "RemoteEvent"
         },
+        "EquipCosmetic": {
+          "$className": "RemoteEvent"
+        },
+        "CosmeticSwung": {
+          "$className": "RemoteEvent"
+        },
         "ArenaAction": {
           "$className": "RemoteEvent"
         },

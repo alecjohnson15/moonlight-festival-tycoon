@@ -687,6 +687,24 @@ def make_payout():
     write("payout", [normalise(reverb(track, seconds=1, wet=0.2)[: int(1.2 * RATE)])])
 
 
+def make_thump():
+    """A big wooden mallet landing: a deep bonk with a woody knock on top."""
+    reseed(8)
+    track = np.zeros(int(0.9 * RATE))
+    place(track, thud(0.7, 1.0, 170, 42), 0)
+    place(track, band(noise(0.12), 350, 2200) * np.exp(-times(0.12) * 45) * 0.7, 0)
+    place(track, band(noise(0.4), 2000, 8000) * np.exp(-times(0.4) * 10) * 0.12, 0.02)
+    write("thump", [normalise(reverb(track, seconds=0.6, wet=0.15, seed=8)[: int(0.9 * RATE)])])
+
+
+def make_whoosh():
+    """A quick swish of air for blades, claws and brooms."""
+    reseed(9)
+    length = 0.4
+    swish = sweep(noise(length), 350, 2600) * np.sin(np.pi * times(length) / length) ** 3
+    write("whoosh", [normalise(reverb(swish, seconds=0.4, wet=0.1, seed=9)[: int(0.55 * RATE)])])
+
+
 if __name__ == "__main__":
     make_music()
     make_music2()
@@ -695,3 +713,5 @@ if __name__ == "__main__":
     make_purchase()
     make_build()
     make_payout()
+    make_thump()
+    make_whoosh()
