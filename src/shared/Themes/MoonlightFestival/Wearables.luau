@@ -96,7 +96,15 @@ local function fade(from: number, to: number): NumberSequence
 end
 
 -- A flat triangle through three points, from two wedges.
-local function triangle(parent: Instance, a: Vector3, b: Vector3, c: Vector3, color: Color3, material: Enum.Material?, thickness: number?)
+local function triangle(
+	parent: Instance,
+	a: Vector3,
+	b: Vector3,
+	c: Vector3,
+	color: Color3,
+	material: Enum.Material?,
+	thickness: number?
+)
 	local ab, ac, bc = b - a, c - a, c - b
 	local abd, acd, bcd = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
 	-- Make bc the longest edge, so a is the corner the two wedges meet under.
@@ -111,8 +119,20 @@ local function triangle(parent: Instance, a: Vector3, b: Vector3, c: Vector3, co
 	local back = bc.Unit
 	local height = math.abs(ab:Dot(up))
 	local depth = thickness or 0.06
-	Kit.wedge(parent, CFrame.fromMatrix((a + b) / 2, right, up, back), Vector3.new(depth, height, math.abs(ab:Dot(back))), color, material)
-	Kit.wedge(parent, CFrame.fromMatrix((a + c) / 2, -right, up, -back), Vector3.new(depth, height, math.abs(ac:Dot(back))), color, material)
+	Kit.wedge(
+		parent,
+		CFrame.fromMatrix((a + b) / 2, right, up, back),
+		Vector3.new(depth, height, math.abs(ab:Dot(back))),
+		color,
+		material
+	)
+	Kit.wedge(
+		parent,
+		CFrame.fromMatrix((a + c) / 2, -right, up, -back),
+		Vector3.new(depth, height, math.abs(ac:Dot(back))),
+		color,
+		material
+	)
 end
 
 local function pointLight(parent: Instance, color: Color3, range: number, brightness: number): PointLight
@@ -135,7 +155,14 @@ local function eyes(model: Model, spots: { { number } }, z: number)
 end
 
 -- A big mallet: a long shaft with a barrel head across the top.
-local function mallet(name: string, head: Color3, headMaterial: Enum.Material, band: Color3, bandMaterial: Enum.Material, glow: Color3?): Model
+local function mallet(
+	name: string,
+	head: Color3,
+	headMaterial: Enum.Material,
+	band: Color3,
+	bandMaterial: Enum.Material,
+	glow: Color3?
+): Model
 	local model = Kit.model(nil, name)
 	Kit.post(model, CFrame.new(0, 1.3, 0), 4.2, 0.3, C.MalletWood, M.Wood)
 	Kit.post(model, CFrame.new(0, 0.1, 0), 1.0, 0.36, C.Leather, M.Fabric)
@@ -183,7 +210,13 @@ Wearables.lantern = {
 	Build = function(): Model
 		local model = Kit.model(nil, "Lantern")
 		for i = 0, 7 do
-			Kit.post(model, CFrame.new(0, -0.3 + i * 0.4, 0), 0.4, 0.2, if i % 2 == 0 then C.CandyOrange else C.CandyCream)
+			Kit.post(
+				model,
+				CFrame.new(0, -0.3 + i * 0.4, 0),
+				0.4,
+				0.2,
+				if i % 2 == 0 then C.CandyOrange else C.CandyCream
+			)
 		end
 		Kit.ball(model, CFrame.new(0, 2.75, 0), Vector3.new(0.32, 0.32, 0.32), P.Metal, M.Metal)
 		Kit.block(model, CFrame.new(0, 2.7, -0.45), Vector3.new(0.12, 0.12, 0.9), P.Metal, M.Metal)
@@ -203,12 +236,26 @@ Wearables.witch_cape = {
 		Kit.block(model, hang * CFrame.new(0, -1.6, 0.05), Vector3.new(2.1, 3.2, 0.08), C.Purple, M.Fabric)
 		Kit.block(model, hang * CFrame.new(0, -1.55, -0.02), Vector3.new(1.95, 3.05, 0.04), C.Lining, M.Fabric)
 		-- A tall collar standing up behind the neck, flaring out at the top.
-		Kit.block(model, CFrame.new(0, 0.95, 0.2) * CFrame.Angles(-0.35, 0, 0), Vector3.new(1.3, 0.75, 0.08), C.Purple, M.Fabric)
+		Kit.block(
+			model,
+			CFrame.new(0, 0.95, 0.2) * CFrame.Angles(-0.35, 0, 0),
+			Vector3.new(1.3, 0.75, 0.08),
+			C.Purple,
+			M.Fabric
+		)
 		for side = -1, 1, 2 do
-			Kit.block(model, CFrame.new(side * 0.72, 0.95, 0.1) * CFrame.Angles(-0.3, side * 0.6, 0), Vector3.new(0.5, 0.7, 0.08), C.Purple, M.Fabric)
+			Kit.block(
+				model,
+				CFrame.new(side * 0.72, 0.95, 0.1) * CFrame.Angles(-0.3, side * 0.6, 0),
+				Vector3.new(0.5, 0.7, 0.08),
+				C.Purple,
+				M.Fabric
+			)
 			Kit.ball(model, CFrame.new(side * 0.95, 0.6, 0), Vector3.new(0.26, 0.26, 0.26), C.Gold, M.Metal)
 		end
-		for _, spot in { { -0.5, -0.5 }, { 0.45, -1.1 }, { -0.3, -1.9 }, { 0.55, -2.5 }, { 0.05, -1.5 }, { -0.6, -2.8 } } do
+		for _, spot in
+			{ { -0.5, -0.5 }, { 0.45, -1.1 }, { -0.3, -1.9 }, { 0.55, -2.5 }, { 0.05, -1.5 }, { -0.6, -2.8 } }
+		do
 			Kit.glow(
 				model,
 				hang * CFrame.new(spot[1], spot[2], 0.1) * CFrame.Angles(0, 0, math.pi / 4),
@@ -288,7 +335,14 @@ Wearables.pumpkling = {
 		local model = Kit.model(nil, "Pumpkling")
 		Pieces.jackOLantern(model, CFrame.new(0, -0.55, 0) * CFrame.Angles(0, math.pi, 0), 1.5, true)
 		for side = -1, 1, 2 do
-			triangle(model, Vector3.new(side * 0.6, 0.15, 0.1), Vector3.new(side * 1.25, 0.55, 0.25), Vector3.new(side * 1.1, -0.1, 0.25), C.Leaf, M.Grass)
+			triangle(
+				model,
+				Vector3.new(side * 0.6, 0.15, 0.1),
+				Vector3.new(side * 1.25, 0.55, 0.25),
+				Vector3.new(side * 1.1, -0.1, 0.25),
+				C.Leaf,
+				M.Grass
+			)
 		end
 		return model
 	end,
@@ -302,12 +356,23 @@ Wearables.werewolf_claws = {
 		Kit.block(model, CFrame.new(0, 0, 0), Vector3.new(0.75, 0.7, 0.9), C.Fur, M.Fabric)
 		Kit.block(model, CFrame.new(0, 0, 0.6), Vector3.new(0.85, 0.8, 0.5), C.FurDark, M.Fabric)
 		for side = -1, 1, 2 do
-			Kit.wedge(model, CFrame.new(side * 0.3, 0.5, 0.65) * CFrame.Angles(0, math.pi, 0), Vector3.new(0.22, 0.3, 0.35), C.FurDark, M.Fabric)
+			Kit.wedge(
+				model,
+				CFrame.new(side * 0.3, 0.5, 0.65) * CFrame.Angles(0, math.pi, 0),
+				Vector3.new(0.22, 0.3, 0.35),
+				C.FurDark,
+				M.Fabric
+			)
 		end
 		for i = 1, 4 do
 			local knuckle = CFrame.new(-0.3 + (i - 1) * 0.2, 0.12, -0.45)
 			Kit.block(model, knuckle * CFrame.new(0, 0, -0.3), Vector3.new(0.09, 0.14, 0.6), C.Claw)
-			local point = Kit.wedge(model, knuckle * CFrame.new(0, -0.04, -0.82) * CFrame.Angles(-0.3, 0, 0), Vector3.new(0.09, 0.14, 0.5), C.Claw)
+			local point = Kit.wedge(
+				model,
+				knuckle * CFrame.new(0, -0.04, -0.82) * CFrame.Angles(-0.3, 0, 0),
+				Vector3.new(0.09, 0.14, 0.5),
+				C.Claw
+			)
 			if i == 2 then
 				point.Name = "Tip"
 			end
@@ -349,8 +414,20 @@ Wearables.moon_saber = {
 		Kit.ball(model, CFrame.new(0, -0.55, 0), Vector3.new(0.34, 0.34, 0.34), C.Gold, M.Metal)
 		-- A crescent guard curling up either side of the blade.
 		for side = -1, 1, 2 do
-			Kit.block(model, CFrame.new(0, 0.62, side * 0.32) * CFrame.Angles(side * 0.5, 0, 0), Vector3.new(0.14, 0.14, 0.5), C.Gold, M.Metal)
-			Kit.block(model, CFrame.new(0, 0.85, side * 0.55) * CFrame.Angles(side * 1.1, 0, 0), Vector3.new(0.12, 0.12, 0.34), C.Gold, M.Metal)
+			Kit.block(
+				model,
+				CFrame.new(0, 0.62, side * 0.32) * CFrame.Angles(side * 0.5, 0, 0),
+				Vector3.new(0.14, 0.14, 0.5),
+				C.Gold,
+				M.Metal
+			)
+			Kit.block(
+				model,
+				CFrame.new(0, 0.85, side * 0.55) * CFrame.Angles(side * 1.1, 0, 0),
+				Vector3.new(0.12, 0.12, 0.34),
+				C.Gold,
+				M.Metal
+			)
 		end
 		-- The blade curves forward like a crescent moon, narrowing to a point.
 		local base = Vector3.new(0, 0.6, 0)
@@ -497,20 +574,62 @@ Wearables.rainbow_trail = {
 Wearables.pizza_bat = {
 	Build = function(): Model
 		local model = Kit.model(nil, "PipistrelloPizzetta")
-		triangle(model, Vector3.new(-0.85, 0.6, 0), Vector3.new(0.85, 0.6, 0), Vector3.new(0, -1.0, 0), C.Cheese, M.SmoothPlastic, 0.18)
+		triangle(
+			model,
+			Vector3.new(-0.85, 0.6, 0),
+			Vector3.new(0.85, 0.6, 0),
+			Vector3.new(0, -1.0, 0),
+			C.Cheese,
+			M.SmoothPlastic,
+			0.18
+		)
 		Kit.log(model, CFrame.new(0, 0.68, 0), 1.9, 0.32, C.Crust)
 		for _, spot in { { -0.35, -0.1 }, { 0.3, -0.15 }, { 0, -0.55 } } do
-			Kit.log(model, CFrame.new(spot[1], spot[2], -0.1) * CFrame.Angles(0, math.pi / 2, 0), 0.04, 0.28, C.Pepperoni)
+			Kit.log(
+				model,
+				CFrame.new(spot[1], spot[2], -0.1) * CFrame.Angles(0, math.pi / 2, 0),
+				0.04,
+				0.28,
+				C.Pepperoni
+			)
 		end
 		eyes(model, { { -0.25, 0.32, 0.3, 0.6, 0 }, { 0.25, 0.32, 0.3, -0.6, 0 } }, -0.13)
 		Kit.block(model, CFrame.new(0, 0.06, -0.1), Vector3.new(0.3, 0.06, 0.04), C.Pupil)
 		for side = -1, 1, 2 do
 			local x = side * 0.09
-			triangle(model, Vector3.new(x - 0.05, 0.03, -0.12), Vector3.new(x + 0.05, 0.03, -0.12), Vector3.new(x, -0.1, -0.12), C.White, M.SmoothPlastic, 0.03)
+			triangle(
+				model,
+				Vector3.new(x - 0.05, 0.03, -0.12),
+				Vector3.new(x + 0.05, 0.03, -0.12),
+				Vector3.new(x, -0.1, -0.12),
+				C.White,
+				M.SmoothPlastic,
+				0.03
+			)
 			-- Bat wings and ears.
-			triangle(model, Vector3.new(side * 0.7, 0.55, 0.05), Vector3.new(side * 1.8, 0.95, 0.15), Vector3.new(side * 1.5, 0.1, 0.15), C.BatSkin)
-			triangle(model, Vector3.new(side * 0.7, 0.55, 0.05), Vector3.new(side * 1.5, 0.1, 0.15), Vector3.new(side * 0.75, 0.0, 0.1), C.BatSkin)
-			triangle(model, Vector3.new(side * 0.3, 0.8, 0), Vector3.new(side * 0.6, 0.8, 0), Vector3.new(side * 0.45, 1.15, 0), C.BatSkin, M.SmoothPlastic, 0.08)
+			triangle(
+				model,
+				Vector3.new(side * 0.7, 0.55, 0.05),
+				Vector3.new(side * 1.8, 0.95, 0.15),
+				Vector3.new(side * 1.5, 0.1, 0.15),
+				C.BatSkin
+			)
+			triangle(
+				model,
+				Vector3.new(side * 0.7, 0.55, 0.05),
+				Vector3.new(side * 1.5, 0.1, 0.15),
+				Vector3.new(side * 0.75, 0.0, 0.1),
+				C.BatSkin
+			)
+			triangle(
+				model,
+				Vector3.new(side * 0.3, 0.8, 0),
+				Vector3.new(side * 0.6, 0.8, 0),
+				Vector3.new(side * 0.45, 1.15, 0),
+				C.BatSkin,
+				M.SmoothPlastic,
+				0.08
+			)
 		end
 		return model
 	end,
@@ -525,7 +644,12 @@ Wearables.gelato_ghost = {
 		local scoop = Kit.ball(model, CFrame.new(0, 0.35, 0), Vector3.new(1.25, 1.3, 1.25), C.Mint)
 		for k = 0, 7 do
 			local angle = k * math.pi / 4
-			Kit.ball(model, CFrame.new(math.sin(angle) * 0.55, -0.12, math.cos(angle) * 0.55), Vector3.new(0.34, 0.34, 0.34), C.Mint)
+			Kit.ball(
+				model,
+				CFrame.new(math.sin(angle) * 0.55, -0.12, math.cos(angle) * 0.55),
+				Vector3.new(0.34, 0.34, 0.34),
+				C.Mint
+			)
 		end
 		for side = -1, 1, 2 do
 			Kit.ball(model, CFrame.new(side * 0.22, 0.5, -0.58), Vector3.new(0.16, 0.26, 0.08), C.Pupil)
@@ -546,11 +670,17 @@ Wearables.candle_buddy = {
 		Kit.post(model, CFrame.new(0, -0.15, 0), 1.5, 0.8, C.Wax)
 		for k = 0, 5 do
 			local angle = k * math.pi / 3 + 0.3
-			Kit.ball(model, CFrame.new(math.sin(angle) * 0.34, 0.58, math.cos(angle) * 0.34), Vector3.new(0.24, 0.2, 0.24), C.Wax)
+			Kit.ball(
+				model,
+				CFrame.new(math.sin(angle) * 0.34, 0.58, math.cos(angle) * 0.34),
+				Vector3.new(0.24, 0.2, 0.24),
+				C.Wax
+			)
 			if k % 2 == 0 then
 				Kit.block(
 					model,
-					CFrame.new(math.sin(angle) * 0.4, 0.3 - k * 0.04, math.cos(angle) * 0.4) * CFrame.Angles(0, angle, 0),
+					CFrame.new(math.sin(angle) * 0.4, 0.3 - k * 0.04, math.cos(angle) * 0.4)
+						* CFrame.Angles(0, angle, 0),
 					Vector3.new(0.12, 0.5, 0.06),
 					C.Wax
 				)
@@ -579,7 +709,14 @@ Wearables.zombie_zucchini = {
 			Kit.ball(model, CFrame.new(patch[1], patch[2], patch[3]), Vector3.new(0.3, 0.38, 0.3), C.ZucchiniDark)
 		end
 		Kit.post(model, CFrame.new(0, 0.95, 0), 0.25, 0.3, P.Stem)
-		triangle(model, Vector3.new(0.05, 1.05, 0), Vector3.new(0.5, 1.25, 0.1), Vector3.new(0.35, 0.95, 0.1), C.Leaf, M.Grass)
+		triangle(
+			model,
+			Vector3.new(0.05, 1.05, 0),
+			Vector3.new(0.5, 1.25, 0.1),
+			Vector3.new(0.35, 0.95, 0.1),
+			C.Leaf,
+			M.Grass
+		)
 		eyes(model, { { -0.16, 0.38, 0.36, 0.4, 0.2 }, { 0.2, 0.42, 0.22, -0.2, -0.3 } }, -0.33)
 		Kit.block(model, CFrame.new(0, 0.05, -0.41), Vector3.new(0.4, 0.05, 0.04), C.Pupil)
 		for i = -1, 1 do
@@ -587,7 +724,13 @@ Wearables.zombie_zucchini = {
 		end
 		-- Arms out in front, the way zombies walk.
 		for side = -1, 1, 2 do
-			Kit.log(model, CFrame.new(side * 0.42, 0, -0.45) * CFrame.Angles(0, math.pi / 2, 0), 0.8, 0.16, C.ZucchiniLight)
+			Kit.log(
+				model,
+				CFrame.new(side * 0.42, 0, -0.45) * CFrame.Angles(0, math.pi / 2, 0),
+				0.8,
+				0.16,
+				C.ZucchiniLight
+			)
 			Kit.ball(model, CFrame.new(side * 0.42, 0, -0.88), Vector3.new(0.24, 0.24, 0.24), C.ZucchiniLight)
 		end
 		local glow = Kit.block(model, CFrame.new(0, -0.1, 0), Vector3.new(0.2, 0.2, 0.2), C.Zucchini)
@@ -615,10 +758,27 @@ Wearables.thunder_hammer = {
 		tip.Name = "Tip"
 		Kit.block(model, head * CFrame.Angles(0, 0, math.pi / 4), Vector3.new(1.4, 1.4, 2.4), C.StormStone, M.Slate)
 		for side = -1, 1, 2 do
-			Kit.log(model, head * CFrame.new(0, 0, side * 1.25) * CFrame.Angles(0, math.pi / 2, 0), 0.2, 1.6, C.Bronze, M.Metal)
+			Kit.log(
+				model,
+				head * CFrame.new(0, 0, side * 1.25) * CFrame.Angles(0, math.pi / 2, 0),
+				0.2,
+				1.6,
+				C.Bronze,
+				M.Metal
+			)
 			Kit.glow(model, head * CFrame.new(side * 0.72, 0, 0), Vector3.new(0.04, 0.9, 0.12), C.Lightning)
-			Kit.glow(model, head * CFrame.new(side * 0.72, 0.15, 0.5) * CFrame.Angles(0.6, 0, 0), Vector3.new(0.04, 0.6, 0.1), C.Lightning)
-			Kit.glow(model, head * CFrame.new(side * 0.72, -0.1, -0.5) * CFrame.Angles(-0.7, 0, 0), Vector3.new(0.04, 0.6, 0.1), C.Lightning)
+			Kit.glow(
+				model,
+				head * CFrame.new(side * 0.72, 0.15, 0.5) * CFrame.Angles(0.6, 0, 0),
+				Vector3.new(0.04, 0.6, 0.1),
+				C.Lightning
+			)
+			Kit.glow(
+				model,
+				head * CFrame.new(side * 0.72, -0.1, -0.5) * CFrame.Angles(-0.7, 0, 0),
+				Vector3.new(0.04, 0.6, 0.1),
+				C.Lightning
+			)
 		end
 		pointLight(tip, C.Lightning, 14, 1.8)
 		Kit.new("ParticleEmitter", tip, {
@@ -644,12 +804,28 @@ Wearables.ghost_blade = {
 		-- A guard shaped like bat wings, then a see-through spectral blade.
 		Kit.block(model, CFrame.new(0, 0.58, 0), Vector3.new(0.2, 0.16, 0.5), P.Metal, M.Metal)
 		for side = -1, 1, 2 do
-			triangle(model, Vector3.new(0, 0.66, side * 0.2), Vector3.new(0, 0.95, side * 0.95), Vector3.new(0, 0.5, side * 0.75), P.Bat, M.Metal, 0.1)
+			triangle(
+				model,
+				Vector3.new(0, 0.66, side * 0.2),
+				Vector3.new(0, 0.95, side * 0.95),
+				Vector3.new(0, 0.5, side * 0.75),
+				P.Bat,
+				M.Metal,
+				0.1
+			)
 		end
 		local core = Kit.glow(model, CFrame.new(0, 2.4, 0), Vector3.new(0.06, 3.5, 0.18), C.Spirit)
 		local blade = Kit.block(model, CFrame.new(0, 2.45, 0), Vector3.new(0.14, 3.6, 0.5), C.Spirit, M.ForceField)
 		blade.Name = "Tip"
-		triangle(model, Vector3.new(0, 4.25, -0.25), Vector3.new(0, 4.25, 0.25), Vector3.new(0, 4.9, 0), C.Spirit, M.Neon, 0.1)
+		triangle(
+			model,
+			Vector3.new(0, 4.25, -0.25),
+			Vector3.new(0, 4.25, 0.25),
+			Vector3.new(0, 4.9, 0),
+			C.Spirit,
+			M.Neon,
+			0.1
+		)
 		pointLight(core, C.Spirit, 12, 1.5)
 		Kit.new("ParticleEmitter", blade, {
 			Texture = SMOKE,
@@ -710,7 +886,15 @@ Wearables.drowned_trident = {
 			local height = if x == 0 then 1.4 else 1.0
 			local prong = Kit.post(model, CFrame.new(x, 3.7 + height / 2, 0), height, 0.16, C.SeaBronze, M.Metal)
 			local top = 3.7 + height
-			triangle(model, Vector3.new(x - 0.16, top, 0), Vector3.new(x + 0.16, top, 0), Vector3.new(x, top + 0.45, 0), C.SeaBronze, M.Metal, 0.12)
+			triangle(
+				model,
+				Vector3.new(x - 0.16, top, 0),
+				Vector3.new(x + 0.16, top, 0),
+				Vector3.new(x, top + 0.45, 0),
+				C.SeaBronze,
+				M.Metal,
+				0.12
+			)
 			Kit.glow(model, CFrame.new(x, 3.85, -0.12), Vector3.new(0.14, 0.14, 0.14), C.SeaGlow, true)
 			if x == 0 then
 				tip = prong
@@ -747,9 +931,16 @@ Wearables.foxfire_fan = {
 			local angle = -spread + i * (2 * spread / (ribs - 1))
 			local rib = CFrame.Angles(0, 0, -angle)
 			local outer = i == 0 or i == ribs - 1
-			Kit.block(model, rib * CFrame.new(0, reach / 2, 0), Vector3.new(if outer then 0.14 else 0.08, reach, 0.08), C.Lacquer, M.Wood)
+			Kit.block(
+				model,
+				rib * CFrame.new(0, reach / 2, 0),
+				Vector3.new(if outer then 0.14 else 0.08, reach, 0.08),
+				C.Lacquer,
+				M.Wood
+			)
 			ends[i + 1] = (rib * CFrame.new(0, reach - 0.05, 0)).Position
-			local flame = Kit.glow(model, rib * CFrame.new(0, reach + 0.12, 0), Vector3.new(0.16, 0.26, 0.16), C.FoxFire, true)
+			local flame =
+				Kit.glow(model, rib * CFrame.new(0, reach + 0.12, 0), Vector3.new(0.16, 0.26, 0.16), C.FoxFire, true)
 			if i == 3 then
 				flame.Name = "Tip"
 				pointLight(flame, C.FoxFire, 12, 1.5)
@@ -757,7 +948,15 @@ Wearables.foxfire_fan = {
 		end
 		local hub = Vector3.new(0, 0.5, -0.02)
 		for i = 1, ribs - 1 do
-			triangle(model, hub, ends[i] - Vector3.new(0, 0, 0.02), ends[i + 1] - Vector3.new(0, 0, 0.02), if i % 2 == 0 then C.CandyCream else C.FanRed, M.Fabric, 0.03)
+			triangle(
+				model,
+				hub,
+				ends[i] - Vector3.new(0, 0, 0.02),
+				ends[i + 1] - Vector3.new(0, 0, 0.02),
+				if i % 2 == 0 then C.CandyCream else C.FanRed,
+				M.Fabric,
+				0.03
+			)
 		end
 		Kit.ball(model, CFrame.new(0, 0, 0), Vector3.new(0.3, 0.3, 0.3), C.Gold, M.Metal)
 		return model

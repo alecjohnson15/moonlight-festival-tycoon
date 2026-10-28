@@ -8,6 +8,7 @@ local Balance = require("../src/shared/Config/Balance")
 local Catalog = require("../src/shared/Config/Catalog")
 local Cosmetics = require("../src/shared/Config/Cosmetics")
 local Theme = require("../src/shared/Themes/MoonlightFestival")
+local Progression = require("../src/shared/Progression")
 local Wardrobe = require("../src/shared/Wardrobe")
 local Migrations = require("../src/server/Lib/Migrations")
 
@@ -62,7 +63,20 @@ describe("Wardrobe rules", function()
 		expect(Wardrobe.isEarned(chef, { c = true }, UPGRADES)).toBe(false)
 		expect(Wardrobe.isEarned(chef, { c = true, e = true }, UPGRADES)).toBe(false)
 		expect(Wardrobe.isEarned(chef, { c = true, d = true }, UPGRADES)).toBe(true)
-		expect(Wardrobe.pathComplete({}, UPGRADES, "kitchen", "missing")).toBe(false)
+		expect(Wardrobe.pathReached({}, UPGRADES, "kitchen", "missing")).toBe(false)
+	end)
+
+	it("takes any path of a building when none is named, and a tier short of the end", function()
+		local finished = { Id = "x", Slot = "Head", Line = "Earned", Unlock = { Building = "kitchen" } }
+		expect(Wardrobe.isEarned(finished, { c = true }, UPGRADES)).toBe(false)
+		expect(Wardrobe.isEarned(finished, { e = true }, UPGRADES)).toBe(true)
+		expect(Wardrobe.isEarned(finished, { c = true, d = true }, UPGRADES)).toBe(true)
+		local picked = { Id = "y", Slot = "Head", Line = "Earned", Unlock = { Building = "kitchen", Tier = 1 } }
+		expect(Wardrobe.isEarned(picked, {}, UPGRADES)).toBe(false)
+		expect(Wardrobe.isEarned(picked, { c = true }, UPGRADES)).toBe(true)
+		expect(Wardrobe.pathReached({ c = true }, UPGRADES, "kitchen", "gourmet", 2)).toBe(false)
+		expect(Wardrobe.pathReached({ c = true, d = true }, UPGRADES, "kitchen", "gourmet", 2)).toBe(true)
+		expect(Wardrobe.pathReached({ a = true }, UPGRADES, "a")).toBe(false)
 	end)
 
 	it("owns earned items and the paid items the player bought", function()
@@ -120,6 +134,8 @@ describe("Wardrobe rules", function()
 			{ Id = "wand", Slot = "Head", Line = "Earned", Weapon = "x", Unlock = { Owns = "a" } },
 			{ Id = "far", Slot = "Pet", Line = "Earned", Unlock = { OwnedCount = 99 } },
 			{ Id = "Bad Id", Slot = "Pet", Line = "Earned", Unlock = { Building = "kitchen", Path = "nope" } },
+			{ Id = "deep", Slot = "Pet", Line = "Earned", Unlock = { Building = "kitchen", Tier = 2 } },
+			{ Id = "lost", Slot = "Pet", Line = "Earned", Unlock = { Path = "gourmet" } },
 		}
 		local problems = Wardrobe.validate(broken, UPGRADES, { { Id = "stray" } })
 		expect(problems).toContain("duplicate cosmetic id hat")
@@ -132,6 +148,10 @@ describe("Wardrobe rules", function()
 		expect(problems).toContain("far: OwnedCount")
 		expect(problems).toContain("Bad Id: ids must be")
 		expect(problems).toContain("no upgrades on path nope of kitchen")
+		-- The speed path has only one tier, so a player who takes it never
+		-- reaches tier 2.
+		expect(problems).toContain("deep: Tier must be a whole number from 1 to 1")
+		expect(problems).toContain("lost: a Path or Tier unlock needs a Building")
 		expect(problems).toContain("catalog item stray is not a paid cosmetic")
 	end)
 
@@ -154,16 +174,79 @@ describe("cosmetics config", function()
 		assert(next(have), `nothing unlocks from {first}`)
 	end)
 
-	it("has something to earn in every slot, and everything earned by finishing", function()
-		local all = {}
-		for _, upgrade in Balance.Upgrades do
-			all[upgrade.Id] = true
+	-- Every route through the tree, as what it ends up owning and the order it
+	-- buys in: the cheapest upgrade open to it each time, as in the pacing
+	-- test in Earnings.spec. Waiting for coins changes when, not what.
+	local function routes(): { { Name: string, Order: { string } } }
+		local paths = Progression.paths(Balance.Upgrades)
+		local choices = { {} }
+		for building, byPath in paths do
+			local more = {}
+			for _, chosen in choices do
+				for name in byPath do
+					local copy = table.clone(chosen)
+					copy[building] = name
+					table.insert(more, copy)
+				end
+			end
+			choices = more
 		end
-		local have = Wardrobe.owned(Cosmetics, all, Balance.Upgrades, nobody)
+		local result = {}
+		for _, chosen in choices do
+			local state = { Coins = math.huge, Owned = {} }
+			local order = {}
+			while true do
+				local cheapest = nil
+				for _, upgrade in Progression.available(state.Owned, Balance.Upgrades) do
+					local onRoute = not upgrade.Path or chosen[upgrade.Building] == upgrade.Path
+					if onRoute and (cheapest == nil or upgrade.Cost < cheapest.Cost) then
+						cheapest = upgrade
+					end
+				end
+				if not cheapest then
+					break
+				end
+				Progression.purchase(state, Balance.Upgrades, cheapest.Id)
+				table.insert(order, cheapest.Id)
+			end
+			local names = {}
+			for building, path in chosen do
+				table.insert(names, `{building}:{path}`)
+			end
+			table.sort(names)
+			table.insert(result, { Name = table.concat(names, " "), Order = order })
+		end
+		return result
+	end
+
+	it("lets every route earn every free item, in the order the wardrobe lists them", function()
+		local earned = {}
+		for _, cosmetic in Cosmetics do
+			if not cosmetic.Premium then
+				table.insert(earned, cosmetic.Id)
+			end
+		end
+		for _, route in routes() do
+			local owned = {}
+			local have = {}
+			local arrived = {}
+			for _, id in route.Order do
+				owned[id] = true
+				local now = Wardrobe.owned(Cosmetics, owned, Balance.Upgrades, nobody)
+				for _, fresh in Wardrobe.newlyOwned(Cosmetics, have, now) do
+					table.insert(arrived, fresh)
+				end
+				have = now
+			end
+			expect(table.concat(arrived, ", ")).toBe(table.concat(earned, ", "))
+		end
+	end)
+
+	it("has something to earn in every slot", function()
 		for _, slot in Wardrobe.SLOTS do
 			local found = false
 			for _, cosmetic in Cosmetics do
-				found = found or (cosmetic.Slot == slot and have[cosmetic.Id] == true)
+				found = found or (cosmetic.Slot == slot and not cosmetic.Premium)
 			end
 			assert(found, `nothing to earn for the {slot} slot`)
 		end
@@ -264,11 +347,20 @@ describe("theme wearables", function()
 						parts += 1
 						local where = `{cosmetic.Id}: {descendant.Name}`
 						assert(descendant.Anchored, `{where} must be built anchored`)
-						assert(not descendant.CanCollide and not descendant.CanTouch, `{where} could bump into or press things`)
+						assert(
+							not descendant.CanCollide and not descendant.CanTouch,
+							`{where} could bump into or press things`
+						)
 						local lo, hi = boxOf(descendant)
 						for axis = 1, 3 do
-							assert(lo[axis] >= bounds[axis] - TOLERANCE, `{where} reaches too far on axis {axis} ({lo[axis]})`)
-							assert(hi[axis] <= bounds[axis + 3] + TOLERANCE, `{where} reaches too far on axis {axis} ({hi[axis]})`)
+							assert(
+								lo[axis] >= bounds[axis] - TOLERANCE,
+								`{where} reaches too far on axis {axis} ({lo[axis]})`
+							)
+							assert(
+								hi[axis] <= bounds[axis + 3] + TOLERANCE,
+								`{where} reaches too far on axis {axis} ({hi[axis]})`
+							)
 						end
 					end
 				end
@@ -306,7 +398,10 @@ describe("theme wearables", function()
 				bottom.Position = Vector3.new(0, -1, 0)
 				entry.Build(top, bottom)
 				local trail = top:FindFirstChildOfClass("Trail")
-				assert(trail and trail.Attachment0 == top and trail.Attachment1 == bottom, `{cosmetic.Id} makes no trail`)
+				assert(
+					trail and trail.Attachment0 == top and trail.Attachment1 == bottom,
+					`{cosmetic.Id} makes no trail`
+				)
 			end
 		end
 	end)

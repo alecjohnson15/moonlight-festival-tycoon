@@ -10,6 +10,7 @@ export type Unlock = {
 	OwnedCount: number?,
 	Building: string?,
 	Path: string?,
+	Tier: number?,
 }
 
 export type Cosmetic = {
@@ -54,19 +55,34 @@ local function ownedCount(owned: { [string]: boolean }): number
 	return count
 end
 
--- Whether a path of a building's tree is finished: there is at least one
--- upgrade on it, and every one of them is owned.
-function Wardrobe.pathComplete(owned: { [string]: boolean }, upgrades: { Upgrade }, building: string, path: string): boolean
-	local any = false
+-- Whether the player has got far enough along a building's tree: owns tier
+-- (or, without one, every tier) of that path, or of any of the building's
+-- paths when path is nil. Tiers are bought in order, so owning n of a path's
+-- upgrades means reaching tier n.
+function Wardrobe.pathReached(
+	owned: { [string]: boolean },
+	upgrades: { Upgrade },
+	building: string,
+	path: string?,
+	tier: number?
+): boolean
+	local tiers: { [string]: number } = {}
+	local bought: { [string]: number } = {}
 	for _, upgrade in upgrades do
-		if upgrade.Building == building and upgrade.Path == path then
-			any = true
-			if not owned[upgrade.Id] then
-				return false
+		local name = upgrade.Path
+		if upgrade.Building == building and name and (path == nil or name == path) then
+			tiers[name] = (tiers[name] or 0) + 1
+			if owned[upgrade.Id] then
+				bought[name] = (bought[name] or 0) + 1
 			end
 		end
 	end
-	return any
+	for name, count in tiers do
+		if (bought[name] or 0) >= (tier or count) then
+			return true
+		end
+	end
+	return false
 end
 
 -- Whether building has earned a free cosmetic. Paid ones are never earned.
@@ -88,7 +104,8 @@ function Wardrobe.isEarned(cosmetic: Cosmetic, owned: { [string]: boolean }, upg
 	if unlock.OwnedCount and ownedCount(owned) < unlock.OwnedCount then
 		return false
 	end
-	if unlock.Building and not Wardrobe.pathComplete(owned, upgrades, unlock.Building, unlock.Path or "") then
+	local onTree = unlock.Building or unlock.Path or unlock.Tier
+	if onTree and not Wardrobe.pathReached(owned, upgrades, unlock.Building or "", unlock.Path, unlock.Tier) then
 		return false
 	end
 	return true
@@ -113,7 +130,12 @@ function Wardrobe.owned(
 end
 
 -- Why an item can't be put on: UnknownCosmetic, WrongSlot or NotOwned.
-function Wardrobe.canEquip(cosmetics: { Cosmetic }, have: { [string]: boolean }, slot: string, id: string): (boolean, string?)
+function Wardrobe.canEquip(
+	cosmetics: { Cosmetic },
+	have: { [string]: boolean },
+	slot: string,
+	id: string
+): (boolean, string?)
 	local cosmetic = Wardrobe.find(cosmetics, id)
 	if not cosmetic then
 		return false, "UnknownCosmetic"
@@ -130,7 +152,11 @@ end
 -- What actually shows, by slot: the saved choices that are still valid. A
 -- choice that isn't valid right now, such as a game pass Roblox couldn't
 -- confirm, stays saved and simply doesn't show.
-function Wardrobe.worn(cosmetics: { Cosmetic }, equipped: { [string]: string }, have: { [string]: boolean }): { [string]: string }
+function Wardrobe.worn(
+	cosmetics: { Cosmetic },
+	equipped: { [string]: string },
+	have: { [string]: boolean }
+): { [string]: string }
 	local worn = {}
 	for slot, id in equipped do
 		if isSlot(slot) and Wardrobe.canEquip(cosmetics, have, slot, id) then
@@ -141,7 +167,11 @@ function Wardrobe.worn(cosmetics: { Cosmetic }, equipped: { [string]: string }, 
 end
 
 -- Ids in after that aren't in before, in config order.
-function Wardrobe.newlyOwned(cosmetics: { Cosmetic }, before: { [string]: boolean }, after: { [string]: boolean }): { string }
+function Wardrobe.newlyOwned(
+	cosmetics: { Cosmetic },
+	before: { [string]: boolean },
+	after: { [string]: boolean }
+): { string }
 	local fresh = {}
 	for _, cosmetic in cosmetics do
 		if after[cosmetic.Id] and not before[cosmetic.Id] then
@@ -240,7 +270,17 @@ function Wardrobe.validate(cosmetics: { Cosmetic }, upgrades: { Upgrade }, catal
 				table.insert(problems, `{id}: free but also in the catalog`)
 			end
 			local unlock = cosmetic.Unlock
-			if not unlock or not (unlock.Owns or unlock.OwnsAll or unlock.OwnedCount or unlock.Building) then
+			if
+				not unlock
+				or not (
+					unlock.Owns
+					or unlock.OwnsAll
+					or unlock.OwnedCount
+					or unlock.Building
+					or unlock.Path
+					or unlock.Tier
+				)
+			then
 				table.insert(problems, `{id}: free items need an unlock`)
 			else
 				local needed = { unlock.Owns }
@@ -255,15 +295,38 @@ function Wardrobe.validate(cosmetics: { Cosmetic }, upgrades: { Upgrade }, catal
 				if unlock.OwnedCount and (unlock.OwnedCount < 1 or unlock.OwnedCount > #upgrades) then
 					table.insert(problems, `{id}: OwnedCount must be between 1 and the number of upgrades`)
 				end
-				if unlock.Building or unlock.Path then
-					local exists = false
+				if unlock.Building or unlock.Path or unlock.Tier then
+					-- Tiers on each path the unlock could be met on. A Tier has to
+					-- exist on all of them, so whichever path a player picks can
+					-- reach it.
+					local tiers: { [string]: number } = {}
 					for _, upgrade in upgrades do
-						if upgrade.Building == unlock.Building and upgrade.Path == unlock.Path then
-							exists = true
+						local name = upgrade.Path
+						if
+							unlock.Building
+							and upgrade.Building == unlock.Building
+							and name
+							and (unlock.Path == nil or name == unlock.Path)
+						then
+							tiers[name] = (tiers[name] or 0) + 1
 						end
 					end
-					if not exists then
-						table.insert(problems, `{id}: no upgrades on path {unlock.Path} of {unlock.Building}`)
+					local fewest = math.huge
+					for _, count in tiers do
+						fewest = math.min(fewest, count)
+					end
+					if not unlock.Building then
+						table.insert(problems, `{id}: a Path or Tier unlock needs a Building`)
+					elseif fewest == math.huge then
+						table.insert(
+							problems,
+							`{id}: no upgrades on path {unlock.Path or "(any)"} of {unlock.Building}`
+						)
+					elseif
+						unlock.Tier
+						and (unlock.Tier < 1 or unlock.Tier > fewest or unlock.Tier ~= math.floor(unlock.Tier))
+					then
+						table.insert(problems, `{id}: Tier must be a whole number from 1 to {fewest}`)
 					end
 				end
 			end

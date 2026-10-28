@@ -5,11 +5,16 @@
 -- Slots (one item each): Head, Back, Hand (held as a Tool), Pet, Aura, Trail.
 --
 -- Free items are earned by building. Unlock is one or more of:
---   Owns = id                   owns that upgrade
---   OwnsAll = { ids }           owns all of them
---   OwnedCount = n              owns at least n upgrades
---   Building = id, Path = name  owns every upgrade on that path of that
---                               building's tree (see Config/Balance)
+--   Owns = id            owns that upgrade
+--   OwnsAll = { ids }    owns all of them
+--   OwnedCount = n       owns at least n upgrades
+--   Building = id        has finished a path of that building's tree (see
+--                        Config/Balance). Add Path = name for one path only,
+--                        and Tier = n to need only that tier rather than all.
+--
+-- A player takes one path per building, so a free item that needs one
+-- particular path can't be earned on any other route. The tests check that
+-- every route through the tree earns every free item, in the order listed.
 --
 -- Premium items are bought with Robux: each has a Catalog entry with the same
 -- id. Nothing here changes coins or income.
@@ -23,18 +28,26 @@
 -- (paid pets) and Legendary (paid arena weapons).
 
 return {
-	-- Earned, roughly one per upgrade in the order players buy them.
+	-- Earned, in the order players get them over the roughly 90 minute run.
+	-- At the pacing test's speed (Earnings.spec) they arrive at about 0, 3, 9,
+	-- 14, 26, 38, 45, 57, 75 and 91 minutes.
 	{ Id = "lantern", Slot = "Hand", Line = "Earned", Unlock = { Owns = "starter_stall" } },
-	{ Id = "witch_cape", Slot = "Back", Line = "Earned", Unlock = { Owns = "stall_counter" } },
-	{ Id = "pumpkin_head", Slot = "Head", Line = "Earned", Unlock = { Owns = "grower" } },
-	{ Id = "wooden_mallet", Slot = "Hand", Line = "Earned", Weapon = "mallet", Unlock = { Owns = "kitchen" } },
-	{ Id = "ember_trail", Slot = "Trail", Line = "Earned", Unlock = { Owns = "grower_boost" } },
-	{ Id = "witch_broom", Slot = "Hand", Line = "Earned", Weapon = "broom", Unlock = { Owns = "kitchen_boost" } },
-	{ Id = "pumpkling", Slot = "Pet", Line = "Earned", Unlock = { Owns = "attraction_1" } },
+	{ Id = "witch_cape", Slot = "Back", Line = "Earned", Unlock = { Building = "starter_stall", Tier = 1 } },
+	{ Id = "pumpkin_head", Slot = "Head", Line = "Earned", Unlock = { Building = "grower", Tier = 1 } },
+	{ Id = "wooden_mallet", Slot = "Hand", Line = "Earned", Weapon = "mallet", Unlock = { Owns = "attraction_1" } },
 	{ Id = "werewolf_claws", Slot = "Hand", Line = "Earned", Weapon = "claws", Unlock = { Owns = "attraction_2" } },
-	{ Id = "phantom_aura", Slot = "Aura", Line = "Earned", Unlock = { Owns = "attraction_3" } },
-	-- The best weapon anyone can earn, for building the whole festival.
-	{ Id = "moon_saber", Slot = "Hand", Line = "Earned", Weapon = "moon_saber", Unlock = { OwnedCount = 9 } },
+	{ Id = "witch_broom", Slot = "Hand", Line = "Earned", Weapon = "broom", Unlock = { Building = "starter_stall" } },
+	{ Id = "ember_trail", Slot = "Trail", Line = "Earned", Unlock = { Owns = "attraction_3" } },
+	{ Id = "pumpkling", Slot = "Pet", Line = "Earned", Unlock = { Building = "grower" } },
+	{ Id = "phantom_aura", Slot = "Aura", Line = "Earned", Unlock = { Building = "attraction_1" } },
+	-- The best weapon anyone can earn, for the last purchase of the run.
+	{
+		Id = "moon_saber",
+		Slot = "Hand",
+		Line = "Earned",
+		Weapon = "moon_saber",
+		Unlock = { Building = "attraction_3" },
+	},
 
 	-- Paid looks.
 	{ Id = "moonstone_mallet", Slot = "Hand", Line = "Deluxe", Weapon = "mallet", Premium = true },

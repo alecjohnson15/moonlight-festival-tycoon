@@ -256,10 +256,22 @@ local function requirement(cosmetic: Wardrobe.Cosmetic): string
 	elseif unlock.OwnedCount then
 		return Strings.WardrobeCount:format(unlock.OwnedCount)
 	elseif unlock.Building then
-		local paths = (Theme :: any).Paths
+		local building = nameOf(unlock.Building)
+		if not unlock.Path then
+			if unlock.Tier == 1 then
+				return Strings.WardrobePick:format(building)
+			elseif unlock.Tier then
+				return Strings.WardrobeTier:format(unlock.Tier, building)
+			end
+			return Strings.WardrobeFinish:format(building)
+		end
+		local paths = Theme.Paths[unlock.Building]
 		local path = paths and paths[unlock.Path]
-		local pathName = if type(path) == "table" and path.DisplayName then path.DisplayName else unlock.Path
-		return Strings.WardrobePath:format(pathName, nameOf(unlock.Building))
+		local pathName = if path then path.DisplayName else unlock.Path
+		if unlock.Tier then
+			return Strings.WardrobePathTier:format(unlock.Tier, pathName, building)
+		end
+		return Strings.WardrobePath:format(pathName, building)
 	end
 	return ""
 end
@@ -439,7 +451,9 @@ local function refreshCard(card: Card)
 
 	card.Detail.Text = if not owned and not cosmetic.Premium then requirement(cosmetic) else names.Blurb
 	if card.Viewport then
-		card.Viewport.ImageColor3 = if owned or cosmetic.Premium then Color3.new(1, 1, 1) else Color3.fromRGB(90, 85, 105)
+		card.Viewport.ImageColor3 = if owned or cosmetic.Premium
+			then Color3.new(1, 1, 1)
+			else Color3.fromRGB(90, 85, 105)
 	end
 end
 
@@ -487,7 +501,8 @@ local function nextToast()
 	toastText.Text = if wearing then Strings.WardrobeNowWearing else Strings.WardrobeOpenToWear
 	toast.Visible = true
 	toastScale.Scale = 0.6
-	TweenService:Create(toastScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	TweenService:Create(toastScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
+		:Play()
 	task.delay(TOAST_SECONDS, function()
 		toast.Visible = false
 		nextToast()
@@ -509,9 +524,11 @@ local function onWardrobeChanged()
 			toastBusy = true
 			task.delay(0.3, nextToast)
 		end
-		TweenService:Create(buttonScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 2, true), {
-			Scale = 1.2,
-		}):Play()
+		TweenService
+			:Create(buttonScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 2, true), {
+				Scale = 1.2,
+			})
+			:Play()
 	end
 	seenOnce = player:GetAttribute("Wardrobe") ~= nil
 	refreshAll()
@@ -522,7 +539,8 @@ local function loadPrices()
 		local item = catalogById[cosmetic.Id]
 		if item and item.Kind == "GamePass" and item.PassId ~= 0 then
 			task.spawn(function()
-				local ok, info = pcall(MarketplaceService.GetProductInfo, MarketplaceService, item.PassId, Enum.InfoType.GamePass)
+				local ok, info =
+					pcall(MarketplaceService.GetProductInfo, MarketplaceService, item.PassId, Enum.InfoType.GamePass)
 				if ok and info and info.PriceInRobux then
 					prices[cosmetic.Id] = info.PriceInRobux
 					refreshAll()
