@@ -32,7 +32,9 @@ return {
 	Lift = 22,
 	KnockoutThrow = 1.5,
 	KnockoutLift = 40,
-	-- Swings and specials arriving up to this much early still count, to
-	-- allow for network jitter. A fraction of the cooldown.
-	CooldownSlack = 0.1,
+	-- Swings and specials arriving up to this much early still count, as a
+	-- fraction of the cooldown, to allow for network jitter. Kept at 0 so that
+	-- every swing that lands also plays its swing animation, which the
+	-- cosmetics code rate-limits with the same cooldown.
+	CooldownSlack = 0,
 }

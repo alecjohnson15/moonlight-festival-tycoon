@@ -31,7 +31,7 @@ Every weapon is a **style** at a **tier**. The style sets how it fights; the tie
 | Starter | ×1.0 | the loaned bonker |
 | Earned | ×1.1 | free weapons unlocked by playing |
 | Elite | ×1.2 | the best free weapon, unlocked near the end of a full run |
-| Premium | ×1.2, plus one edge | bought with Robux |
+| Premium | ×1.2, plus one edge | bought with Robux (the Legendary weapons in the cosmetics) |
 
 Special moves, on their own cooldown:
 
