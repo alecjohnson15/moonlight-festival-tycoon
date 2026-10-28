@@ -463,14 +463,19 @@ describe("theme look", function()
 	end)
 
 	it("gives every sound an asset id or nothing, and a volume", function()
-		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout" } do
-			local sound = Theme.Sounds[name]
-			assert(sound, `the theme has no {name} sound`)
+		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout", "Deny" } do
+			assert(Theme.Sounds[name], `the theme has no {name} sound`)
+		end
+		for name, sound in Theme.Sounds do
 			assert(
 				sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"),
 				`{name} must be rbxassetid://<number> or ""`
 			)
 			assert(sound.Volume >= 0 and sound.Volume <= 1, `{name} volume must be 0 to 1`)
+			assert(
+				sound.Fallback == nil or string.match(sound.Fallback, "^rbxasset://sounds/[%w_]+%.%w+$"),
+				`{name} falls back to rbxasset://sounds/<file>, one of Roblox's own sounds`
+			)
 		end
 	end)
 end)

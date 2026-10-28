@@ -350,20 +350,22 @@ return {
 	-- Sounds and music, as Roblox asset ids ("rbxassetid://123"). Empty means
 	-- silent. The original sounds for this pack are in assets/audio; upload
 	-- them and paste their ids here (see the README). Volume is 0 to 1. Music
-	-- and Music2 are two songs that play in turn.
+	-- and Music2 are two songs that play in turn. Until a cue is uploaded it
+	-- plays its Fallback, one of the plain sounds that come with Roblox
+	-- ("rbxasset://sounds/..."), so buying and claiming are never silent.
 	Sounds = {
 		Music = { Id = "", Volume = 0.3 },
 		Music2 = { Id = "", Volume = 0.3 },
 		Ambience = { Id = "", Volume = 0.35 },
-		Claim = { Id = "", Volume = 0.6 },
-		Purchase = { Id = "", Volume = 0.6 },
+		Claim = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		Purchase = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
 		Build = { Id = "", Volume = 0.5 },
 		Payout = { Id = "", Volume = 0.5 },
 		-- A pad that can't be afforded yet.
-		Deny = { Id = "", Volume = 0.5 },
+		Deny = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
-		Thump = { Id = "", Volume = 0.6 },
-		Whoosh = { Id = "", Volume = 0.5 },
+		Thump = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/action_jump_land.mp3" },
+		Whoosh = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

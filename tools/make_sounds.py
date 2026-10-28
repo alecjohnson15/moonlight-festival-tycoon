@@ -687,6 +687,17 @@ def make_payout():
     write("payout", [normalise(reverb(track, seconds=1, wet=0.2)[: int(1.2 * RATE)])])
 
 
+def make_deny():
+    """Not yet: two soft, low wooden knocks, the second one lower."""
+    reseed(10)
+    track = np.zeros(int(0.7 * RATE))
+    for at, name in ((0, "A3"), (0.16, "E3")):
+        place(track, thud(0.25, 0.5, 220, 120), at)
+        place(track, music_box(note(name), 0.35, 0.5), at)
+        place(track, band(noise(0.05), 400, 1800) * np.exp(-times(0.05) * 60) * 0.3, at)
+    write("deny", [normalise(reverb(track, seconds=0.5, wet=0.15, seed=10)[: int(0.7 * RATE)], 0.6)])
+
+
 def make_thump():
     """A big wooden mallet landing: a deep bonk with a woody knock on top."""
     reseed(8)
@@ -713,5 +724,6 @@ if __name__ == "__main__":
     make_purchase()
     make_build()
     make_payout()
+    make_deny()
     make_thump()
     make_whoosh()
