@@ -5,6 +5,7 @@
 local TestKit = require("./TestKit")
 local Loader = require("./RobloxLoader")
 local Arena = require("../src/shared/Config/Arena")
+local Cosmetics = require("../src/shared/Config/Cosmetics")
 local Layout = require("../src/shared/Config/Layout")
 local Weapons = require("../src/shared/Config/Weapons")
 
@@ -57,6 +58,20 @@ describe("arena weapons", function()
 		end
 		assert(Weapons.bonker and Weapons.bonker.Tier == "Starter", "the arena has no Starter bonker to lend")
 		expect(count > 5).toBe(true)
+	end)
+
+	it("fight for every cosmetic weapon, with the paid edge only on Legendary ones", function()
+		for _, cosmetic in Cosmetics do
+			if cosmetic.Weapon then
+				local weapon = rawget(Weapons, cosmetic.Weapon)
+				assert(weapon, `{cosmetic.Id} names weapon {cosmetic.Weapon}, which has no arena stats`)
+				local legendary = cosmetic.Line == "Legendary"
+				assert(
+					(weapon.Tier == "Premium") == legendary,
+					`{cosmetic.Id} is {cosmetic.Line} but fights at the {weapon.Tier} tier`
+				)
+			end
+		end
 	end)
 
 	it("hit harder tier by tier, and every style is close to as quick to win with", function()
