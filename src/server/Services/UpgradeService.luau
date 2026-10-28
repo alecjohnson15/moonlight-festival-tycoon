@@ -1,12 +1,14 @@
 -- Buys upgrades when an owner steps on a buy button on their plot. The server
 -- checks the purchase, charges for it and builds it; touching a button only
--- names the upgrade the player wants. A player who steps on a pad they can't
--- afford yet is told how many more coins it needs, through the Notice remote.
+-- names the upgrade the player wants. Through the Notice remote, a player who
+-- steps on a pad they can't afford yet is told how many more coins it needs,
+-- and one who buys something is told how much more it earns them a second.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local Earnings = require(ReplicatedStorage.Shared.Earnings)
 local Progression = require(ReplicatedStorage.Shared.Progression)
 local RateLimiter = require(script.Parent.Parent.Lib.RateLimiter)
 local AttractionService = require(script.Parent.AttractionService)
@@ -38,6 +40,7 @@ local function onButtonStepped(player: Player, upgradeId: string)
 	if not data then
 		return
 	end
+	local before = Earnings.perSecond(data.Owned, Balance)
 	local bought, reason = Progression.purchase(data, Balance.Upgrades, upgradeId)
 	if not bought then
 		local upgrade = upgradesById[upgradeId]
@@ -47,6 +50,12 @@ local function onButtonStepped(player: Player, upgradeId: string)
 		return
 	end
 	PlotService.build(player, upgradeId, true)
+	local upgrade = upgradesById[upgradeId]
+	Notice:FireClient(player, {
+		Kind = "Built",
+		Station = upgrade.Building or upgradeId,
+		Gain = Earnings.perSecond(data.Owned, Balance) - before,
+	})
 	PlotService.refreshButtons(player, true)
 	EconomyService.publish(player)
 	ProductionService.refresh(player)

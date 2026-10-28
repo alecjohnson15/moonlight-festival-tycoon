@@ -117,12 +117,14 @@ describe("layout", function()
 		end
 	end)
 
-	it("keeps every slot inside the plot", function()
+	it("keeps every slot and yard inside the plot", function()
 		local half = Layout.PlotSize / 2
 		for id, slot in Layout.Slots do
-			local width, depth = slot.Size[1], slot.Size[3]
-			assert(math.abs(slot.X) + width / 2 <= half, `{id} sticks out of the plot sideways`)
-			assert(math.abs(slot.Z) + depth / 2 <= half, `{id} sticks out of the plot front or back`)
+			for _, box in { slot, slot.Yard } do
+				local width, depth = box.Size[1], box.Size[3]
+				assert(math.abs(box.X) + width / 2 <= half, `{id} sticks out of the plot sideways`)
+				assert(math.abs(box.Z) + depth / 2 <= half, `{id} sticks out of the plot front or back`)
+			end
 		end
 	end)
 
@@ -138,11 +140,15 @@ describe("layout", function()
 		end
 	end)
 
-	it("keeps buttons, the gate and every slot on the plot and clear of each other", function()
+	it("keeps buttons, the gate and every slot and yard on the plot and clear of each other", function()
 		-- Footprints as { name, x, z, width, depth }.
 		local footprints = {}
 		for id, slot in Layout.Slots do
 			table.insert(footprints, { `slot {id}`, slot.X, slot.Z, slot.Size[1], slot.Size[3] })
+			local yard = slot.Yard
+			if yard then
+				table.insert(footprints, { `yard {id}`, yard.X, yard.Z, yard.Size[1], yard.Size[3] })
+			end
 		end
 		local gate = Layout.Gate
 		table.insert(footprints, { "gate", gate.X, gate.Z, gate.Size[1], gate.Size[3] })

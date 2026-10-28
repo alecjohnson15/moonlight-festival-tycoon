@@ -104,11 +104,22 @@ return {
 
 	-- Where each station and attraction is built. Size is { width, height,
 	-- depth }: the theme's model fits inside it, and it is the size of the
-	-- greybox block drawn when the theme has no model for that upgrade.
+	-- greybox block drawn when the theme has no model for that upgrade. A
+	-- Yard beside a building is open ground for the things its upgrades add.
 	Slots = {
-		starter_stall = { X = -26, Z = 26, Size = { 12, 8, 8 } },
+		starter_stall = {
+			X = -26,
+			Z = 26,
+			Size = { 12, 8, 8 },
+			Yard = { X = -36, Z = 26, Size = { 8, 8, 8 } },
+		},
 		kitchen = { X = -26, Z = -2, Size = { 14, 10, 12 } },
-		grower = { X = -26, Z = -28, Size = { 18, 3, 18 } },
+		grower = {
+			X = -26,
+			Z = -28,
+			Size = { 18, 3, 18 },
+			Yard = { X = -39, Z = -28, Size = { 8, 3, 18 } },
+		},
 		attraction_1 = { X = 24, Z = 26, Size = { 18, 6, 18 } },
 		attraction_2 = { X = 24, Z = -2, Size = { 14, 14, 14 } },
 		attraction_3 = { X = 24, Z = -30, Size = { 20, 10, 16 } },

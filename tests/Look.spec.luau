@@ -102,18 +102,38 @@ local function lightCount(root: any): number
 	return count
 end
 
--- Checks every visible part of a build stays inside the slot's footprint, on
--- or above the floor and not far above the slot.
+-- Why a part isn't inside a slot's footprint, on or above the floor and not
+-- far above the slot, or nil if it is.
+local function outside(part: any, origin: any, size: any): string?
+	local lo, hi = boxIn(part, origin)
+	if lo[1] < -size.X / 2 - TOLERANCE or hi[1] > size.X / 2 + TOLERANCE then
+		return "sticks out sideways"
+	elseif lo[3] < -size.Z / 2 - TOLERANCE or hi[3] > size.Z / 2 + TOLERANCE then
+		return "sticks out front or back"
+	elseif lo[2] < -TOLERANCE then
+		return "goes below the floor"
+	elseif hi[2] > size.Y + 4 then
+		return "is far above its slot"
+	end
+	return nil
+end
+
+local function assertPlaced(part: any, origin: any, problem: string?, label: string)
+	assert(part.Anchored, `{label}: {part.Name} is not anchored`)
+	if problem then
+		local lo, hi = boxIn(part, origin)
+		assert(
+			false,
+			`{label}: a {part.ClassName} reaching ({lo[1]}, {lo[2]}, {lo[3]}) to ({hi[1]}, {hi[2]}, {hi[3]}) {problem}`
+		)
+	end
+end
+
+-- Checks every part of a build stays inside the slot.
 local function assertInside(model: any, origin: any, size: any, label: string)
 	assertFinite(model, label)
 	for _, part in partsIn(model) do
-		assert(part.Anchored, `{label}: {part.Name} is not anchored`)
-		local lo, hi = boxIn(part, origin)
-		local where = `{label}: a {part.ClassName} reaching ({lo[1]}, {lo[2]}, {lo[3]}) to ({hi[1]}, {hi[2]}, {hi[3]})`
-		assert(lo[1] >= -size.X / 2 - TOLERANCE and hi[1] <= size.X / 2 + TOLERANCE, `{where} sticks out sideways`)
-		assert(lo[3] >= -size.Z / 2 - TOLERANCE and hi[3] <= size.Z / 2 + TOLERANCE, `{where} sticks out front or back`)
-		assert(lo[2] >= -TOLERANCE, `{where} goes below the floor`)
-		assert(hi[2] <= size.Y + 4, `{where} is far above its slot`)
+		assertPlaced(part, origin, outside(part, origin, size), label)
 	end
 end
 
@@ -141,19 +161,61 @@ describe("theme props", function()
 		end
 	end)
 
-	it("adds each drawn upgrade inside the slot of the building it improves", function()
-		for id, builder in Props do
-			local upgrade = Progression.find(Balance.Upgrades, id)
-			assert(upgrade, `the theme has a model for unknown upgrade {id}`)
-			if upgrade.Building then
-				local slot = Layout.Slots[upgrade.Building]
+	it("adds every upgrade to the building it improves, inside its slot or yard", function()
+		-- Parts and lights for each building's shared upgrades, and for each of
+		-- its paths. A plot only ever has one path per building built, so the
+		-- budget counts the heaviest.
+		local shared: { [string]: { number } } = {}
+		local paths: { [string]: { [string]: { number } } } = {}
+		local function tally(totals: { [string]: { number } }, key: string, model: any)
+			local counts = totals[key] or { 0, 0 }
+			counts[1] += #partsIn(model)
+			counts[2] += lightCount(model)
+			totals[key] = counts
+		end
+
+		for _, upgrade in Balance.Upgrades do
+			local id, building = upgrade.Id, upgrade.Building
+			if building then
+				local builder = Props[id]
+				assert(builder, `the theme draws nothing for {id}, so buying it changes nothing you can see`)
+				local slot = Layout.Slots[building]
 				local origin, size = slotOrigin(slot), slotSize(slot)
-				local model = builder(origin, size)
+				local yard = slot.Yard and slotOrigin(slot.Yard)
+				local model = builder(origin, size, yard)
+				expect(model.ClassName).toBe("Model")
 				expect(model.PrimaryPart).toBe(nil)
-				assertInside(model, origin, size, id)
-				plotParts += #partsIn(model)
-				plotLights += lightCount(model)
+				assertFinite(model, id)
+				for _, part in partsIn(model) do
+					local problem = outside(part, origin, size)
+					if problem and yard and outside(part, yard, slotSize(slot.Yard)) == nil then
+						problem = nil
+					end
+					assertPlaced(part, origin, problem, id)
+				end
+				if upgrade.Path then
+					paths[building] = paths[building] or {}
+					tally(paths[building], upgrade.Path, model)
+				else
+					tally(shared, building, model)
+				end
 			end
+		end
+		for id in Props do
+			assert(Progression.find(Balance.Upgrades, id), `the theme has a model for unknown upgrade {id}`)
+		end
+
+		for _, counts in shared do
+			plotParts += counts[1]
+			plotLights += counts[2]
+		end
+		for _, byPath in paths do
+			local parts, lights = 0, 0
+			for _, counts in byPath do
+				parts, lights = math.max(parts, counts[1]), math.max(lights, counts[2])
+			end
+			plotParts += parts
+			plotLights += lights
 		end
 	end)
 
@@ -194,11 +256,13 @@ describe("theme scenery", function()
 
 		local keepOut: { { any } } = {}
 		for id, slot in Layout.Slots do
-			local w, h, d = slot.Size[1], slot.Size[2], slot.Size[3]
-			table.insert(
-				keepOut,
-				{ `slot {id}`, { slot.X - w / 2, 0, slot.Z - d / 2, slot.X + w / 2, h, slot.Z + d / 2 } }
-			)
+			for _, box in { slot, slot.Yard } do
+				local w, h, d = box.Size[1], box.Size[2], box.Size[3]
+				table.insert(
+					keepOut,
+					{ `slot {id}`, { box.X - w / 2, 0, box.Z - d / 2, box.X + w / 2, h, box.Z + d / 2 } }
+				)
+			end
 		end
 		local half = Layout.ButtonSize / 2
 		for building, spots in Layout.Buttons do
@@ -237,7 +301,8 @@ describe("theme scenery", function()
 	end)
 
 	it("keeps a fully built plot within a part and light budget", function()
-		-- Every plot can be fully built at once, so this is what each costs.
+		-- Every plot can be fully built at once, on its heaviest paths, so this
+		-- is the most each costs.
 		print(`  a fully built plot has {plotParts} parts and {plotLights} lights`)
 		assert(plotParts < 1500, `a fully built plot has {plotParts} parts`)
 		assert(plotLights < 60, `a fully built plot has {plotLights} lights`)

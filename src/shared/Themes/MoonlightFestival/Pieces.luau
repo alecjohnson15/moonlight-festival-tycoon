@@ -116,6 +116,20 @@ function Pieces.bunting(parent: Instance, a: Vector3, b: Vector3, sag: number, c
 	end
 end
 
+-- A pointed pennant flying from its pole along cframe's front (-Z), with
+-- cframe at the middle of the edge that's on the pole.
+function Pieces.pennant(parent: Instance, cframe: CFrame, length: number, height: number, color: Color3)
+	local size = Vector3.new(0.08, height / 2, length)
+	Kit.wedge(parent, cframe * CFrame.new(0, height / 4, -length / 2), size, color, M.Fabric)
+	Kit.wedge(
+		parent,
+		cframe * CFrame.new(0, -height / 4, -length / 2) * CFrame.Angles(0, 0, math.pi),
+		size,
+		color,
+		M.Fabric
+	)
+end
+
 -- A ghost with hollow eyes, facing +Z. It is its own model so it can float.
 function Pieces.ghost(parent: Instance, centre: CFrame, size: number): Model
 	local model = Kit.model(parent, "Ghost")

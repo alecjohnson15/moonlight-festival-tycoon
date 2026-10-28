@@ -5,8 +5,9 @@
 -- bobbing over it. Free gates shine with a tall beacon until the player has
 -- a haunt.
 --
--- It also shows the notes the server sends through the Notice remote, such
--- as a pad that needs more coins, and the preview of a path pad stepped on
+-- It also shows the notes the server sends through the Notice remote: a pad
+-- that needs more coins, and how much more a second each purchase earns,
+-- rising off what it built. And it shows the preview of a path pad stepped on
 -- once: what the path does, what it adds per second, what it locks, and a
 -- see-through model of what it builds. Everything here is drawn on this
 -- client only, from attributes the server publishes; the server decides
@@ -44,6 +45,7 @@ local IDLE_SECONDS = 40
 -- Close enough to the goal that the beam isn't needed.
 local NEAR_GOAL = 9
 local NOTE_SECONDS = 3.5
+local GAIN_SECONDS = 2.2
 local GOAL_STEP = 0.2
 local BEACON_HEIGHT = 70
 
@@ -345,6 +347,44 @@ local function showGoal(goal: Goal?)
 	end
 end
 
+-- "+N / sec" rising and fading over the building a purchase just added to.
+local function showGain(station: string, gain: number)
+	local plot = myPlot()
+	local built = plot and plot:FindFirstChild("Built")
+	local model = built and built:WaitForChild(station, 3)
+	local anchor = if model and model:IsA("Model")
+		then model.PrimaryPart
+		elseif model and model:IsA("BasePart") then model
+		else nil
+	if not anchor then
+		return
+	end
+	local billboard = make("BillboardGui", {
+		Name = "GainPop",
+		Adornee = anchor,
+		Size = UDim2.fromOffset(220, 50),
+		StudsOffset = Vector3.new(0, anchor.Size.Y / 2 + 2, 0),
+		AlwaysOnTop = true,
+		LightInfluence = 0,
+	}, gui)
+	local label = text(billboard, {
+		Size = UDim2.fromScale(1, 1),
+		Font = FONT,
+		TextColor3 = BAR,
+		TextStrokeTransparency = 0.2,
+		Text = Strings.UpgradeGain:format(Format.rate(gain)),
+	})
+	local info = TweenInfo.new(GAIN_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(billboard, info, { StudsOffset = billboard.StudsOffset + Vector3.new(0, 5, 0) }):Play()
+	TweenService:Create(label, TweenInfo.new(GAIN_SECONDS, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		TextTransparency = 1,
+		TextStrokeTransparency = 1,
+	}):Play()
+	task.delay(GAIN_SECONDS, function()
+		billboard:Destroy()
+	end)
+end
+
 local function showNote(title: string, body: string, color: Color3?)
 	noteTitle.Text = title
 	noteTitle.TextColor3 = color or GOLD
@@ -366,8 +406,11 @@ local function hologram(plot: BasePart, pad: BasePart, color: Color3): Model?
 	if not builder or not slot then
 		return nil
 	end
-	local origin = plot.CFrame * CFrame.new(slot.X, plot.Size.Y / 2, slot.Z)
-	local model = builder(origin, Vector3.new(slot.Size[1], slot.Size[2], slot.Size[3]))
+	local function onFloor(box): CFrame
+		return plot.CFrame * CFrame.new(box.X, plot.Size.Y / 2, box.Z)
+	end
+	local size = Vector3.new(slot.Size[1], slot.Size[2], slot.Size[3])
+	local model = builder(onFloor(slot), size, slot.Yard and onFloor(slot.Yard))
 	-- Only to look at: nothing to bump into or step on, and no tags, so
 	-- nothing animates it.
 	local function untag(instance: Instance)
@@ -554,6 +597,8 @@ function Guide.mount()
 			local name = if themed then themed.DisplayName else ""
 			showNote(Strings.ShortCoins:format(Format.whole(message.Need or 0), name), Strings.ShortHint, WARN)
 			Sounds.play("Deny")
+		elseif message.Kind == "Built" and type(message.Station) == "string" and (message.Gain or 0) > 0 then
+			task.spawn(showGain, message.Station, message.Gain)
 		end
 	end)
 	RunService.RenderStepped:Connect(onRenderStep)
