@@ -30,6 +30,8 @@ export type Site = {
 	Plots: { BasePart },
 	Plaza: BasePart?,
 	Spawns: { BasePart },
+	-- The PvP arena's round stage, which the theme's Arena module dresses.
+	Arena: BasePart?,
 }
 
 local Scenery = {}
@@ -255,6 +257,12 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	for _, spawn in site.Spawns do
 		local position = spawn.CFrame.Position
 		table.insert(boxes, { position.X, position.Z, 6, 6 })
+	end
+	-- Keeps the woods off the arena, its braziers, and the ramp and open
+	-- ground in front of its entrance (towards -Z).
+	if site.Arena then
+		local position, radius = site.Arena.CFrame.Position, site.Arena.Size.Z / 2
+		table.insert(boxes, { position.X, position.Z - 8, radius + 12, radius + 20 })
 	end
 	-- The terrain's top is at y = 0; things on the plaza stand on its top.
 	local plazaTop = if plaza then plaza.CFrame.Position.Y + plaza.Size.Y / 2 else 0

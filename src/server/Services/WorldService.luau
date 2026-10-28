@@ -1,7 +1,8 @@
 -- The night the game is set in. Applies the theme's lighting, haze, sky and
--- colour grading, paints the terrain, and dresses the plots, the plaza and the
--- land around them with the theme's scenery. Runs after PlotService, so the
--- plots exist. Changes made on the server replicate to every client.
+-- colour grading, paints the terrain, and dresses the plots, the plaza, the
+-- arena and the land around them with the theme's scenery. Runs after
+-- PlotService and ArenaService, so the plots and the arena's stage exist.
+-- Changes made on the server replicate to every client.
 --
 -- A place that already has a Workspace.Scenery folder keeps its own scenery
 -- and terrain, and only gets the lighting.
@@ -90,6 +91,8 @@ function WorldService.init()
 		end
 	end
 	local plaza = Workspace:FindFirstChild("Plaza")
+	local arena = Workspace:FindFirstChild("Arena")
+	local stage = arena and arena:FindFirstChild("Stage")
 
 	-- The terrain replaces the flat baseplate a new place starts with.
 	local baseplate = Workspace:FindFirstChild("Baseplate")
@@ -106,7 +109,11 @@ function WorldService.init()
 		Plots = plots,
 		Plaza = if plaza and plaza:IsA("BasePart") then plaza else nil,
 		Spawns = spawns,
+		Arena = if stage and stage:IsA("BasePart") then stage else nil,
 	}, scenery)
+	if stage and stage:IsA("BasePart") then
+		Theme.Arena.dress(stage, scenery)
+	end
 	paintTerrain(Theme.Look, fills)
 	scenery.Parent = Workspace
 end

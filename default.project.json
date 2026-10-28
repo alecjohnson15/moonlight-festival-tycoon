@@ -10,6 +10,12 @@
         "$className": "Folder",
         "RequestPurchase": {
           "$className": "RemoteEvent"
+        },
+        "ArenaAction": {
+          "$className": "RemoteEvent"
+        },
+        "ArenaEffect": {
+          "$className": "RemoteEvent"
         }
       }
     },

@@ -11,6 +11,7 @@ export type Save = {
 	Cosmetics: { [string]: boolean },
 	Receipts: { Ids: { [string]: number }, Order: { string } },
 	Stats: { ServeCount: number },
+	Arena: { KOs: number },
 }
 
 type Step = (data: any) -> ()
@@ -31,6 +32,7 @@ local function template(): Save
 		Cosmetics = {},
 		Receipts = { Ids = {}, Order = {} },
 		Stats = { ServeCount = 0 },
+		Arena = { KOs = 0 },
 	}
 end
 

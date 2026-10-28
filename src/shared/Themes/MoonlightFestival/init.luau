@@ -37,6 +37,22 @@ return {
 		-- Hover text on the music button in the corner of the screen.
 		MusicOn = "Music on",
 		MusicOff = "Music off",
+
+		-- The PvP arena. ArenaKOs is the leaderboard column counting each
+		-- player's knockouts.
+		ArenaSign = "BONK ARENA",
+		ArenaRules = "Walk in to fight. Walk out to be safe.",
+		ArenaKOs = "KOs",
+		ArenaBonker = "Pumpkin Bonker",
+		ArenaBonkerTip = "Lent to you while you're in the arena",
+		ArenaEquip = "Hold your weapon to fight",
+		ArenaEntered = "You're in the Bonk Arena! Anyone in here can bonk you.",
+		ArenaLeft = "You left the arena. You're safe out here.",
+		ArenaSpecialKey = "E",
+		ArenaKnockedOutBy = "%s bonked you out! Walk back in for a rematch.",
+		ArenaYouKnockedOut = "You bonked out %s!",
+		ArenaStreak = "%d in a row!",
+		ArenaReady = "Ready!",
 	},
 
 	-- The goods in the production chain, named as a plural for rate labels.

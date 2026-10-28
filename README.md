@@ -13,7 +13,8 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 - **Plot activity:** pumpkins, pies and toffee apples travel along the chain, and visitors in Halloween costume (sheet ghosts, pumpkin kids, skeletons, witches and mummies) hop or float to the stall and the attractions. Rides on your own plot show a countdown and each round's takings. All of this is drawn on each client and changes nothing.
 - **The look:** a haunted night under a huge moon, in thick coloured fog. Every upgrade is a model built from parts in code: a treat stall with a shelf of glowing potions, a misty pumpkin patch with a scarecrow, a witch's cottage with green windows and a smoking chimney, a bubbling cauldron, a hedge maze with a hooded reaper statue, a giant grinning pumpkin with bats circling it, and a ghost train looping through a haunted house. Each build is washed in red, green or purple light. Plots have fences, lantern posts lit in the plot's own colour, string lights, an arch over the gate, gravestones, skeletons and cobwebs. Around them are dead woods, a graveyard with a crypt, a bonfire, a pond with floating lanterns, a windmill and drifting mist. Ghosts and the pumpkin float, the train runs round its track, bats circle and lights flicker, all moved on each client.
 - **HUD and sound:** a cash counter with a moon coin that counts up and pops "+N" as you earn (the Coins leaderstat stays), income and visitors per second, and a music button. The theme has slots for two songs that play in turn, an eerie ambience and sounds for claiming, buying, building and ride payouts. The songs are original upbeat Halloween instrumentals with a pop shape: "Moonlit Mischief" (a theremin hook in A minor, 124 bpm) and "Haunted Arcade" (an arcade lead and harpsichord in D minor, 116 bpm). The original audio is in `assets/audio` and plays once it is uploaded (see Getting started).
-- **Rating:** spooky rather than gory, aimed at Roblox's **Mild** maturity label (mild fear) for players aged 9 to 12: dark, foggy lighting, ghosts, skeletons, gravestones and a reaper statue, with no blood, gore or violence. Answer the Maturity & Compliance questionnaire to match before publishing.
+- **PvP arena:** a raised round stage past the bonfire, through the gateway at the back of the plaza. Fighting is opt-in: walking onto the stage makes you a fighter, walking off makes you safe, and nobody outside can hit or be hit. Anyone who walks in empty-handed is lent a Pumpkin Bonker, and a weapon from the cosmetics (a Tool with a `Weapon` attribute) is used instead when you have one. Click to swing, and press **E** (gamepad X, or the on-screen button) for your weapon's special move: a ground slam, a charge, a whirl or a flying wave, each drawn with its own effects. The server decides every hit. Knocking someone out throws them out of the ring dizzy (nobody dies, and no coins change hands) and scores a KO, saved and shown on the leaderboard. Weapons and their balance are in `Config/Weapons.luau`, and the design is in [docs/arena.md](docs/arena.md).
+- **Rating:** spooky rather than gory, aimed at Roblox's **Mild** maturity label for players aged 9 to 12: dark, foggy lighting, ghosts, skeletons, gravestones and a reaper statue (mild fear), and cartoon bonks in the opt-in arena (repeated mild violence, with knockback and dizzy stars but no blood or gore). Answer the Maturity & Compliance questionnaire to match before publishing.
 - **Saves:** session-locked DataStore saves with a versioned schema, autosave every 60 seconds, and a final save on leave and on shutdown.
 - **Purchases:** cosmetics only. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice.
 - **Theme packs:** every player-facing name, colour, sound and model lives in a theme pack under `src/shared/Themes/`. Swapping themes is a new pack folder plus one line in `Config/Theme.luau`.
@@ -26,6 +27,8 @@ src/
       Layout.luau         plot size, gate, buy buttons and build slots
       Catalog.luau        Robux cosmetics (ids are 0 until set up)
       Theme.luau          picks the active theme pack
+      Arena.luau          the arena's size, place and rules of a fight
+      Weapons.luau        every arena weapon's stats and special move
     Themes/
       MoonlightFestival/
         init.luau         names, colours, the night's look, sounds
@@ -33,14 +36,16 @@ src/
         Scenery.luau      plot dressing and the land around the plots
         Crowd.luau        visitors in costume and the goods on the move
         Pieces.luau       pumpkins, lanterns, ghosts, fences and the rest
+        Arena.luau        the arena's dressing, the bonker, special moves' looks
     Kit.luau              helpers for building models from parts
     Progression.luau      what can be bought, when (pure)
     Earnings.luau         production chain, visitors, attractions (pure)
+    Combat.luau           who an arena hit reaches, and how it throws
     Format.luau           number formatting for labels
   server/                 ServerScriptService.Server
     init.server.luau      starts services in order
     Services/             DataService, EconomyService, PlotService,
-                          WorldService, ProductionService,
+                          ArenaService, WorldService, ProductionService,
                           AttractionService, UpgradeService,
                           PurchaseService
     Lib/                  Migrations, SessionLock, ReceiptLedger,
@@ -51,12 +56,15 @@ src/
     Motion.luau           floating, spinning, the ghost train, flicker
     BuildEffects.luau     the build-up when something is bought
     Sounds.luau           music, ambience and sound effects
+    Arena.luau            the arena panel, special move button, knockback
+    ArenaEffects.luau     hit sparks, knockouts and special move effects
 tests/                    Lune tests, including the theme's models
 tools/make_sounds.py      makes the original audio in assets/audio
+tools/make_arena_sounds.py  makes the arena's sounds in assets/audio
 docs/rights-register.md   every external asset and dependency
 ```
 
-The one remote, `RequestPurchase` for the cosmetic shop, is declared in `default.project.json`. Gates and buy buttons use touches, which the server sees directly.
+The remotes are declared in `default.project.json`: `RequestPurchase` for the cosmetic shop, `ArenaAction` for a fighter's special move, and `ArenaEffect` for the server to tell clients what to draw. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
 
 ## Getting started
 
@@ -65,7 +73,8 @@ The one remote, `RequestPurchase` for the cosmetic shop, is declared in `default
 3. Run `rojo serve`, open a new Baseplate place in Studio (or delete the baseplate) and connect from the Rojo plugin.
 4. In Game Settings, set **Max Players** to 6 to match `Layout.PlotCount`, and turn on **Security > Enable Studio Access to API Services** if you want saves to work in Studio. Without it, progress lives in memory for that session and the output says so.
 5. Press Play, walk off the plaza into a plot's gate to claim it, then step on the glowing **Creepy Treat Stall** pad.
-6. Optional, for sound: upload the seven files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau` as `"rbxassetid://<id>"`. Until then the game is silent and the music button stays hidden.
+6. Optional, for sound: upload the files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it as `"rbxassetid://<id>"` into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau`, or for the four `arena_*` files, into `Sounds` in `Themes/MoonlightFestival/Arena.luau`. Until then the game is silent and the music button stays hidden.
+7. To try the arena, walk through the gateway behind the spawn, past the bonfire and up the ramp. With **Test > Clients and Servers** set to 2 players you can fight yourself.
 
 ## Checks
 
@@ -87,8 +96,9 @@ A fully built plot is about 1,200 parts and 43 lights, and the land around the p
 - **Swap the theme:** copy the `Themes/MoonlightFestival` folder, change its names, colours, look, sounds, models and scenery, and point `Config/Theme.luau` at the new folder. An artist's model can replace a built one: put it in `ReplicatedStorage.Assets` and name it in the upgrade's `Model` field. An upgrade with neither stays a greybox block.
 - **Change the sounds:** edit `tools/make_sounds.py` and run it (Python 3 with numpy, and ffmpeg), then upload the new files and update the ids.
 - **Change the save shape:** bump `Migrations.CURRENT_VERSION` and append a step. Never edit a step that has shipped.
+- **Tune the arena:** fight rules (health, shield time, knockout time, knockback lift) are in `Config/Arena.luau`; weapon styles, tiers, special moves and the premium edge are in `Config/Weapons.luau`, and the tests fail if a paid weapon gets more than a slight edge. To add a weapon, add it to `Roster` there and give its special a look in the theme's `Arena.luau`.
 - **Sell a cosmetic:** fill in its id in `Config/Catalog.luau` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
 
 ## Not built yet
 
-The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
+The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Arena weapons swing with Roblox's built-in tool slash animation until custom animations are uploaded. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
