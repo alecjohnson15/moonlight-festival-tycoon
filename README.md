@@ -15,7 +15,10 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 - **HUD and sound:** a cash counter with a moon coin that counts up and pops "+N" as you earn (the Coins leaderstat stays), income and visitors per second, and a music button. The theme has slots for two songs that play in turn, an eerie ambience and sounds for claiming, buying, building and ride payouts. The songs are original upbeat Halloween instrumentals with a pop shape: "Moonlit Mischief" (a theremin hook in A minor, 124 bpm) and "Haunted Arcade" (an arcade lead and harpsichord in D minor, 116 bpm). The original audio is in `assets/audio` and plays once it is uploaded (see Getting started).
 - **Rating:** spooky rather than gory, aimed at Roblox's **Mild** maturity label (mild fear) for players aged 9 to 12: dark, foggy lighting, ghosts, skeletons, gravestones and a reaper statue, with no blood, gore or violence. Answer the Maturity & Compliance questionnaire to match before publishing.
 - **Saves:** session-locked DataStore saves with a versioned schema, autosave every 60 seconds, and a final save on leave and on shutdown.
-- **Purchases:** cosmetics only. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice.
+- **Flex items:** almost every upgrade unlocks something to wear, hold or have follow you: a Trick-or-Treat Lantern for the first stall, then a Witch's Cape, a Pumpkin Head, the Big Wooden Mallet, an Ember Trail, a Witch's Broom, a Pumpkling pet, Werewolf Claws, a Phantom Aura and, for building everything, the Crescent Moon Blade. A new item goes straight on if its slot is empty, a note pops up, and everyone on the server sees it. There are six slots (head, back, held, pet, aura, trail), one item each, and the choice is saved.
+- **Wardrobe:** a button on the left (shown once you've earned your first item) opens a panel with a turning preview of every item, in four tabs: Earned, Deluxe, Brainrot Buddies and Legendary. Earned items say what to build to unlock them; paid ones show their price and exactly what they are.
+- **Held items and weapons:** the held item is a Roblox Tool in your hotbar. Weapons swing with the built-in Slash or Lunge tool animation when clicked, and every player hears a thump or whoosh and sees a dust puff where it lands. Each weapon carries a `Weapon` attribute that the PvP arena reads its stats from (`Config/Weapons.luau`).
+- **Purchases:** direct game-pass purchases with the contents stated up front, and no loot boxes, rerolls, timers or repeat prompts. Deluxe looks (a Moonstone Mallet that swings exactly like the wooden one, Neon Bat Wings, a Ghostfire Crown, an aura and a trail) and Brainrot Buddies (four original nonsense pets: Pipistrello Pizzetta, Fantasmino Gelatino, Candelino Wobblino and Zucchino Zombino) are looks only. The five Legendary weapons (Storm-Stone Hammer, Ghostlight Blade, Reaper's Scythe, Drowned Trident, Foxfire Fan) are a little stronger than the best earned weapon in the PvP arena only; that was the project owner's call, and their edge lives in `Config/Weapons.luau`. Nothing paid changes coins or income. The server opens prompts, a developer product is confirmed only after its grant is saved, and a ledger in the save stops a retried receipt granting twice. In Studio, every paid item counts as owned so it can be tried on; live servers never do this.
 - **Theme packs:** every player-facing name, colour, sound and model lives in a theme pack under `src/shared/Themes/`. Swapping themes is a new pack folder plus one line in `Config/Theme.luau`.
 
 ```
@@ -24,6 +27,7 @@ src/
     Config/
       Balance.luau        upgrade costs, income, goods and visitors
       Layout.luau         plot size, gate, buy buttons and build slots
+      Cosmetics.luau      everything players can wear, and how it unlocks
       Catalog.luau        Robux cosmetics (ids are 0 until set up)
       Theme.luau          picks the active theme pack
     Themes/
@@ -32,17 +36,19 @@ src/
         Props.luau        a model for each upgrade
         Scenery.luau      plot dressing and the land around the plots
         Crowd.luau        visitors in costume and the goods on the move
+        Wearables.luau    a model or effect for each cosmetic
         Pieces.luau       pumpkins, lanterns, ghosts, fences and the rest
     Kit.luau              helpers for building models from parts
     Progression.luau      what can be bought, when (pure)
     Earnings.luau         production chain, visitors, attractions (pure)
+    Wardrobe.luau         who owns which cosmetic, what goes where (pure)
     Format.luau           number formatting for labels
   server/                 ServerScriptService.Server
     init.server.luau      starts services in order
     Services/             DataService, EconomyService, PlotService,
                           WorldService, ProductionService,
                           AttractionService, UpgradeService,
-                          PurchaseService
+                          PurchaseService, CosmeticService
     Lib/                  Migrations, SessionLock, ReceiptLedger,
                           RateLimiter (pure)
   client/                 StarterPlayerScripts.Client
@@ -51,12 +57,15 @@ src/
     Motion.luau           floating, spinning, the ghost train, flicker
     BuildEffects.luau     the build-up when something is bought
     Sounds.luau           music, ambience and sound effects
+    Wardrobe.luau         the wardrobe panel and unlock notes
+    Pets.luau             every player's pet, following them
+    Swing.luau            the thump and dust when a weapon lands
 tests/                    Lune tests, including the theme's models
 tools/make_sounds.py      makes the original audio in assets/audio
 docs/rights-register.md   every external asset and dependency
 ```
 
-The one remote, `RequestPurchase` for the cosmetic shop, is declared in `default.project.json`. Gates and buy buttons use touches, which the server sees directly.
+The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item) and `CosmeticSwung` (the server telling clients a weapon swung). A client only names what it wants; the server checks it. Gates and buy buttons use touches, which the server sees directly.
 
 ## Getting started
 
@@ -65,7 +74,7 @@ The one remote, `RequestPurchase` for the cosmetic shop, is declared in `default
 3. Run `rojo serve`, open a new Baseplate place in Studio (or delete the baseplate) and connect from the Rojo plugin.
 4. In Game Settings, set **Max Players** to 6 to match `Layout.PlotCount`, and turn on **Security > Enable Studio Access to API Services** if you want saves to work in Studio. Without it, progress lives in memory for that session and the output says so.
 5. Press Play, walk off the plaza into a plot's gate to claim it, then step on the glowing **Creepy Treat Stall** pad.
-6. Optional, for sound: upload the seven files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau` as `"rbxassetid://<id>"`. Until then the game is silent and the music button stays hidden.
+6. Optional, for sound: upload the nine files in `assets/audio` (Studio: **Window > Asset Manager**, then **Bulk Import**). Right-click each upload, choose **Copy Asset ID**, and paste it into `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau` as `"rbxassetid://<id>"`. Until then the game is silent and the music button stays hidden.
 
 ## Checks
 
@@ -87,8 +96,9 @@ A fully built plot is about 1,200 parts and 43 lights, and the land around the p
 - **Swap the theme:** copy the `Themes/MoonlightFestival` folder, change its names, colours, look, sounds, models and scenery, and point `Config/Theme.luau` at the new folder. An artist's model can replace a built one: put it in `ReplicatedStorage.Assets` and name it in the upgrade's `Model` field. An upgrade with neither stays a greybox block.
 - **Change the sounds:** edit `tools/make_sounds.py` and run it (Python 3 with numpy, and ffmpeg), then upload the new files and update the ids.
 - **Change the save shape:** bump `Migrations.CURRENT_VERSION` and append a step. Never edit a step that has shipped.
-- **Sell a cosmetic:** fill in its id in `Config/Catalog.luau` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
+- **Add a cosmetic:** add it to `Config/Cosmetics.luau` with its slot, line and unlock (or `Premium = true` and a matching `Config/Catalog.luau` entry), name it in the theme pack's `Cosmetics`, and give it a look in `Wearables.luau`. The tests check each item fits the body, can't touch or collide, and that every paid look of a weapon fights like an earned one.
+- **Sell a cosmetic:** create a game pass on the Roblox website for each item in `Config/Catalog.luau` (`SuggestedRobux` is a starting price), and paste its id into `PassId` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
 
 ## Not built yet
 
-The cosmetic shop UI, the tutorial, and uploaded art: every model is built from parts in code until an artist's models replace them. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
+The tutorial, emotes and plot decorations for the shop, and uploaded art: every model is built from parts in code until an artist's models replace them. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
