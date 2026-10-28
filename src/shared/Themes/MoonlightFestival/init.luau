@@ -17,6 +17,8 @@ return {
 	Strings = {
 		PlotOwner = "%s's Haunt",
 		ClaimGate = "Touch to claim",
+		-- The arrows by the spawn, pointing along the plaza to the plots.
+		ClaimSign = "Claim a haunt",
 		ClaimHint = "Walk into a free gate to claim your haunted festival",
 		Coins = "Coins",
 		IncomePerSecond = "+%d / sec",
@@ -229,6 +231,8 @@ return {
 		Candle = "#FFD27A",
 		Glow = "#FFA43D",
 		Moon = "#CFE0FF",
+		-- The festival's landmark is lit in this, and nothing else is.
+		Moonlight = "#FFE9A8",
 		Ghost = "#EEF3FF",
 		Eye = "#1E1A2B",
 		Water = "#7FD3FF",

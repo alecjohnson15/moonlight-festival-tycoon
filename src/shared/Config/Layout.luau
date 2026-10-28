@@ -6,10 +6,28 @@
 -- The plot's front (+Z) faces the plaza. The production chain runs down the
 -- left side towards the stall at the front, and attractions fill the right.
 
+local PLOT_COUNT = 6
+local PLOT_SPACING = 120
+-- Extra room between the middle two plots for the arrival courtyard, which
+-- players see straight ahead when they spawn on the plaza.
+local COURTYARD_GAP = 36
+
+-- The X of plot index's centre. The plots stand in a row along the plaza,
+-- centred on X = 0, with the courtyard's extra room in the middle of the row.
+local function plotX(index: number): number
+	local x = (index - (PLOT_COUNT + 1) / 2) * PLOT_SPACING
+	return x + math.sign(x) * COURTYARD_GAP / 2
+end
+
 return {
-	PlotCount = 6,
+	PlotCount = PLOT_COUNT,
 	PlotSize = 96,
-	PlotSpacing = 120,
+	PlotSpacing = PLOT_SPACING,
+	CourtyardGap = COURTYARD_GAP,
+	plotX = plotX,
+	-- The plaza runs along the front of the row, end to end.
+	PlazaWidth = PLOT_COUNT * PLOT_SPACING + COURTYARD_GAP,
+	PlazaDepth = 40,
 
 	-- Where a player stands after being moved to their plot.
 	ArrivalOffset = { X = 0, Z = 40 },

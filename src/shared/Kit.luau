@@ -137,6 +137,14 @@ function Kit.log(
 	return part
 end
 
+-- A CFrame at from, looking at to. A straight up or down look turns about X
+-- instead of Y, so it has a direction everywhere, in Roblox and in tests.
+function Kit.facing(from: Vector3, to: Vector3): CFrame
+	local direction = to - from
+	local up = if math.abs(direction.Unit.Y) > 0.999 then Vector3.xAxis else Vector3.yAxis
+	return CFrame.lookAt(from, to, up)
+end
+
 -- A block running from a to b, such as a rail or a hedge.
 function Kit.span(
 	parent: Instance,
@@ -148,7 +156,7 @@ function Kit.span(
 	material: Enum.Material?
 ): Part
 	local length = (b - a).Magnitude
-	return decor("Part", parent, CFrame.lookAt((a + b) / 2, b), Vector3.new(width, height, length), color, material)
+	return decor("Part", parent, Kit.facing((a + b) / 2, b), Vector3.new(width, height, length), color, material)
 end
 
 -- A glowing part. Neon blooms at night, so it reads as a light on its own.
@@ -191,8 +199,7 @@ function Kit.wash(
 	range: number,
 	brightness: number
 ): SpotLight
-	local fixture =
-		decor("Part", parent, CFrame.lookAt(from, to), Vector3.new(0.5, 0.5, 0.6), Color3.fromRGB(30, 28, 36))
+	local fixture = decor("Part", parent, Kit.facing(from, to), Vector3.new(0.5, 0.5, 0.6), Color3.fromRGB(30, 28, 36))
 	fixture.Name = "Wash"
 	local light = Instance.new("SpotLight")
 	light.Face = Enum.NormalId.Front

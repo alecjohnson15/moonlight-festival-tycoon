@@ -4,6 +4,7 @@
 
 local TestKit = require("./TestKit")
 local Loader = require("./RobloxLoader")
+local Map = require("./Map")
 local Arena = require("../src/shared/Config/Arena")
 local Cosmetics = require("../src/shared/Config/Cosmetics")
 local Layout = require("../src/shared/Config/Layout")
@@ -279,18 +280,9 @@ describe("arena look", function()
 	end)
 
 	it("keeps the woods out of the arena and the ground in front of it", function()
-		local plots = {}
-		for i = 1, Layout.PlotCount do
-			local plot = Instance.new("Part")
-			plot.Size = Vector3.new(Layout.PlotSize, 1, Layout.PlotSize)
-			plot.CFrame = CFrame.new((i - (Layout.PlotCount + 1) / 2) * Layout.PlotSpacing, 0, 0)
-			table.insert(plots, plot)
-		end
-		local plaza = Instance.new("Part")
-		plaza.Size = Vector3.new(Layout.PlotCount * Layout.PlotSpacing, 1, 40)
-		plaza.CFrame = CFrame.new(0, 0, Layout.PlotSize / 2 + 20)
+		local map = Map.build()
 		local folder = Instance.new("Folder")
-		Scenery.world({ Plots = plots, Plaza = plaza, Spawns = {}, Arena = makeStage() }, folder)
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = {}, Arena = makeStage() }, folder)
 		local front = CENTRE.Z - Arena.Radius - Arena.RampLength - Arena.ExitDistance - 2
 		for _, part in partsIn(folder) do
 			local at = part.CFrame.Position

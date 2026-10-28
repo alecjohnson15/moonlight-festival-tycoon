@@ -194,12 +194,15 @@ end
 -- A fence of posts and two rails from a to b, both on the ground.
 function Pieces.fence(parent: Instance, a: Vector3, b: Vector3, height: number)
 	local count = math.max(1, math.floor((b - a).Magnitude / 4 + 0.5))
+	-- Every post faces along the fence. (Facing each post at b would leave the
+	-- last one, which stands on b, with no direction to face.)
+	local along = CFrame.lookAt(a, b).Rotation
 	for i = 0, count do
 		local point = a:Lerp(b, i / count)
 		Kit.solid(
 			Kit.block(
 				parent,
-				CFrame.lookAt(point, b) + Vector3.new(0, height / 2, 0),
+				CFrame.new(point + Vector3.new(0, height / 2, 0)) * along,
 				Vector3.new(0.4, height, 0.4),
 				P.Wood,
 				M.WoodPlanks
@@ -488,6 +491,22 @@ function Pieces.mist(parent: Instance, cframe: CFrame, size: Vector2, rate: numb
 		RotSpeed = NumberRange.new(-6, 6),
 		LightInfluence = 1,
 	})
+end
+
+-- A signpost on base with a board of text facing +Z and a glowing arrow on
+-- its end, pointing along +X, or -X when pointing is -1.
+function Pieces.arrowSign(parent: Instance, base: CFrame, text: string, color: Color3, pointing: number)
+	Kit.solid(Kit.post(parent, base * CFrame.new(0, 2.1, 0), 4.2, 0.45, P.DarkWood, M.Wood))
+	local width = 7
+	local board = base * CFrame.new(pointing * 1.5, 4, 0)
+	Pieces.sign(parent, board, Vector2.new(width, 1.6), text, color)
+	local tip = board * CFrame.new(pointing * (width / 2 + 1.3), 0, 0)
+	for side = -1, 1, 2 do
+		local bar = tip
+			* CFrame.new(-pointing * 0.35, side * 0.35, 0)
+			* CFrame.Angles(0, 0, -side * pointing * math.pi / 4)
+		Kit.glow(parent, bar, Vector3.new(1.2, 0.3, 0.3), color)
+	end
 end
 
 -- A sign board with text on its front (+Z).

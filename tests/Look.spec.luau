@@ -5,6 +5,7 @@
 
 local TestKit = require("./TestKit")
 local Loader = require("./RobloxLoader")
+local Map = require("./Map")
 local Balance = require("../src/shared/Config/Balance")
 local Layout = require("../src/shared/Config/Layout")
 local Progression = require("../src/shared/Progression")
@@ -56,6 +57,23 @@ local function boxIn(part: any, frame: any): (any, any)
 	return lo, hi
 end
 
+-- Whether every number in a part's CFrame is a number. A CFrame turned to
+-- look at its own position has none, and the part vanishes in Roblox.
+local function finite(part: any): boolean
+	for _, value in { part.CFrame:GetComponents() } do
+		if value ~= value or math.abs(value) == math.huge then
+			return false
+		end
+	end
+	return true
+end
+
+local function assertFinite(root: any, label: string)
+	for _, part in partsIn(root) do
+		assert(finite(part), `{label}: a {part.ClassName} near {part.CFrame.Position} has no proper direction`)
+	end
+end
+
 -- Whether a box overlaps a region given as { minX, minY, minZ, maxX, maxY, maxZ }.
 local function overlaps(lo: { number }, hi: { number }, region: { number }): boolean
 	for axis = 1, 3 do
@@ -87,6 +105,7 @@ end
 -- Checks every visible part of a build stays inside the slot's footprint, on
 -- or above the floor and not far above the slot.
 local function assertInside(model: any, origin: any, size: any, label: string)
+	assertFinite(model, label)
 	for _, part in partsIn(model) do
 		assert(part.Anchored, `{label}: {part.Name} is not anchored`)
 		local lo, hi = boxIn(part, origin)
@@ -167,18 +186,11 @@ describe("theme props", function()
 end)
 
 describe("theme scenery", function()
-	local function makePlot(cframe: any): any
-		local plot = Instance.new("Part")
-		plot.Name = "Plot1"
-		plot.Size = Vector3.new(Layout.PlotSize, 1, Layout.PlotSize)
-		plot.CFrame = cframe
-		return plot
-	end
-
 	it("dresses a plot without touching its slots, buttons, gate or walkway", function()
-		local plot = makePlot(PLOT_CFRAME)
+		local plot = Map.plot(PLOT_CFRAME)
 		local model = Scenery.plot(plot, 1, Instance.new("Folder"))
 		local floor = PLOT_CFRAME * CFrame.new(0, 0.5, 0)
+		assertFinite(model, "plot dressing")
 
 		local keepOut: { { any } } = {}
 		for id, slot in Layout.Slots do
@@ -233,22 +245,14 @@ describe("theme scenery", function()
 
 	it("dresses the world around the plots without building on them", function()
 		-- The same map PlotService generates.
-		local plots = {}
-		local count, spacing = Layout.PlotCount, Layout.PlotSpacing
-		for i = 1, count do
-			table.insert(plots, makePlot(CFrame.new((i - (count + 1) / 2) * spacing, 0, 0)))
-		end
-		local plaza = Instance.new("Part")
-		plaza.Size = Vector3.new(count * spacing, 1, 40)
-		plaza.CFrame = CFrame.new(0, 0, Layout.PlotSize / 2 + 20)
-		local spawn = Instance.new("SpawnLocation")
-		spawn.Size = Vector3.new(8, 1, 8)
-		spawn.CFrame = CFrame.new(0, 1, Layout.PlotSize / 2 + 20)
+		local map = Map.build()
+		local plots, plaza, spawn = map.Plots, map.Plaza, map.Spawn
 
 		local folder = Instance.new("Folder")
 		local fills = Scenery.world({ Plots = plots, Plaza = plaza, Spawns = { spawn } }, folder)
 		local parts = partsIn(folder)
 		print(`  the world has {#parts} parts and {lightCount(folder)} lights`)
+		assertFinite(folder, "the world")
 		assert(#parts < 9000, `the world has {#parts} parts`)
 
 		local half = Layout.PlotSize / 2
@@ -280,6 +284,9 @@ describe("theme scenery", function()
 		-- so the last fills clear the ground under every plot and the plaza.
 		local floors = table.clone(plots)
 		table.insert(floors, plaza)
+		local courtyardFloor = folder:FindFirstChild("CourtyardFloor", true)
+		assert(courtyardFloor, "the courtyard has no floor")
+		table.insert(floors, courtyardFloor)
 		for _, floor in floors do
 			local cleared = false
 			for index, fill in fills do
@@ -302,6 +309,79 @@ describe("theme scenery", function()
 				end
 			end
 			assert(cleared, `the ground under {floor.Name} is not cleared`)
+		end
+	end)
+
+	-- Whether the segment from a to b passes through a part's box.
+	local function crosses(part: any, a: any, b: any): boolean
+		local half = part.Size / 2
+		local from, to = part.CFrame:PointToObjectSpace(a), part.CFrame:PointToObjectSpace(b)
+		local enter, leave = 0, 1
+		for _, axis in { "X", "Y", "Z" } do
+			local start, delta, extent = from[axis], to[axis] - from[axis], half[axis]
+			if math.abs(delta) < 1e-9 then
+				if math.abs(start) > extent then
+					return false
+				end
+			else
+				local near, far = (-extent - start) / delta, (extent - start) / delta
+				if near > far then
+					near, far = far, near
+				end
+				enter, leave = math.max(enter, near), math.min(leave, far)
+				if enter > leave then
+					return false
+				end
+			end
+		end
+		return true
+	end
+
+	it("shows the landmark and the nearest gates from the spawn", function()
+		local map = Map.build()
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = { map.Spawn } }, folder)
+		local wheel = folder:FindFirstChild("MoonlightWheel", true)
+		assert(wheel and wheel:HasTag("Wheel"), "the courtyard has no tagged wheel")
+		local centre = wheel:GetAttribute("Centre")
+		assert(centre and wheel:GetAttribute("Radius") and wheel:GetAttribute("LapSeconds"), "the wheel can't turn")
+		local rim = wheel:FindFirstChild("Rim")
+		assert(rim and (rim.WorldPivot.Position - centre.Position).Magnitude < 0.01, "the rim doesn't turn on the hub")
+		local seats = 0
+		for _, child in wheel:GetChildren() do
+			if child:GetAttribute("Seat") ~= nil then
+				seats += 1
+			end
+		end
+		expect(seats).toBe(8)
+
+		-- The wheel stands in the gap between the middle two plots.
+		local half = Layout.PlotSize / 2
+		local left, right = Layout.plotX(Layout.PlotCount / 2) + half, Layout.plotX(Layout.PlotCount / 2 + 1) - half
+		for _, part in partsIn(wheel) do
+			local lo, hi = boxIn(part, CFrame.new())
+			assert(lo[1] > left and hi[1] < right, `the wheel reaches over a plot at x = {lo[1]} to {hi[1]}`)
+		end
+
+		-- A player's eyes on the spawn see the hub and the two nearest gates,
+		-- past anything solid to look at. The gates stand where PlotService
+		-- puts them.
+		local spawnTop = map.Spawn.CFrame.Position + Vector3.new(0, map.Spawn.Size.Y / 2, 0)
+		local eye = spawnTop + Vector3.new(0, 5, 0)
+		local targets = { { "the wheel's hub", centre.Position, wheel } }
+		for _, index in { Layout.PlotCount / 2, Layout.PlotCount / 2 + 1 } do
+			local gate = map.Plots[index].CFrame
+				* CFrame.new(Layout.Gate.X, 0.5 + Layout.Gate.Size[2] / 2, Layout.Gate.Z)
+			table.insert(targets, { `the gate of Plot{index}`, gate.Position, nil })
+		end
+		for _, target in targets do
+			for _, part in partsIn(folder) do
+				local skip = part.Transparency > 0.5 or (target[3] and part:IsDescendantOf(target[3]))
+				if not skip and crosses(part, eye, target[2]) then
+					local at = part.CFrame.Position
+					error(`a {part.ClassName} at ({at.X}, {at.Y}, {at.Z}) hides {target[1]} from the spawn`)
+				end
+			end
 		end
 	end)
 end)

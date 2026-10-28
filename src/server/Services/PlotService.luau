@@ -118,19 +118,21 @@ end
 local function buildGreyboxMap(): Folder
 	local folder = Instance.new("Folder")
 	folder.Name = "Plots"
-	local size, spacing, count = Layout.PlotSize, Layout.PlotSpacing, Layout.PlotCount
-	for i = 1, count do
-		local x = (i - (count + 1) / 2) * spacing
+	local size = Layout.PlotSize
+	for i = 1, Layout.PlotCount do
+		local x = Layout.plotX(i)
 		makePart(`Plot{i}`, Vector3.new(size, 1, size), CFrame.new(x, 0, 0), Color3.fromRGB(70, 92, 68), folder)
 	end
 	folder.Parent = Workspace
 
-	-- A walkway along the front of the plots, with the spawn in the middle.
-	local plazaDepth = 40
+	-- A walkway along the front of the plots, with the spawn in the middle,
+	-- in front of the courtyard between the middle two plots. Players spawn
+	-- facing the courtyard (-Z).
+	local plazaDepth = Layout.PlazaDepth
 	local plazaZ = size / 2 + plazaDepth / 2
 	makePart(
 		"Plaza",
-		Vector3.new(count * spacing, 1, plazaDepth),
+		Vector3.new(Layout.PlazaWidth, 1, plazaDepth),
 		CFrame.new(0, 0, plazaZ),
 		Color3.fromRGB(60, 60, 72),
 		Workspace

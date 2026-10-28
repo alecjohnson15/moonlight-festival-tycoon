@@ -8,6 +8,7 @@
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
 local Layout = require(script.Parent.Parent.Parent.Config.Layout)
+local Courtyard = require(script.Parent.Courtyard)
 local Pieces = require(script.Parent.Pieces)
 local Theme = require(script.Parent)
 
@@ -35,6 +36,9 @@ export type Site = {
 }
 
 local Scenery = {}
+
+-- A gap between plots this wide or wider is the arrival courtyard.
+local COURTYARD_MIN_WIDTH = 40
 
 -- The direction from (x, z) towards the middle, as a turn about Y.
 local function inward(x: number, z: number): number
@@ -267,7 +271,32 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	end
 	for _, spawn in site.Spawns do
 		local position = spawn.CFrame.Position
-		table.insert(boxes, { position.X, position.Z, 6, 6 })
+		table.insert(boxes, { position.X, position.Z, 14, 12 })
+		Courtyard.spawn(parent, spawn)
+	end
+
+	-- The arrival courtyard fills the widest gap in the row of plots, which
+	-- is the one straight ahead of the spawn.
+	local byX = table.clone(site.Plots)
+	table.sort(byX, function(a, b)
+		return a.CFrame.Position.X < b.CFrame.Position.X
+	end)
+	local courtyard: { Left: BasePart, Right: BasePart, Width: number }? = nil
+	for i = 1, #byX - 1 do
+		local a, b = byX[i], byX[i + 1]
+		local width = (b.CFrame.Position.X - b.Size.X / 2) - (a.CFrame.Position.X + a.Size.X / 2)
+		if width >= COURTYARD_MIN_WIDTH and (not courtyard or width > courtyard.Width) then
+			courtyard = { Left = a, Right = b, Width = width }
+		end
+	end
+	local courtyardFloor: BasePart? = nil
+	if courtyard then
+		local a, b = courtyard.Left, courtyard.Right
+		local centreX = (a.CFrame.Position.X + a.Size.X / 2 + b.CFrame.Position.X - b.Size.X / 2) / 2
+		local top = a.CFrame.Position.Y + a.Size.Y / 2
+		local size = Vector2.new(courtyard.Width - 2, a.Size.Z)
+		courtyardFloor = Courtyard.build(parent, CFrame.new(centreX, top, a.CFrame.Position.Z), size)
+		table.insert(boxes, { centreX, a.CFrame.Position.Z, courtyard.Width / 2, a.Size.Z / 2 })
 	end
 	-- Keeps the woods off the arena, its braziers, and the ramp and open
 	-- ground in front of its entrance (towards -Z).
@@ -350,7 +379,9 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		frontZ = backEdge
 	end
 
-	-- A gateway out of the plaza towards the bonfire, with the festival's name.
+	-- A gateway out of the plaza towards the bonfire and the arena, named for
+	-- the arena on the plaza side so it isn't mistaken for the way to the
+	-- plots, and for the festival on the way back.
 	local gateZ = frontZ + 4
 	for side = -1, 1, 2 do
 		Kit.solid(
@@ -358,15 +389,14 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		)
 		Pieces.jackOLantern(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 12, 0), 1.8, true)
 	end
-	for _, yaw in { 0, math.pi } do
-		Pieces.sign(
-			parent,
-			at(middleX, gateZ, yaw) * CFrame.new(0, 10.5, 0.15),
-			Vector2.new(12, 2.2),
-			Theme.Name,
-			P.Candle
-		)
-	end
+	Pieces.sign(
+		parent,
+		at(middleX, gateZ, math.pi) * CFrame.new(0, 10.5, 0.15),
+		Vector2.new(12, 2.2),
+		Theme.Strings.ArenaSign,
+		W.Orange
+	)
+	Pieces.sign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
 	Kit.block(
 		parent,
 		at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0),
@@ -538,10 +568,12 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	scatter(left + 10, minX - 12, minZ, frontZ, 18, 0.5, 14, 24)
 	scatter(maxX + 12, right - 10, minZ, frontZ, 18, 0.5, 14, 24)
 	-- Between the plots, a few trees in each gap.
-	for i = 1, #site.Plots - 1 do
-		local a, b = site.Plots[i], site.Plots[i + 1]
-		local gapX = (a.CFrame.Position.X + b.CFrame.Position.X) / 2
-		scatter(gapX, gapX, a.CFrame.Position.Z - 36, a.CFrame.Position.Z + 36, 18, 0.8, 9, 14)
+	for i = 1, #byX - 1 do
+		local a, b = byX[i], byX[i + 1]
+		if not courtyard or a ~= courtyard.Left then
+			local gapX = (a.CFrame.Position.X + b.CFrame.Position.X) / 2
+			scatter(gapX, gapX, a.CFrame.Position.Z - 36, a.CFrame.Position.Z + 36, 18, 0.8, 9, 14)
+		end
 	end
 
 	-- Mist rolling through the woods behind the plots and beyond the plaza.
@@ -554,6 +586,9 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	local floors = table.clone(site.Plots)
 	if plaza then
 		table.insert(floors, plaza)
+	end
+	if courtyardFloor then
+		table.insert(floors, courtyardFloor)
 	end
 	for _, floor in floors do
 		local top = floor.CFrame.Position.Y + floor.Size.Y / 2 + 4
