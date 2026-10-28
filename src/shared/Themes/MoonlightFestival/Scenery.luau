@@ -64,8 +64,17 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	local gate = Layout.Gate
 	local opening = gate.Size[1] / 2 + 3.5
 
-	-- A cobbled walkway from the gate down the middle, between the buttons.
-	Kit.block(model, at(-1, 0.05, -0.3), V(10, 0.1, 91.4), Kit.color(Theme.Look.Path), M.Cobblestone)
+	-- A cobbled walkway from the gate down the middle, between the buttons,
+	-- to Ghost Catcher's booth at the back.
+	local walkwayEnd = Layout.Activity.Z + Layout.Activity.Size[3] / 2
+	local walkwayStart = gate.Z - gate.Size[3] / 2 - 0.1
+	Kit.block(
+		model,
+		at(-1, 0.05, (walkwayStart + walkwayEnd) / 2),
+		V(10, 0.1, walkwayStart - walkwayEnd),
+		Kit.color(Theme.Look.Path),
+		M.Cobblestone
+	)
 
 	-- The fence, open at the gate.
 	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3)
@@ -92,8 +101,9 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		local x, z = spot[1], spot[2]
 		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, 18))
 	end
+	-- Spaced out a little, as every plot has them.
 	for i = 1, #tops - 1 do
-		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs)
+		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 3)
 	end
 
 	-- The arch over the gate: stone pillars topped with jack-o'-lanterns, a

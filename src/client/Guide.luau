@@ -1,5 +1,6 @@
 -- The guide: what to do next, always on screen. A line at the bottom of the
--- screen names the next goal, with a bar while saving up for it. Until a
+-- screen names the next goal, with a bar while saving up for it (and, for a
+-- long wait, a nudge towards Ghost Catcher). Until a
 -- player knows their way round, and whenever they could buy something but
 -- haven't for a while, a beam runs from them to the goal with an arrow
 -- bobbing over it. Free gates shine with a tall beacon until the player has
@@ -44,6 +45,8 @@ local GUIDED_PURCHASES = 6
 local IDLE_SECONDS = 40
 -- Close enough to the goal that the beam isn't needed.
 local NEAR_GOAL = 9
+-- Saving up for longer than this, the guide suggests Ghost Catcher.
+local ACTIVITY_WAIT = 20
 local NOTE_SECONDS = 3.5
 local GAIN_SECONDS = 2.2
 local GOAL_STEP = 0.2
@@ -281,6 +284,16 @@ local function nearestFreeGate(): BasePart?
 	return best
 end
 
+-- The player's Ghost Catcher booth, if its next round is ready.
+local function activityBooth(plot: BasePart): Instance?
+	local folder = plot:FindFirstChild("Activity")
+	local booth = folder and folder:FindFirstChild("Booth")
+	if not booth or booth:GetAttribute("Playing") then
+		return nil
+	end
+	return if Workspace:GetServerTimeNow() >= (booth:GetAttribute("ReadyAt") or 0) then booth else nil
+end
+
 -- Works out the next goal from what the server has published.
 local function findGoal(): Goal?
 	local plot = myPlot()
@@ -323,6 +336,22 @@ local function findGoal(): Goal?
 		}
 	end
 	local cost = pad:GetAttribute("Cost")
+	local booth = activityBooth(plot)
+	if booth then
+		-- A long wait: point them at Ghost Catcher, still showing the bar.
+		local income = player:GetAttribute("IncomePerSecond") or 0
+		local wait = if income > 0 then (cost - coins) / income else math.huge
+		if wait > ACTIVITY_WAIT then
+			local start = booth.Parent and booth.Parent:FindFirstChild("Pad")
+			return {
+				Text = Strings.GoalActivity:format(padName(pad)),
+				Progress = if cost > 0 then math.clamp(coins / cost, 0, 1) else 1,
+				ProgressText = Strings.GoalProgress:format(Format.whole(coins), Format.whole(cost)),
+				Target = if start and start:IsA("BasePart") then start.Position else nil,
+				Urgent = os.clock() - lastPurchaseAt > IDLE_SECONDS,
+			}
+		end
+	end
 	return {
 		Text = Strings.GoalSave:format(padName(pad)),
 		Progress = if cost > 0 then math.clamp(coins / cost, 0, 1) else 1,
@@ -366,7 +395,8 @@ local function showGain(station: string, gain: number)
 		StudsOffset = Vector3.new(0, anchor.Size.Y / 2 + 2, 0),
 		AlwaysOnTop = true,
 		LightInfluence = 0,
-	}, gui)
+		-- In PlayerGui itself: a billboard inside a ScreenGui isn't drawn.
+	}, gui.Parent)
 	local label = text(billboard, {
 		Size = UDim2.fromScale(1, 1),
 		Font = FONT,

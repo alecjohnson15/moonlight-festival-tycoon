@@ -44,6 +44,7 @@ return {
 		GoalPick = "Pick a path for your %s. Step on a pad to see what it does",
 		GoalConfirm = "Step off and on %s again to pick it",
 		GoalDone = "Your haunt is complete!",
+		GoalActivity = "Saving for %s. Catch ghosts at the Ghost Catcher while you wait",
 		Welcome = "Welcome to your haunt!",
 		WelcomeHint = "Your festival starts here. Step on the glowing pad",
 		ShortCoins = "Need %s more coins for %s",
@@ -51,6 +52,15 @@ return {
 		PathLocks = "Locks for good: %s",
 		PathGain = "%s now",
 		PathConfirm = "Step off, then on again, to pick it",
+		ActivityName = "Ghost Catcher",
+		ActivityReady = "Step on the pad to play!",
+		ActivityWait = "Next round in %ds",
+		ActivityPlaying = "Catch the wisps!",
+		ActivityCount = "%d / %d caught",
+		ActivityResult = "Caught %d of %d",
+		ActivityEarned = "+%s coins",
+		ActivityPerfect = "Perfect round!",
+		ActivityBest = "Best: %d",
 
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
@@ -366,6 +376,10 @@ return {
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
 		Thump = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/action_jump_land.mp3" },
 		Whoosh = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
+		-- Ghost Catcher: a round starting, a wisp caught and a round over.
+		RoundStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Catch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		RoundEnd = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

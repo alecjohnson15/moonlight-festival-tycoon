@@ -18,6 +18,7 @@ local Instance, Vector3, CFrame = roblox.Instance, roblox.Vector3, roblox.CFrame
 local Props = Loader.require("src/shared/Themes/MoonlightFestival/Props")
 local Scenery = Loader.require("src/shared/Themes/MoonlightFestival/Scenery")
 local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
+local ActivityLook = Loader.require("src/shared/Themes/MoonlightFestival/Activity")
 local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
@@ -219,6 +220,24 @@ describe("theme props", function()
 		end
 	end)
 
+	it("builds Ghost Catcher's booth inside its place, and wisps nobody can bump into", function()
+		local spec = Layout.Activity
+		local origin, size = slotOrigin(spec), slotSize(spec)
+		local booth = ActivityLook.booth(origin, size)
+		assertInside(booth, origin, size, "the activity booth")
+		local status = booth:FindFirstChild("Status", true)
+		assert(status and status:FindFirstChildWhichIsA("SurfaceGui"), "the booth has no Status board")
+		plotParts += #partsIn(booth)
+		plotLights += lightCount(booth)
+
+		local wisp = ActivityLook.wisp()
+		assert(wisp.PrimaryPart, "a wisp has no body")
+		assertFinite(wisp, "a wisp")
+		for _, part in partsIn(wisp) do
+			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `a wisp's {part.Name} can be hit`)
+		end
+	end)
+
 	it("sets up every moving part for the client", function()
 		local slot = Layout.Slots.attraction_3
 		local model = Props.attraction_3(slotOrigin(slot), slotSize(slot))
@@ -278,6 +297,15 @@ describe("theme scenery", function()
 		local gate = Layout.Gate
 		local gw, gh, gd = gate.Size[1] / 2, gate.Size[2], gate.Size[3] / 2
 		table.insert(keepOut, { "gate", { gate.X - gw, 0, gate.Z - gd, gate.X + gw, gh, gate.Z + gd } })
+		local booth = Layout.Activity
+		local bw, bh, bd = booth.Size[1] / 2, booth.Size[2], booth.Size[3] / 2
+		table.insert(keepOut, { "activity booth", { booth.X - bw, 0, booth.Z - bd, booth.X + bw, bh, booth.Z + bd } })
+		local start = booth.Pad
+		-- It stands on the walkway, so only what's over the walkway counts.
+		table.insert(
+			keepOut,
+			{ "activity pad", { start.X - half, 0.1, start.Z - half, start.X + half, 6, start.Z + half } }
+		)
 
 		local edge = Layout.PlotSize / 2
 		for _, part in partsIn(model) do

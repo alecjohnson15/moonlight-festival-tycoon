@@ -102,6 +102,11 @@ return {
 		},
 	},
 
+	-- Ghost Catcher's booth (Config/Activity), at the back of the walkway and
+	-- facing the gate, and the pad in front of it that starts a round. Size
+	-- is { width, height, depth }, as for Slots.
+	Activity = { X = -1, Z = -40, Size = { 12, 8, 6 }, Pad = { X = -1, Z = -33 } },
+
 	-- Where each station and attraction is built. Size is { width, height,
 	-- depth }: the theme's model fits inside it, and it is the size of the
 	-- greybox block drawn when the theme has no model for that upgrade. A

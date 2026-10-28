@@ -140,34 +140,44 @@ describe("layout", function()
 		end
 	end)
 
-	it("keeps buttons, the gate and every slot and yard on the plot and clear of each other", function()
-		-- Footprints as { name, x, z, width, depth }.
-		local footprints = {}
-		for id, slot in Layout.Slots do
-			table.insert(footprints, { `slot {id}`, slot.X, slot.Z, slot.Size[1], slot.Size[3] })
-			local yard = slot.Yard
-			if yard then
-				table.insert(footprints, { `yard {id}`, yard.X, yard.Z, yard.Size[1], yard.Size[3] })
+	it(
+		"keeps buttons, the gate, the activity booth and every slot and yard on the plot and clear of each other",
+		function()
+			-- Footprints as { name, x, z, width, depth }.
+			local footprints = {}
+			for id, slot in Layout.Slots do
+				table.insert(footprints, { `slot {id}`, slot.X, slot.Z, slot.Size[1], slot.Size[3] })
+				local yard = slot.Yard
+				if yard then
+					table.insert(footprints, { `yard {id}`, yard.X, yard.Z, yard.Size[1], yard.Size[3] })
+				end
 			end
-		end
-		local gate = Layout.Gate
-		table.insert(footprints, { "gate", gate.X, gate.Z, gate.Size[1], gate.Size[3] })
-		for _, entry in allSpots() do
-			local spot = entry[2]
-			table.insert(footprints, { `button {entry[1]}`, spot.X, spot.Z, Layout.ButtonSize, Layout.ButtonSize })
-		end
+			local gate = Layout.Gate
+			table.insert(footprints, { "gate", gate.X, gate.Z, gate.Size[1], gate.Size[3] })
+			local booth = Layout.Activity
+			table.insert(footprints, { "activity booth", booth.X, booth.Z, booth.Size[1], booth.Size[3] })
+			local start = booth.Pad
+			table.insert(footprints, { "activity pad", start.X, start.Z, Layout.ButtonSize, Layout.ButtonSize })
+			for _, entry in allSpots() do
+				local spot = entry[2]
+				table.insert(footprints, { `button {entry[1]}`, spot.X, spot.Z, Layout.ButtonSize, Layout.ButtonSize })
+			end
 
-		local half = Layout.PlotSize / 2
-		for i, a in footprints do
-			assert(math.abs(a[2]) + a[4] / 2 <= half and math.abs(a[3]) + a[5] / 2 <= half, `{a[1]} is off the plot`)
-			for j = i + 1, #footprints do
-				local b = footprints[j]
-				local apartX = math.abs(a[2] - b[2]) >= (a[4] + b[4]) / 2
-				local apartZ = math.abs(a[3] - b[3]) >= (a[5] + b[5]) / 2
-				assert(apartX or apartZ, `{a[1]} overlaps {b[1]}`)
+			local half = Layout.PlotSize / 2
+			for i, a in footprints do
+				assert(
+					math.abs(a[2]) + a[4] / 2 <= half and math.abs(a[3]) + a[5] / 2 <= half,
+					`{a[1]} is off the plot`
+				)
+				for j = i + 1, #footprints do
+					local b = footprints[j]
+					local apartX = math.abs(a[2] - b[2]) >= (a[4] + b[4]) / 2
+					local apartZ = math.abs(a[3] - b[3]) >= (a[5] + b[5]) / 2
+					assert(apartX or apartZ, `{a[1]} overlaps {b[1]}`)
+				end
 			end
 		end
-	end)
+	)
 
 	it("keeps a path's pads apart, so picking one can't step on another", function()
 		for building, spots in Layout.Buttons do

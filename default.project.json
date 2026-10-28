@@ -25,6 +25,9 @@
         },
         "Notice": {
           "$className": "RemoteEvent"
+        },
+        "Activity": {
+          "$className": "RemoteEvent"
         }
       }
     },

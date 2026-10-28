@@ -24,6 +24,8 @@ describe("Migrations", function()
 		expect(data.Owned.starter_stall).toBe(true)
 		expect(data.Stats.ServeCount).toBe(0)
 		expect(data.Receipts.Order).toEqual({})
+		expect(data.Activity.Best).toBe(0)
+		expect(data.Activity.Rounds).toBe(0)
 	end)
 
 	it("refuses a save written by a newer server", function()

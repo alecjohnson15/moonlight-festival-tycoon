@@ -89,9 +89,17 @@ function Pieces.lanternPost(parent: Instance, base: CFrame, height: number, colo
 	return (base * CFrame.new(0, height, 0)).Position
 end
 
--- A string of coloured bulbs sagging between two points.
-function Pieces.stringLights(parent: Instance, a: Vector3, b: Vector3, sag: number, colors: { Color3 })
-	local count = math.max(2, math.floor((b - a).Magnitude / 2.2))
+-- A string of coloured bulbs sagging between two points, about spacing
+-- studs apart (2.2 if not given).
+function Pieces.stringLights(
+	parent: Instance,
+	a: Vector3,
+	b: Vector3,
+	sag: number,
+	colors: { Color3 },
+	spacing: number?
+)
+	local count = math.max(2, math.floor((b - a).Magnitude / (spacing or 2.2)))
 	for i = 1, count - 1 do
 		local t = i / count
 		local point = a:Lerp(b, t) - Vector3.new(0, 4 * sag * t * (1 - t), 0)
