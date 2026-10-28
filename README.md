@@ -131,4 +131,4 @@ A fully built plot, on its heaviest paths and with its Ghost Catcher booth, is a
 
 ## Not built yet
 
-The tutorial, emotes and plot decorations for the shop, and uploaded art: every model is built from parts in code until an artist's models replace them. Arena weapons swing with Roblox's built-in tool slash animation until custom animations are uploaded. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
+A full tutorial (the guide's goal line and beam cover the first steps), emotes and plot decorations for the shop, analytics for a funnel and retention, and uploaded art: every model is built from parts in code until an artist's models replace them. Arena weapons swing with Roblox's built-in tool slash animation until custom animations are uploaded. Visitors are a rate, not individual characters: the costumed walkers on each plot are decoration, and nothing about a visitor is simulated or saved. Ride rounds restart when a player rejoins, and nothing is earned while offline.
