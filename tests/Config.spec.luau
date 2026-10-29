@@ -1,6 +1,8 @@
 -- Keeps the balance, layout, theme and catalog files in step with each other,
 -- so a theme swap or a new upgrade can't ship half-configured.
 
+local fs = require("@lune/fs")
+
 local TestKit = require("./TestKit")
 local Balance = require("../src/shared/Config/Balance")
 local Catalog = require("../src/shared/Config/Catalog")
@@ -21,18 +23,54 @@ describe("theme pack", function()
 			assert(Progression.find(Balance.Upgrades, id), `theme names unknown upgrade {id}`)
 		end
 	end)
+
+	it("names every good in the production chain, and only real ones", function()
+		for item in Balance.Items do
+			local entry = Theme.Items[item]
+			assert(entry and entry.DisplayName, `theme has no entry for item {item}`)
+			assert(string.match(entry.Color, "^#%x%x%x%x%x%x$"), `item {item} colour must be #RRGGBB`)
+		end
+		for item in Theme.Items do
+			assert(Balance.Items[item], `theme names unknown item {item}`)
+		end
+	end)
+
+	it("gives visitors at least one colour", function()
+		assert(#Theme.VisitorColors > 0, "no visitor colours")
+		for _, color in Theme.VisitorColors do
+			assert(string.match(color, "^#%x%x%x%x%x%x$"), `visitor colour {color} must be #RRGGBB`)
+		end
+	end)
+
+	it("has every string the code asks for", function()
+		-- Scans the source for Theme.Strings.<Name> so a new string can't be
+		-- forgotten in a theme pack.
+		local function scan(dir: string)
+			for _, name in fs.readDir(dir) do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					scan(path)
+				elseif string.match(name, "%.luau$") then
+					for key in string.gmatch(fs.readFile(path), "[Ss]trings%.(%u%w*)") do
+						assert(Theme.Strings[key], `{path} uses Strings.{key}, which the theme lacks`)
+					end
+				end
+			end
+		end
+		scan("src")
+	end)
 end)
 
 describe("layout", function()
-	it("has a slot for every producer and none for anything else", function()
+	it("has a slot for every station and attraction, and none for boosts", function()
 		for _, upgrade in Balance.Upgrades do
-			if upgrade.Kind == "Producer" then
-				assert(Layout.Slots[upgrade.Id], `no layout slot for producer {upgrade.Id}`)
+			if upgrade.Kind ~= "Boost" then
+				assert(Layout.Slots[upgrade.Id], `no layout slot for {upgrade.Id}`)
 			end
 		end
 		for id in Layout.Slots do
 			local upgrade = Progression.find(Balance.Upgrades, id)
-			assert(upgrade and upgrade.Kind == "Producer", `layout slot {id} is not a producer`)
+			assert(upgrade and upgrade.Kind ~= "Boost", `layout slot {id} is not a station or attraction`)
 		end
 	end)
 
@@ -45,17 +83,41 @@ describe("layout", function()
 		end
 	end)
 
+	it("has a buy button for every upgrade, and none for anything else", function()
+		for _, upgrade in Balance.Upgrades do
+			assert(Layout.Buttons[upgrade.Id], `no buy button for {upgrade.Id}`)
+		end
+		for id in Layout.Buttons do
+			assert(Progression.find(Balance.Upgrades, id), `buy button {id} is not an upgrade`)
+		end
+	end)
+
+	it("keeps buttons, the gate and every slot on the plot and clear of each other", function()
+		-- Footprints as { name, x, z, width, depth }.
+		local footprints = {}
+		for id, slot in Layout.Slots do
+			table.insert(footprints, { `slot {id}`, slot.X, slot.Z, slot.Size[1], slot.Size[3] })
+		end
+		local gate = Layout.Gate
+		table.insert(footprints, { "gate", gate.X, gate.Z, gate.Size[1], gate.Size[3] })
+		for id, spot in Layout.Buttons do
+			table.insert(footprints, { `button {id}`, spot.X, spot.Z, Layout.ButtonSize, Layout.ButtonSize })
+		end
+
+		local half = Layout.PlotSize / 2
+		for i, a in footprints do
+			assert(math.abs(a[2]) + a[4] / 2 <= half and math.abs(a[3]) + a[5] / 2 <= half, `{a[1]} is off the plot`)
+			for j = i + 1, #footprints do
+				local b = footprints[j]
+				local apartX = math.abs(a[2] - b[2]) >= (a[4] + b[4]) / 2
+				local apartZ = math.abs(a[3] - b[3]) >= (a[5] + b[5]) / 2
+				assert(apartX or apartZ, `{a[1]} overlaps {b[1]}`)
+			end
+		end
+	end)
+
 	it("leaves a gap between plots", function()
 		expect(Layout.PlotSpacing > Layout.PlotSize).toBe(true)
-	end)
-end)
-
-describe("serve task", function()
-	it("sits on a free producer so every player has it from the start", function()
-		local upgrade = Progression.find(Balance.Upgrades, Balance.ServeTask.UpgradeId)
-		assert(upgrade, "serve task upgrade is missing")
-		expect(upgrade.Kind).toBe("Producer")
-		expect(upgrade.Cost).toBe(0)
 	end)
 end)
 

@@ -1,14 +1,15 @@
 local TestKit = require("./TestKit")
 local Balance = require("../src/shared/Config/Balance")
+local Earnings = require("../src/shared/Earnings")
 local Progression = require("../src/shared/Progression")
 
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
 local UPGRADES = {
-	{ Id = "stall", Kind = "Producer", Cost = 0, IncomePerSecond = 2 },
-	{ Id = "counter", Kind = "Boost", Cost = 10, Target = "stall", Multiplier = 3, Requires = "stall" },
-	{ Id = "sign", Kind = "Boost", Cost = 20, Target = "stall", Multiplier = 2, Requires = "stall" },
-	{ Id = "patch", Kind = "Producer", Cost = 50, IncomePerSecond = 5, Requires = "stall" },
+	{ Id = "stall", Kind = "Stall", Cost = 0 },
+	{ Id = "counter", Kind = "Boost", Cost = 10, Requires = "stall" },
+	{ Id = "sign", Kind = "Boost", Cost = 20, Requires = "stall" },
+	{ Id = "patch", Kind = "Grower", Cost = 50, Requires = "stall" },
 }
 
 local function state(coins: number, owned: { string }?)
@@ -26,28 +27,27 @@ describe("Progression.validate", function()
 
 	it("reports duplicate ids and unknown requirements", function()
 		local problems = Progression.validate({
-			{ Id = "a", Kind = "Producer", Cost = 0, IncomePerSecond = 1 },
-			{ Id = "a", Kind = "Producer", Cost = 0, IncomePerSecond = 1 },
-			{ Id = "b", Kind = "Producer", Cost = 5, IncomePerSecond = 1, Requires = "missing" },
+			{ Id = "a", Kind = "Stall", Cost = 0 },
+			{ Id = "a", Kind = "Stall", Cost = 0 },
+			{ Id = "b", Kind = "Grower", Cost = 5, Requires = "missing" },
 		})
 		expect(problems).toContain("duplicate id a")
 		expect(problems).toContain("requires unknown upgrade missing")
 	end)
 
-	it("reports boosts that target a boost and bad costs", function()
+	it("reports costs that are fractional or negative", function()
 		local problems = Progression.validate({
-			{ Id = "p", Kind = "Producer", Cost = 1.5, IncomePerSecond = 1 },
-			{ Id = "b1", Kind = "Boost", Cost = 1, Target = "p", Multiplier = 2 },
-			{ Id = "b2", Kind = "Boost", Cost = 1, Target = "b1", Multiplier = 2 },
+			{ Id = "p", Kind = "Grower", Cost = 1.5 },
+			{ Id = "q", Kind = "Grower", Cost = -1 },
 		})
 		expect(problems).toContain("p: cost must be a whole number")
-		expect(problems).toContain("b2: boost must target a producer")
+		expect(problems).toContain("q: cost must be a whole number")
 	end)
 
 	it("reports requirement loops", function()
 		local problems = Progression.validate({
-			{ Id = "x", Kind = "Producer", Cost = 1, IncomePerSecond = 1, Requires = "y" },
-			{ Id = "y", Kind = "Producer", Cost = 1, IncomePerSecond = 1, Requires = "x" },
+			{ Id = "x", Kind = "Grower", Cost = 1, Requires = "y" },
+			{ Id = "y", Kind = "Grower", Cost = 1, Requires = "x" },
 		})
 		expect(problems).toContain("requirement loop")
 	end)
@@ -79,25 +79,6 @@ describe("Progression.purchase", function()
 	end)
 end)
 
-describe("Progression.incomePerSecond", function()
-	it("is zero with nothing owned", function()
-		expect(Progression.incomePerSecond({}, UPGRADES)).toBe(0)
-	end)
-
-	it("adds producers and multiplies only the boosted one", function()
-		expect(Progression.incomePerSecond({ stall = true, patch = true }, UPGRADES)).toBe(7)
-		expect(Progression.incomePerSecond({ stall = true, patch = true, counter = true }, UPGRADES)).toBe(11)
-	end)
-
-	it("stacks boosts on the same producer", function()
-		expect(Progression.incomePerSecond({ stall = true, counter = true, sign = true }, UPGRADES)).toBe(12)
-	end)
-
-	it("ignores a boost whose producer isn't owned", function()
-		expect(Progression.incomePerSecond({ counter = true }, UPGRADES)).toBe(0)
-	end)
-end)
-
 describe("Progression.available", function()
 	it("lists unlocked, unowned upgrades in config order", function()
 		local ids = {}
@@ -124,7 +105,7 @@ describe("first minute (shipped balance)", function()
 		for _, upgrade in Progression.available(s.Owned, Balance.Upgrades) do
 			cheapest = math.min(cheapest, upgrade.Cost)
 		end
-		local earned = Progression.incomePerSecond(s.Owned, Balance.Upgrades) * 60
+		local earned = Earnings.perSecond(s.Owned, Balance) * 60
 		expect(s.Coins + earned >= cheapest).toBe(true)
 	end)
 end)
