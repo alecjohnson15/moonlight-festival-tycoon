@@ -579,6 +579,35 @@ return {
 		ParadeCatch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
 		ParadeCheer = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/button.wav" },
 		ParadeMarch = { Id = "", Volume = 0.45 },
+		-- A sting for each building as it, or anything for it, is bought (see
+		-- Reveals). Until one is uploaded, Build plays instead.
+		RevealStall = { Id = "", Volume = 0.55 },
+		RevealPatch = { Id = "", Volume = 0.55 },
+		RevealKitchen = { Id = "", Volume = 0.55 },
+		RevealMaze = { Id = "", Volume = 0.55 },
+		RevealPumpkin = { Id = "", Volume = 0.55 },
+		RevealTrain = { Id = "", Volume = 0.55 },
+		-- Ambience by place (Scenery's sound zones): the festival crowd on the
+		-- plaza, plots and courtyard, a low choir in the graveyard and drums at
+		-- the arena. The woods, and anywhere a zone's sound isn't uploaded yet,
+		-- keep Ambience.
+		AmbienceCrowd = { Id = "", Volume = 0.3 },
+		AmbienceChoir = { Id = "", Volume = 0.35 },
+		AmbienceDrums = { Id = "", Volume = 0.35 },
+		-- The Terror Train's wail from inside its tunnel, heard near it.
+		TrainWail = { Id = "", Volume = 0.6 },
+		-- The trail's reaper whispering as it turns to watch you.
+		ReaperWhisper = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/swoosh.wav" },
+	},
+
+	-- Which reveal sting plays for each building (Sounds).
+	Reveals = {
+		starter_stall = "RevealStall",
+		grower = "RevealPatch",
+		kitchen = "RevealKitchen",
+		attraction_1 = "RevealMaze",
+		attraction_2 = "RevealPumpkin",
+		attraction_3 = "RevealTrain",
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

@@ -1,6 +1,8 @@
 -- Makes every plot look busy: goods travel along the production chain and
 -- visitors in costume walk to the stall and the attractions, at rates the
--- server publishes as attributes. On the way, a visitor may stop at one of
+-- server publishes as attributes. Visitors queue at the stall and the
+-- attractions when it's busy, and some cheer at the attractions. On the
+-- way, a visitor may stop at one of
 -- the places a path has marked (Kit.stop): they turn to face it, sit, jump
 -- or cheer while they wait, and leave carrying what it gave them. A path can
 -- also make a building's goods glow as they leave it (GoodsGlow). On the player's own plot, buy buttons glow and
@@ -48,8 +50,17 @@ local STOP_CHANCE = 0.6
 -- Where a visitor holds what they carry, from their feet.
 local HAND = CFrame.new(0.75, 1.5, -0.45)
 
+-- Visitors waiting in one place line up this far apart, at most this many.
+local QUEUE_GAP = 1.8
+local QUEUE_LENGTH = 4
+-- How many cheer when they reach an attraction.
+local CHEER_CHANCE = 0.35
+
 -- What a visitor does on reaching one of their points.
 type Arrival = { Pose: string?, Carry: string?, Facing: Vector3 }
+-- A point where visitors queue: its key, the front of the queue, and the
+-- way the queue grows.
+type Queue = { Key: string, Front: Vector3, Back: Vector3 }
 
 type Mover = {
 	Instance: Model,
@@ -69,6 +80,9 @@ type Mover = {
 	Pose: string?,
 	PoseAt: number,
 	Carrying: boolean?,
+	-- By point index, the queues on the way, and the one it has a place in.
+	Queues: { [number]: Queue }?,
+	Holding: string?,
 }
 
 local PlotActivity = {}
@@ -90,6 +104,8 @@ local owed: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
 local rideStatus: { [Instance]: BillboardGui } = {}
 -- Each plot's visitor stops, found again whenever stops come or go.
 local stopsByPlot: { [BasePart]: { Attachment } } = {}
+-- How many visitors are in or heading for each queue.
+local queueLength: { [string]: number } = {}
 local lastPayoutAt: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
 
 -- A point above the plot's surface, from plot-local X and Z.
@@ -122,7 +138,10 @@ local function anchorOf(station: Instance): BasePart?
 	return nil
 end
 
+local aim: (Mover) -> ()
+
 local function addMover(mover: Mover)
+	aim(mover)
 	mover.Instance:PivotTo(mover.Facing)
 	mover.Instance.Parent = folder
 	table.insert(movers, mover)
@@ -211,10 +230,18 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 	local lift = 0
 	local points = { onPlot(plot, random:NextNumber(-14, 14), half - 1, lift) }
 	local pauses = { 0 }
-	local arrivals = {}
+	local arrivals: { [number]: Arrival } = {}
+	local queues: { [number]: Queue } = {}
+	-- Queues grow towards the plaza, facing the building.
+	local back = plot.CFrame:VectorToWorldSpace(Vector3.zAxis)
+	local function queueAt(id: string, pause: number, pose: string?)
+		table.insert(points, frontOf(plot, id, lift))
+		table.insert(pauses, pause)
+		queues[#points] = { Key = `{plot.Name}/{id}`, Front = points[#points], Back = back }
+		arrivals[#points] = { Pose = pose, Facing = -back }
+	end
 	if stallId then
-		table.insert(points, frontOf(plot, stallId, lift))
-		table.insert(pauses, STALL_PAUSE)
+		queueAt(stallId, STALL_PAUSE)
 	end
 	local stops = stopsOn(plot)
 	if #stops > 0 then
@@ -224,8 +251,8 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 		end
 	end
 	if #attractionIds > 0 then
-		table.insert(points, frontOf(plot, attractionIds[random:NextInteger(1, #attractionIds)], lift))
-		table.insert(pauses, ATTRACTION_PAUSE)
+		local id = attractionIds[random:NextInteger(1, #attractionIds)]
+		queueAt(id, ATTRACTION_PAUSE, if random:NextNumber() < CHEER_CHANCE then "Cheer" else nil)
 	end
 	table.insert(points, onPlot(plot, random:NextNumber(-14, 14), half - 1, lift))
 	table.insert(pauses, 0)
@@ -245,7 +272,29 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 		Phase = random:NextNumber(0, 10),
 		Arrivals = arrivals,
 		PoseAt = 0,
+		Queues = queues,
 	})
+end
+
+-- Takes a place in the queue at the point a mover is heading for, if
+-- there's one there: at the back of whoever is already waiting.
+function aim(mover: Mover)
+	local queue = mover.Queues and mover.Queues[mover.Index]
+	if not queue then
+		return
+	end
+	local ahead = queueLength[queue.Key] or 0
+	queueLength[queue.Key] = ahead + 1
+	mover.Holding = queue.Key
+	mover.Points[mover.Index] = queue.Front + queue.Back * math.min(ahead, QUEUE_LENGTH - 1) * QUEUE_GAP
+end
+
+local function release(mover: Mover)
+	local key = mover.Holding
+	if key then
+		queueLength[key] = math.max((queueLength[key] or 1) - 1, 0)
+		mover.Holding = nil
+	end
 end
 
 -- Adds rate * dt to what a station or plot is owed and returns how many
@@ -383,6 +432,9 @@ local function moveAll(dt: number)
 				mover.Wait = mover.Pauses[mover.Index] or 0
 				arrival = mover.Arrivals and mover.Arrivals[mover.Index]
 				mover.Index += 1
+				if not mover.Holding then
+					aim(mover)
+				end
 				if mover.Index > #mover.Points then
 					mover.Instance:Destroy()
 					table.remove(movers, index)
@@ -406,6 +458,8 @@ local function moveAll(dt: number)
 			mover.Wait -= dt
 			if mover.Wait <= 0 then
 				mover.Pose = nil
+				release(mover)
+				aim(mover)
 			elseif mover.Gait ~= "Float" and not mover.Pose then
 				-- Standing still: nothing to redraw.
 				continue

@@ -1,13 +1,15 @@
 -- Plays the theme's sounds on this client: one-off effects by name, the
--- music as a playlist that goes round the theme's songs in turn, the eerie
--- ambience on a loop, and loops for events such as the parade's march, which
--- turn the music down while they play. The player can turn the music,
+-- music as a playlist that goes round the theme's songs in turn, the
+-- ambience of wherever the player is on a loop (crossfading as they move
+-- between places; client/SoundZones picks it), and loops for events such as
+-- the parade's march, which turn the music down while they play. The player can turn the music,
 -- ambience and event loops off. A sound whose id is empty in the theme plays
 -- its fallback, one of Roblox's own sounds, or is silent if it has none, so
 -- the game runs before any audio is uploaded.
 
-local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 
 local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
 
@@ -15,6 +17,7 @@ local PLAYLIST = { "Music", "Music2" }
 local AMBIENCE = "Ambience"
 -- How loud the music is while an event loop plays.
 local DUCKED = 0.25
+local CROSSFADE = TweenInfo.new(2, Enum.EasingStyle.Sine)
 
 local Sounds = {}
 
@@ -22,6 +25,8 @@ local made: { [string]: Sound } = {}
 local loopsOn = true
 -- The event loops playing now.
 local events: { [string]: boolean } = {}
+-- The ambience loop for where the player is.
+local ambience = AMBIENCE
 -- Which of the songs with an id is playing, by its place in that list.
 local current = 0
 local playNextSong: () -> ()
@@ -87,6 +92,11 @@ function playNextSong()
 	end
 end
 
+-- Whether name has a sound to play: an uploaded id or a fallback.
+function Sounds.has(name: string): boolean
+	return soundId(name) ~= nil
+end
+
 function Sounds.play(name: string)
 	local sound = get(name)
 	if sound then
@@ -135,19 +145,48 @@ function Sounds.hasLoops(): boolean
 	return #songs() > 0 or hasId(AMBIENCE)
 end
 
+-- Crossfades to the ambience for where the player is, or the general one if
+-- that place's isn't uploaded yet.
+function Sounds.setAmbience(name: string)
+	local wanted = if hasId(name) then name else AMBIENCE
+	if wanted == ambience then
+		return
+	end
+	local old, new = get(ambience), get(wanted)
+	ambience = wanted
+	if old then
+		local fade = TweenService:Create(old, CROSSFADE, { Volume = 0 })
+		fade.Completed:Connect(function()
+			if ambience ~= old.Name then
+				old:Stop()
+			end
+		end)
+		fade:Play()
+	end
+	if new and loopsOn then
+		new.Looped = true
+		new.Volume = 0
+		if not new.IsPlaying then
+			new:Play()
+		end
+		TweenService:Create(new, CROSSFADE, { Volume = Theme.Sounds[wanted].Volume }):Play()
+	end
+end
+
 function Sounds.loopsOn(): boolean
 	return loopsOn
 end
 
 function Sounds.setLoops(on: boolean)
 	loopsOn = on
-	local ambience = get(AMBIENCE)
-	if ambience then
-		ambience.Looped = true
-		if on and not ambience.IsPlaying then
-			ambience:Play()
+	local place = get(ambience)
+	if place then
+		place.Looped = true
+		if on and not place.IsPlaying then
+			place.Volume = Theme.Sounds[ambience].Volume
+			place:Play()
 		elseif not on then
-			ambience:Stop()
+			place:Stop()
 		end
 	end
 
