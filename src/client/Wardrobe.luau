@@ -19,6 +19,7 @@ local Catalog = require(Shared.Config.Catalog)
 local Cosmetics = require(Shared.Config.Cosmetics)
 local Theme = require(Shared.Config.Theme)
 local Wardrobe = require(Shared.Wardrobe)
+local Corner = require(script.Parent.Corner)
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local EquipCosmetic = Remotes:WaitForChild("EquipCosmetic") :: RemoteEvent
@@ -122,28 +123,11 @@ local badge = make("Frame", {
 round(badge, UDim.new(1, 0))
 local buttonScale = make("UIScale", {}, openButton)
 
--- The note that pops up when something unlocks.
-local toast = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 104),
-	Size = UDim2.fromOffset(380, 60),
-	BackgroundColor3 = PANEL,
-	BackgroundTransparency = 0.05,
-	Visible = false,
-}, gui)
-round(toast)
-outline(toast, GOLD, 2.5)
-local toastTitle = label(toast, {
-	Position = UDim2.fromOffset(12, 6),
-	Size = UDim2.new(1, -24, 0, 26),
-	Font = FONT,
-	TextColor3 = GOLD,
-})
-local toastText = label(toast, {
-	Position = UDim2.fromOffset(12, 34),
-	Size = UDim2.new(1, -24, 0, 18),
-})
-local toastScale = make("UIScale", {}, toast)
+-- The note that pops up in the corner (client/Corner) when something
+-- unlocks.
+local toast = Corner.card(Corner.Order.Wardrobe, GOLD)
+local toastTitle = Corner.title(toast, { TextColor3 = GOLD })
+local toastText = Corner.line(toast)
 
 -- The panel.
 local panel = make("Frame", {
@@ -499,10 +483,7 @@ local function nextToast()
 	toastTitle.Text = Strings.WardrobeUnlocked:format(Theme.Cosmetics[id].DisplayName)
 	local wearing = cosmetic and player:GetAttribute(`Wear{cosmetic.Slot}`) == id
 	toastText.Text = if wearing then Strings.WardrobeNowWearing else Strings.WardrobeOpenToWear
-	toast.Visible = true
-	toastScale.Scale = 0.6
-	TweenService:Create(toastScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
-		:Play()
+	Corner.pop(toast)
 	task.delay(TOAST_SECONDS, function()
 		toast.Visible = false
 		nextToast()

@@ -3,7 +3,7 @@
 -- a burst and "+N" for every lantern this player catches, confetti and a
 -- cheer when the server's meter fills, and how the parade went at the end. It
 -- also writes on the courtyard's sign when the next parade starts. The goal
--- line (Guide) shows the meter while it's on. The server picks where the
+-- card (Guide) shows the meter while it's on. The server picks where the
 -- lanterns go and decides every catch; this only draws them.
 
 local CollectionService = game:GetService("CollectionService")
@@ -19,11 +19,11 @@ local Config = require(Shared.Config.Parade)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
 local Parade = require(Shared.Parade)
+local Corner = require(script.Parent.Corner)
 local Sounds = require(script.Parent.Sounds)
 
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Parade") :: RemoteEvent
 
-local PANEL = Color3.fromRGB(26, 18, 40)
 local TEXT = Color3.fromRGB(255, 244, 214)
 local GAIN = Color3.fromRGB(150, 255, 140)
 local GOLD = Color3.fromRGB(255, 205, 90)
@@ -75,39 +75,20 @@ local function label(parent: Instance, props: { [string]: any }): TextLabel
 	return text
 end
 
-local gui = make("ScreenGui", { Name = "Parade", ResetOnSpawn = false })
-
--- A card at the top: the meter filling, and how the parade went.
-local card = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 140),
-	Size = UDim2.fromOffset(380, 112),
-	BackgroundColor3 = PANEL,
-	BackgroundTransparency = 0.08,
-	Visible = false,
-}, gui)
-make("UICorner", { CornerRadius = UDim.new(0, 12) }, card)
-make("UIStroke", { Color = Look.LanternColor, Thickness = 2.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, card)
-local cardTitle = label(card, { Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 34) })
-local cardLine = label(card, {
-	Position = UDim2.fromOffset(14, 46),
-	Size = UDim2.new(1, -28, 0, 26),
-	Font = Enum.Font.GothamBold,
-})
-local cardLast = label(card, { Position = UDim2.fromOffset(14, 76), Size = UDim2.new(1, -28, 0, 28) })
-local cardScale = make("UIScale", {}, card)
+-- A card in the corner (client/Corner) when the meter fills, and with how
+-- the parade went.
+local card = Corner.card(Corner.Order.Parade, Look.LanternColor)
+local cardTitle = Corner.title(card)
+local cardLine = Corner.line(card)
+local cardLast = Corner.line(card, { Font = FONT, TextSize = 15 })
 
 local function showCard(title: string, line: string, last: string, color: Color3, lastColor: Color3)
 	cardTitle.Text = title
 	cardTitle.TextColor3 = color
-	cardLine.Text = line
-	cardLast.Text = last
+	Corner.set(cardLine, line)
+	Corner.set(cardLast, last)
 	cardLast.TextColor3 = lastColor
-	card.Visible = true
-	cardScale.Scale = 0.6
-	TweenService:Create(cardScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Scale = 1,
-	}):Play()
+	Corner.pop(card)
 	cardUntil = os.clock() + CARD_SECONDS
 end
 
@@ -396,7 +377,6 @@ local function onRenderStep(dt: number)
 end
 
 function ParadeClient.start()
-	gui.Parent = player:WaitForChild("PlayerGui")
 	Remote.OnClientEvent:Connect(function(message)
 		if type(message) ~= "table" then
 			return

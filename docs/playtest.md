@@ -33,9 +33,9 @@ they hesitate and what they say. Time each step from when they spawn.
 
 | Step | Target | What to note |
 | --- | --- | --- |
-| Find and claim a plot | under 30 seconds (median) | Did they see the wheel, the arrows and the gold beacons? Did they read the goal line? |
+| Find and claim a plot | under 30 seconds (median) | Did they see the wheel, the arrows and the gold beacons? Did they read the goal card in the corner? |
 | First satisfying action | under 60 seconds | Usually the free stall, then the first "+N / sec". Did the build-up, the flash and the stall's own sting feel good? |
-| Find the next purchase unaided | 8 of 10 testers | Did the goal line and beam lead them? Did anyone step on a pad they couldn't afford, and did the note make sense? |
+| Find the next purchase unaided | 8 of 10 testers | Did the goal card and beam lead them? Did anyone step on a pad they couldn't afford, and did the note make sense? |
 | Understand a path choice | 8 of 10 testers | At the stall's three paths (about 620 coins): did the card's "visitors" line and the hologram (shown fully upgraded) make the trade clear? Did anyone pick by accident? |
 | Find Ghost Catcher | most testers within 5 minutes | Did the guide's nudge bring them? Did they get the rules from the first round? Did they go back for another? |
 | Join the Moonlight Parade | most testers join the first one they're on the server for | Did they notice the 30 second warning and follow the beam to the Wheel? Did they understand catching lanterns and the shared meter? |
@@ -93,10 +93,12 @@ tester round.
   Studio's device emulator for layout, and a real phone (published test
   place) for frame rate: open the Developer Console (F9) and watch the
   Performance stats, or `Shift+F5` for the frame time.
-- **Phone pass:** on a small phone, the goal line, notes, path card, Ghost
-  Catcher panel, parade meter and result card, Festival panel and wardrobe
-  button must not overlap each other or the thumbstick and jump button, and
-  every button must be big enough to tap. Catch a parade lantern using only
+- **Phone pass:** on a small phone, the corner cards (goal, notes, path card,
+  Ghost Catcher panel and result, parade card, wardrobe note) sit in the top
+  right and stay readable; they, the hotbar, the Festival panel and the
+  wardrobe button must not overlap each other or the thumbstick and jump
+  button, and every button must be big enough to tap. Every hotbar slot shows
+  a picture of its item, and tapping it holds or puts away the item. Catch a parade lantern using only
   the thumbstick.
 - **Fog and lighting:** at the lowest graphics level on a phone, the plaza,
   the trail and the graveyard should still be readable at night. If they're
