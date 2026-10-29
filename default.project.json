@@ -16,6 +16,12 @@
         },
         "CosmeticSwung": {
           "$className": "RemoteEvent"
+        },
+        "ArenaAction": {
+          "$className": "RemoteEvent"
+        },
+        "ArenaEffect": {
+          "$className": "RemoteEvent"
         }
       }
     },
