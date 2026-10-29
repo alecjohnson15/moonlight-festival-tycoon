@@ -38,7 +38,7 @@ That makes 42 purchases on every route (6 buildings, 2 shared upgrades each,
 | | Terror Train | Scarier: every rider pays more. |
 | | Ghost Parade | Parades pull in visitors for everything. |
 
-The building names above are the Moonlight Festival theme's; the ids in
+The building names above are the Halloween theme's (`Themes/MoonlightFestival`); the ids in
 `Balance.luau` are theme-neutral (`stall_vendor_2`, `attraction_3_draw_4`).
 
 The paths lean two ways. Production paths (Sweet Shop, Bumper Crop, Enchanted

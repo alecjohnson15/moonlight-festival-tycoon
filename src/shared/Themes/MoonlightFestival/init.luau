@@ -12,7 +12,12 @@
 -- ReplicatedStorage.Assets to use instead of the built one.
 
 return {
-	Name = "Moonlight Festival",
+	-- The game's title is Name and Tagline joined by a colon, "Halloween
+	-- Tycoon: Your Dream Festival". The title signs show the name big with
+	-- the tagline under it. The experience's name on the Roblox website is set
+	-- there, to match.
+	Name = "Halloween Tycoon",
+	Tagline = "Your Dream Festival",
 
 	Strings = {
 		PlotOwner = "%s's Haunt",

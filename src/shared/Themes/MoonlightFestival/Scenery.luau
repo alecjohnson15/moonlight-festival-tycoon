@@ -392,7 +392,7 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		Theme.Strings.ArenaSign,
 		W.Orange
 	)
-	Pieces.sign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
+	Pieces.titleSign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), P.Candle)
 	Kit.block(
 		parent,
 		at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0),

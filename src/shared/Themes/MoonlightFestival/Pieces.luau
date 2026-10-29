@@ -564,4 +564,24 @@ function Pieces.sign(parent: Instance, cframe: CFrame, size: Vector2, text: stri
 	return board
 end
 
+-- A sign board with the game's title: its name big across the top and the
+-- tagline smaller under it, so the whole title stays readable on one board.
+function Pieces.titleSign(parent: Instance, cframe: CFrame, size: Vector2, color: Color3?)
+	local board = Pieces.sign(parent, cframe, size, Theme.Name, color)
+	local gui = board:FindFirstChildOfClass("SurfaceGui") :: SurfaceGui
+	local name = gui:FindFirstChildOfClass("TextLabel") :: TextLabel
+	name.Size = UDim2.fromScale(1, 0.62)
+	Kit.new("TextLabel", gui, {
+		Position = UDim2.fromScale(0.08, 0.6),
+		Size = UDim2.fromScale(0.84, 0.34),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		TextScaled = true,
+		TextColor3 = P.Plaster,
+		TextStrokeTransparency = 0.6,
+		Text = Theme.Tagline,
+	})
+	return board
+end
+
 return Pieces

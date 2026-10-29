@@ -1,6 +1,8 @@
-# Moonlight Festival Tycoon
+# Halloween Tycoon: Your Dream Festival
 
 An original Roblox tycoon: players turn an empty plot into a festival, earn coins from what they build and reinvest them. This repository holds the theme-neutral core systems. The festival theme is a placeholder until trend research in August 2027 confirms or replaces it.
+
+The game's title comes from the theme pack (`Name` and `Tagline` in `src/shared/Themes/MoonlightFestival/init.luau`) and shows on the signs at the Wheel and at the gateway to the bonfire and arena. The experience's name on the Roblox website is set there by its owner, to match. The repository, folders and code keep the old working title, Moonlight Festival.
 
 ## What's here
 
@@ -45,7 +47,7 @@ src/
       Parade.luau         the Moonlight Parade's timing, lanterns and rewards
     Themes/
       MoonlightFestival/
-        init.luau         names, colours, the night's look, sounds
+        init.luau         the title, names, colours, the night's look, sounds
         Props.luau        a model for each upgrade
         Scenery.luau      plot dressing and the land around the plots
         Crowd.luau        visitors in costume and the goods on the move
