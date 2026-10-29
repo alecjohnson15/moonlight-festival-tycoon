@@ -596,7 +596,7 @@ return {
 		AmbienceCrowd = { Id = "", Volume = 0.3 },
 		AmbienceChoir = { Id = "", Volume = 0.35 },
 		AmbienceDrums = { Id = "", Volume = 0.35 },
-		-- The Terror Train chuffing and wailing, heard near its lead car, once
+		-- The ghost train chuffing and wailing, heard near its lead car, once
 		-- uploaded.
 		TrainWail = { Id = "", Volume = 0.6 },
 		-- The trail's reaper whispering as it turns to watch you. Every sound

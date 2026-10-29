@@ -2,7 +2,7 @@
 and noise with the helpers in make_sounds.py, so the project owns them
 outright: a reveal sting for each building, the ambience of each place
 (the festival crowd, the graveyard choir, the arena drums), the Moonlight
-Parade's fanfare, catch, cheer and march, the Terror Train's wail and the
+Parade's fanfare, catch, cheer and march, the ghost train's wail and the
 trail reaper's whisper. Run it with Python 3 and numpy, with ffmpeg on the
 path:
 
@@ -164,7 +164,7 @@ def make_reveal_kitchen():
 
 
 def make_reveal_maze():
-    """The scream maze, kept mild: a ghost's swooping "ooo", a rush of air
+    """The lantern maze, kept mild: a ghost's swooping "ooo", a rush of air
     and a soft thud."""
     reseed(104)
     track = np.zeros(int(2.1 * RATE))
@@ -179,7 +179,7 @@ def make_reveal_maze():
 
 
 def make_reveal_pumpkin():
-    """The great pumpkin: a deep bell and a harpsichord flourish."""
+    """The giant pumpkin: a deep bell and a harpsichord flourish."""
     reseed(105)
     track = np.zeros(int(2.3 * RATE))
     place(track, bell(note("D2"), 2.3, 0.5), 0)
@@ -191,7 +191,7 @@ def make_reveal_pumpkin():
 
 
 def make_reveal_train():
-    """The Terror Train: chuffs speeding up, a two-tone whistle and a bell."""
+    """The ghost train: chuffs speeding up, a two-tone whistle and a bell."""
     reseed(106)
     track = np.zeros(int(2.4 * RATE))
     at = 0.0
@@ -406,7 +406,7 @@ def make_parade_march():
 
 
 def make_train_wail():
-    """The Terror Train in its tunnel, heard up close: steady chuffing and,
+    """The ghost train in its tunnel, heard up close: steady chuffing and,
     once a loop, a ghostly two-note whistle that sags as it fades."""
     reseed(117)
     length = 10

@@ -3,7 +3,7 @@
 -- ambience of wherever the player is on a loop (crossfading as they move
 -- between places; client/SoundZones picks it), loops for events such as
 -- the parade's march, which turn the music down while they play, and loops
--- that play from a part, heard only near it, such as the Terror Train's
+-- that play from a part, heard only near it, such as the ghost train's
 -- wail. The player can turn the music, ambience and all loops off. A sound
 -- whose id is empty in the theme plays its fallback, one of Roblox's own
 -- sounds, or is silent if it has none, so the game runs before any audio is
