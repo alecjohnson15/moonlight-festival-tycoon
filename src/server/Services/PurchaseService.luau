@@ -1,7 +1,8 @@
 -- Sells the cosmetic catalog. The server opens purchase prompts itself, after
 -- checking the item is set up and not already owned. A developer product is
 -- confirmed only once its grant is saved, and the receipt ledger in the save
--- stops a retried receipt from granting twice.
+-- stops a retried receipt from granting twice. CosmeticService listens for
+-- ownership changes to put new items on.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -23,6 +24,8 @@ local itemsById = {}
 local itemsByProductId = {}
 local itemsByPassId = {}
 local passesOwned: { [Player]: { [string]: boolean } } = {}
+local passesChecked: { [Player]: boolean } = {}
+local ownershipCallbacks: { (Player, string?) -> () } = {}
 local promptLimiter = RateLimiter.new(1)
 
 for _, item in Catalog do
@@ -32,6 +35,25 @@ for _, item in Catalog do
 	elseif item.Kind == "GamePass" and item.PassId ~= 0 then
 		itemsByPassId[item.PassId] = item
 	end
+end
+
+local function ownershipChanged(player: Player, itemId: string?)
+	for _, callback in ownershipCallbacks do
+		task.spawn(callback, player, itemId)
+	end
+end
+
+-- Runs callback(player, itemId) when what a player owns changes: with the
+-- item's id after they buy it, and with nil once their game passes have been
+-- checked on joining.
+function PurchaseService.onOwnershipChanged(callback: (Player, string?) -> ())
+	table.insert(ownershipCallbacks, callback)
+end
+
+-- Whether the player's game passes have been checked since they joined, so
+-- owns() can be trusted for them.
+function PurchaseService.ready(player: Player): boolean
+	return passesChecked[player] == true
 end
 
 function PurchaseService.owns(player: Player, itemId: string): boolean
@@ -58,9 +80,12 @@ local function processReceipt(receipt)
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
-	ReceiptLedger.grantOnce(data.Receipts, tostring(receipt.PurchaseId), os.time(), function()
+	local granted = ReceiptLedger.grantOnce(data.Receipts, tostring(receipt.PurchaseId), os.time(), function()
 		data.Cosmetics[item.Id] = true
 	end)
+	if granted then
+		ownershipChanged(player, item.Id)
+	end
 
 	-- If this save fails, Roblox retries the receipt later and the ledger entry
 	-- above stops the retry from granting the item again.
@@ -80,6 +105,10 @@ local function loadPasses(player: Player)
 		elseif not ok then
 			warn(`Could not check game pass {passId} for {player.UserId}: {result}`)
 		end
+	end
+	if player.Parent then
+		passesChecked[player] = true
+		ownershipChanged(player, nil)
 	end
 end
 
@@ -107,14 +136,16 @@ function PurchaseService.init()
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
 		local item = itemsByPassId[passId]
 		local owned = passesOwned[player]
-		if purchased and item and owned then
+		if purchased and item and owned and not owned[item.Id] then
 			owned[item.Id] = true
+			ownershipChanged(player, item.Id)
 		end
 	end)
 
 	Players.PlayerAdded:Connect(loadPasses)
 	Players.PlayerRemoving:Connect(function(player)
 		passesOwned[player] = nil
+		passesChecked[player] = nil
 		promptLimiter:forget(player)
 	end)
 	for _, player in Players:GetPlayers() do

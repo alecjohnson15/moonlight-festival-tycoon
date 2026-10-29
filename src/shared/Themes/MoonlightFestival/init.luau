@@ -42,6 +42,30 @@ return {
 		-- Hover text on the music button in the corner of the screen.
 		MusicOn = "Music on",
 		MusicOff = "Music off",
+
+		-- The wardrobe, where players put on what they have unlocked or bought.
+		WardrobeButton = "Wardrobe",
+		WardrobeTitle = "Haunted Wardrobe",
+		WardrobeWear = "Wear",
+		WardrobeWearing = "Wearing",
+		WardrobeLocked = "Locked",
+		WardrobeSoon = "Coming soon",
+		WardrobeBuy = "Buy",
+		WardrobePrice = "R$ %s",
+		WardrobeOwns = "Build the %s",
+		WardrobeOwnsAll = "Build all of: %s",
+		WardrobeCount = "Build %d upgrades",
+		WardrobePick = "Pick a path for the %s",
+		WardrobeTier = "Reach tier %d on the %s",
+		WardrobeFinish = "Finish a path of the %s",
+		WardrobePath = "Finish the %s path of the %s",
+		WardrobePathTier = "Reach tier %d of the %s path of the %s",
+		WardrobeUnlocked = "New flex unlocked: %s!",
+		WardrobeNowWearing = "Everyone can see it on you now",
+		WardrobeOpenToWear = "Open the Wardrobe to wear it",
+		WardrobeArenaEdge = "Arena edge",
+		WardrobeNote = "Paid items are looks only, except Legendary weapons, which are a little stronger in the PvP arena. Nothing here changes your coins.",
+		WardrobeStudio = "Studio test: paid items are free to try here, and only here.",
 	},
 
 	-- The goods in the production chain, named as a plural for rate labels.
@@ -299,5 +323,147 @@ return {
 		Purchase = { Id = "", Volume = 0.6 },
 		Build = { Id = "", Volume = 0.5 },
 		Payout = { Id = "", Volume = 0.5 },
+		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
+		Thump = { Id = "", Volume = 0.6 },
+		Whoosh = { Id = "", Volume = 0.5 },
+	},
+
+	-- Names for the wardrobe: its slots, its lines (one tab each) and every
+	-- cosmetic in Config/Cosmetics. Color tints the item's card.
+	CosmeticSlots = {
+		Head = "Head",
+		Back = "Back",
+		Hand = "Held",
+		Pet = "Pet",
+		Aura = "Aura",
+		Trail = "Trail",
+	},
+	CosmeticLines = {
+		Earned = "Earned",
+		Deluxe = "Deluxe",
+		Brainrot = "Brainrot Buddies",
+		Legendary = "Legendary",
+	},
+	Cosmetics = {
+		lantern = {
+			DisplayName = "Trick-or-Treat Lantern",
+			Color = "#F28A1E",
+			Blurb = "A candy-striped pole with a glowing lantern.",
+		},
+		witch_cape = {
+			DisplayName = "Witch's Cape",
+			Color = "#5B2A86",
+			Blurb = "A starry purple cape that swishes behind you.",
+		},
+		pumpkin_head = {
+			DisplayName = "Pumpkin Head",
+			Color = "#EE7A1C",
+			Blurb = "Swap your head for a grinning, glowing jack-o'-lantern.",
+		},
+		wooden_mallet = {
+			DisplayName = "Big Wooden Mallet",
+			Color = "#B5753F",
+			Blurb = "A huge mallet. Click to swing it down with a thump.",
+		},
+		ember_trail = {
+			DisplayName = "Ember Trail",
+			Color = "#FF7A1A",
+			Blurb = "Leave glowing embers wherever you run.",
+		},
+		witch_broom = {
+			DisplayName = "Witch's Broom",
+			Color = "#D9B45A",
+			Blurb = "A crooked broom for smacking things.",
+		},
+		pumpkling = {
+			DisplayName = "Pumpkling",
+			Color = "#FF9F43",
+			Blurb = "A tiny floating pumpkin that follows you everywhere.",
+		},
+		werewolf_claws = {
+			DisplayName = "Werewolf Claws",
+			Color = "#8A6A50",
+			Blurb = "Furry gauntlets with big curved claws.",
+		},
+		phantom_aura = {
+			DisplayName = "Phantom Aura",
+			Color = "#8A3DFF",
+			Blurb = "Ghostly purple wisps rise all around you.",
+		},
+		moon_saber = {
+			DisplayName = "Crescent Moon Blade",
+			Color = "#CFE3FF",
+			Blurb = "A glowing crescent sword: the best weapon you can earn.",
+		},
+		moonstone_mallet = {
+			DisplayName = "Moonstone Mallet",
+			Color = "#8FB4FF",
+			Blurb = "The Big Wooden Mallet in glowing moonstone. Same swing, fancier thump.",
+		},
+		bat_wings = {
+			DisplayName = "Neon Bat Wings",
+			Color = "#9B4DFF",
+			Blurb = "Glowing purple bat wings on your back.",
+		},
+		ghostfire_crown = {
+			DisplayName = "Ghostfire Crown",
+			Color = "#6CFF5A",
+			Blurb = "A golden crown with green ghostfire on every point.",
+		},
+		toxic_aura = {
+			DisplayName = "Toxic Ghostfire Aura",
+			Color = "#5CFF4A",
+			Blurb = "Green ghostfire flickers all around you.",
+		},
+		rainbow_trail = {
+			DisplayName = "Spooky Rainbow Trail",
+			Color = "#FF2A2A",
+			Blurb = "A ribbon of every colour of the night.",
+		},
+		pizza_bat = {
+			DisplayName = "Pipistrello Pizzetta",
+			Color = "#F2C94C",
+			Blurb = "Half pizza slice, half bat, all nonsense.",
+		},
+		gelato_ghost = {
+			DisplayName = "Fantasmino Gelatino",
+			Color = "#A8F0D0",
+			Blurb = "A ghost who is also a scoop of mint gelato.",
+		},
+		candle_buddy = {
+			DisplayName = "Candelino Wobblino",
+			Color = "#FFB347",
+			Blurb = "A wobbly candle with googly eyes and tiny feet.",
+		},
+		zombie_zucchini = {
+			DisplayName = "Zucchino Zombino",
+			Color = "#6FA35A",
+			Blurb = "A zucchini that came back. Arms out, always.",
+		},
+		thunder_hammer = {
+			DisplayName = "Storm-Stone Hammer",
+			Color = "#5FC8FF",
+			Blurb = "A rune-carved warhammer crackling with lightning.",
+		},
+		ghost_blade = {
+			DisplayName = "Ghostlight Blade",
+			Color = "#7FF7FF",
+			Blurb = "A see-through spirit sword with a bat-wing guard.",
+		},
+		reaper_scythe = {
+			DisplayName = "Reaper's Scythe",
+			Color = "#B26BFF",
+			Blurb = "A huge scythe with a glowing purple edge.",
+		},
+		drowned_trident = {
+			DisplayName = "Drowned Trident",
+			Color = "#3DF5D0",
+			Blurb = "A sea-green trident glowing with sunken light.",
+		},
+		foxfire_fan = {
+			DisplayName = "Foxfire Fan",
+			Color = "#4FA8FF",
+			Blurb = "A folding fan with blue fox-fire on every tip.",
+		},
 	},
 }

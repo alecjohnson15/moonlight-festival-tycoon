@@ -10,6 +10,12 @@
         "$className": "Folder",
         "RequestPurchase": {
           "$className": "RemoteEvent"
+        },
+        "EquipCosmetic": {
+          "$className": "RemoteEvent"
+        },
+        "CosmeticSwung": {
+          "$className": "RemoteEvent"
         }
       }
     },
