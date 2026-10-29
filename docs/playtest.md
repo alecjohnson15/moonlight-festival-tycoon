@@ -11,10 +11,11 @@ that changes the first ten minutes, and keep the results table at the end.
 1. Build or serve the place (see Getting started in the README) and open it
    in Studio. With no `Workspace.Plots` folder, the server makes the plots,
    the plaza, the courtyard and the spawn itself.
-2. For sound, upload `assets/audio` (32 files) and paste the ids into the
-   theme (README, step 6). Each file's name is its sound's name in snake
-   case: `parade_march.ogg` is `ParadeMarch`, `reveal_stall.ogg` is
-   `RevealStall`. Without them, claiming, buying, a pad you can't afford,
+2. For sound, check every sound in the theme has an id (README, step 6).
+   Each file's name is its sound's name in snake case: `parade_march.ogg`
+   is `ParadeMarch`, `reveal_stall.ogg` is `RevealStall`. If a sound is
+   silent in Studio, check the output for an asset permission error. Without
+   the ids, claiming, buying, a pad you can't afford,
    weapon swings, Ghost Catcher, the parade and the reaper play plain Roblox
    sounds, every building's reveal plays the same build sound, every place
    keeps one ambience, and there is no music.

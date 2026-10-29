@@ -559,50 +559,70 @@ return {
 	-- plays its Fallback, one of the plain sounds that come with Roblox
 	-- ("rbxasset://sounds/..."), so buying and claiming are never silent.
 	Sounds = {
-		Music = { Id = "", Volume = 0.3 },
-		Music2 = { Id = "", Volume = 0.3 },
-		Ambience = { Id = "", Volume = 0.35 },
-		Claim = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		Purchase = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
-		Build = { Id = "", Volume = 0.5 },
-		Payout = { Id = "", Volume = 0.5 },
+		Music = { Id = "rbxassetid://132380445548830", Volume = 0.3 },
+		Music2 = { Id = "rbxassetid://119481806316324", Volume = 0.3 },
+		Ambience = { Id = "rbxassetid://99004754443542", Volume = 0.35 },
+		Claim = {
+			Id = "rbxassetid://91575562990285",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		Purchase = { Id = "rbxassetid://135655320041946", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		Build = { Id = "rbxassetid://76034978730655", Volume = 0.5 },
+		Payout = { Id = "rbxassetid://136531051662074", Volume = 0.5 },
 		-- A pad that can't be afforded yet.
-		Deny = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
+		Deny = { Id = "rbxassetid://108298839886466", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
-		Thump = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/action_jump_land.mp3" },
-		Whoosh = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Thump = {
+			Id = "rbxassetid://70744692772741",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/action_jump_land.mp3",
+		},
+		Whoosh = { Id = "rbxassetid://74666016923414", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
 		-- Ghost Catcher: a round starting, a wisp caught and a round over.
-		RoundStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
-		Catch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		RoundEnd = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		RoundStart = { Id = "rbxassetid://82987461392073", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Catch = {
+			Id = "rbxassetid://104608476202610",
+			Volume = 0.5,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		RoundEnd = { Id = "rbxassetid://88132914429723", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
 		-- The Moonlight Parade: a fanfare as it starts, a lantern caught, the
 		-- cheer when the meter fills, and the march that plays near it.
-		ParadeStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		ParadeCatch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		ParadeCheer = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/button.wav" },
-		ParadeMarch = { Id = "", Volume = 0.45 },
+		ParadeStart = {
+			Id = "rbxassetid://73895753707691",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		ParadeCatch = {
+			Id = "rbxassetid://94976434176225",
+			Volume = 0.5,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		ParadeCheer = { Id = "rbxassetid://137908757491442", Volume = 0.7, Fallback = "rbxasset://sounds/button.wav" },
+		ParadeMarch = { Id = "rbxassetid://109236917990604", Volume = 0.45 },
 		-- A sting for each building as it, or anything for it, is bought (see
 		-- Reveals). Until one is uploaded, Build plays instead.
-		RevealStall = { Id = "", Volume = 0.55 },
-		RevealPatch = { Id = "", Volume = 0.55 },
-		RevealKitchen = { Id = "", Volume = 0.55 },
-		RevealMaze = { Id = "", Volume = 0.55 },
-		RevealPumpkin = { Id = "", Volume = 0.55 },
-		RevealTrain = { Id = "", Volume = 0.55 },
+		RevealStall = { Id = "rbxassetid://86314738320307", Volume = 0.55 },
+		RevealPatch = { Id = "rbxassetid://115544433604971", Volume = 0.55 },
+		RevealKitchen = { Id = "rbxassetid://88090534670415", Volume = 0.55 },
+		RevealMaze = { Id = "rbxassetid://140117123247588", Volume = 0.55 },
+		RevealPumpkin = { Id = "rbxassetid://109293718642450", Volume = 0.55 },
+		RevealTrain = { Id = "rbxassetid://132093068071405", Volume = 0.55 },
 		-- Ambience by place (Scenery's sound zones): the festival crowd on the
 		-- plaza, plots and courtyard, a low choir in the graveyard and drums at
 		-- the arena. The woods, and anywhere a zone's sound isn't uploaded yet,
 		-- keep Ambience.
-		AmbienceCrowd = { Id = "", Volume = 0.3 },
-		AmbienceChoir = { Id = "", Volume = 0.35 },
-		AmbienceDrums = { Id = "", Volume = 0.35 },
+		AmbienceCrowd = { Id = "rbxassetid://139093006556675", Volume = 0.3 },
+		AmbienceChoir = { Id = "rbxassetid://129402171526439", Volume = 0.35 },
+		AmbienceDrums = { Id = "rbxassetid://112011251321382", Volume = 0.35 },
 		-- The ghost train chuffing and wailing, heard near its lead car, once
 		-- uploaded.
-		TrainWail = { Id = "", Volume = 0.6 },
+		TrainWail = { Id = "rbxassetid://100736724857511", Volume = 0.6 },
 		-- The trail's reaper whispering as it turns to watch you. Every sound
 		-- here is made by tools/make_sounds.py, make_festival_sounds.py or
 		-- make_arena_sounds.py, as assets/audio/<snake_case name>.ogg.
-		ReaperWhisper = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/swoosh.wav" },
+		ReaperWhisper = { Id = "rbxassetid://118288191651789", Volume = 0.7, Fallback = "rbxasset://sounds/swoosh.wav" },
 	},
 
 	-- Which reveal sting plays for each building (Sounds).

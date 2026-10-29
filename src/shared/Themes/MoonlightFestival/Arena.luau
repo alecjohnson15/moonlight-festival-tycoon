@@ -39,10 +39,10 @@ Arena.Specials = {
 -- Sounds as Roblox asset ids ("rbxassetid://123"), empty for silent. The
 -- originals are in assets/audio (made by tools/make_arena_sounds.py).
 Arena.Sounds = {
-	Bonk = { Id = "", Volume = 0.6 },
-	KnockOut = { Id = "", Volume = 0.7 },
-	Special = { Id = "", Volume = 0.6 },
-	Thunder = { Id = "", Volume = 0.7 },
+	Bonk = { Id = "rbxassetid://129763700860944", Volume = 0.6 },
+	KnockOut = { Id = "rbxassetid://103065201266783", Volume = 0.7 },
+	Special = { Id = "rbxassetid://90077066969834", Volume = 0.6 },
+	Thunder = { Id = "rbxassetid://87049769577931", Volume = 0.7 },
 }
 
 -- The top of the stage, at its middle, facing the entrance (-Z).
