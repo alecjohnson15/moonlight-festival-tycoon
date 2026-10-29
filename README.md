@@ -104,6 +104,7 @@ tools/tune_balance.luau   picks upgrade costs to hit the pacing target
 docs/progression.md       the upgrade paths and the 90 minute pacing rule
 docs/arena.md             the arena's rules, weapons and the paid edge
 docs/rights-register.md   every external asset and dependency
+docs/store-page.md        the icon and thumbnails in assets/marketing and where to upload them
 ```
 
 The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item), `CosmeticSwung` (the server telling clients a weapon swung), `ArenaAction` (a fighter's special move), `ArenaEffect` (the server telling clients what to draw in the arena), `Activity` (Ghost Catcher rounds), `Festival` (renaming and decorating a festival, and the server opening the panel), `Parade` (the server telling clients about the parade, and a client that joins mid-parade asking for it) and `Notice` (notes for the guide). A client only names what it wants; the server checks it. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
