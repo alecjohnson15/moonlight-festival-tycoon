@@ -1,6 +1,7 @@
--- Brings visitors to every claimed plot and runs its attractions. Walkthroughs
--- earn on every tick and rides pay when each round ends. Earnings does the
--- maths; coins only change through EconomyService.
+-- Brings visitors to every claimed plot and runs its attractions and vendors.
+-- Walkthroughs, showpieces and vendors earn on every tick and rides pay when
+-- each round ends. Earnings does the maths; coins only change through
+-- EconomyService.
 --
 -- Attributes for clients: the plot carries VisitorsPerSecond, each attraction
 -- carries the visitors it serves, and a ride carries NextRoundAt (server time)
@@ -21,17 +22,13 @@ local PlotService = require(script.Parent.PlotService)
 
 local AttractionService = {}
 
-local upgradesById = {}
-for _, upgrade in Balance.Upgrades do
-	upgradesById[upgrade.Id] = upgrade
-end
-
 -- Seconds into the current round of each ride, per player. Rounds restart
 -- when a player rejoins; nothing here is saved.
 local clocks: { [Player]: { [string]: number } } = {}
 -- Fractions of a coin earned between ticks, so odd rates aren't lost.
 local carry: { [Player]: number } = {}
 
+-- upgrade is the attraction with its boosts applied (see Earnings.effective).
 local function caption(upgrade, attraction: Earnings.Attraction, visitors: number): string
 	local strings = Theme.Strings
 	if upgrade.Type == "Walkthrough" then
@@ -51,8 +48,9 @@ local function show(player: Player, owned: { [string]: boolean })
 	end
 
 	local rideClocks = clocks[player] or {}
+	local effective = Earnings.effective(owned, Balance)
 	for id, attraction in Earnings.attractions(owned, Balance) do
-		local upgrade = upgradesById[id]
+		local upgrade = effective[id]
 		PlotService.updateStation(player, id, caption(upgrade, attraction, visitors), {
 			VisitorsPerSecond = attraction.Visitors,
 		})
@@ -80,6 +78,9 @@ local function tick(player: Player, owned: { [string]: boolean }, elapsed: numbe
 		if attraction.Type ~= "Ride" then
 			steady += attraction.CoinsPerSecond
 		end
+	end
+	for _, vendor in Earnings.vendors(owned, Balance) do
+		steady += vendor.CoinsPerSecond
 	end
 	local earned = steady * elapsed + (carry[player] or 0)
 	local whole = math.floor(earned)

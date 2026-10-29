@@ -21,4 +21,26 @@ function Format.whole(value: number): string
 	return if value < 0 then `-{grouped}` else grouped
 end
 
+local SUFFIXES = { "K", "M", "B", "T" }
+
+-- A price or big amount kept short for labels: whole numbers with commas up
+-- to 9,999, then three figures at most with K, M, B or T, such as "97K",
+-- "1.4M" or "130M".
+function Format.short(value: number): string
+	local size = math.abs(value)
+	if size < 10_000 then
+		return Format.whole(value)
+	end
+	local index, shown = 0, size
+	-- Rounds first, so 999,950 reads "1M" rather than "1000K".
+	while shown >= 1000 and index < #SUFFIXES do
+		size /= 1000
+		index += 1
+		local scale = if size >= 10 then 1 else 10
+		shown = math.floor(size * scale + 0.5) / scale
+	end
+	local text = string.gsub(string.format("%.1f", shown), "%.0$", "")
+	return `{if value < 0 then "-" else ""}{text}{SUFFIXES[index]}`
+end
+
 return Format
