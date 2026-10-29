@@ -1,11 +1,13 @@
 -- Plays the theme's sounds on this client: one-off effects by name, the
 -- music as a playlist that goes round the theme's songs in turn, the
 -- ambience of wherever the player is on a loop (crossfading as they move
--- between places; client/SoundZones picks it), and loops for events such as
--- the parade's march, which turn the music down while they play. The player can turn the music,
--- ambience and event loops off. A sound whose id is empty in the theme plays
--- its fallback, one of Roblox's own sounds, or is silent if it has none, so
--- the game runs before any audio is uploaded.
+-- between places; client/SoundZones picks it), loops for events such as
+-- the parade's march, which turn the music down while they play, and loops
+-- that play from a part, heard only near it, such as the Terror Train's
+-- wail. The player can turn the music, ambience and all loops off. A sound
+-- whose id is empty in the theme plays its fallback, one of Roblox's own
+-- sounds, or is silent if it has none, so the game runs before any audio is
+-- uploaded.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -25,6 +27,8 @@ local made: { [string]: Sound } = {}
 local loopsOn = true
 -- The event loops playing now.
 local events: { [string]: boolean } = {}
+-- The loops playing from parts.
+local attached: { [Sound]: boolean } = {}
 -- The ambience loop for where the player is.
 local ambience = AMBIENCE
 -- Which of the songs with an id is playing, by its place in that list.
@@ -140,6 +144,33 @@ function Sounds.stopLoop(name: string)
 	duck()
 end
 
+-- Plays name on a loop from part, heard only within reach studs of it,
+-- while loops are on. Only an uploaded sound plays, since a fallback would
+-- grate on a loop.
+function Sounds.attach(name: string, part: BasePart, reach: number): Sound?
+	if not hasId(name) then
+		return nil
+	end
+	local spec = Theme.Sounds[name]
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	sound.SoundId = spec.Id
+	sound.Volume = spec.Volume
+	sound.Looped = true
+	sound.RollOffMode = Enum.RollOffMode.InverseTapered
+	sound.RollOffMinDistance = reach / 6
+	sound.RollOffMaxDistance = reach
+	sound.Parent = part
+	attached[sound] = true
+	sound.Destroying:Connect(function()
+		attached[sound] = nil
+	end)
+	if loopsOn then
+		sound:Play()
+	end
+	return sound
+end
+
 -- Whether the theme has any music or ambience to turn on and off.
 function Sounds.hasLoops(): boolean
 	return #songs() > 0 or hasId(AMBIENCE)
@@ -207,6 +238,13 @@ function Sounds.setLoops(on: boolean)
 		if sound and not on then
 			sound:Stop()
 		elseif sound and not sound.IsPlaying then
+			sound:Play()
+		end
+	end
+	for sound in attached do
+		if not on then
+			sound:Stop()
+		elseif not sound.IsPlaying then
 			sound:Play()
 		end
 	end

@@ -24,6 +24,7 @@ local FestivalLook = Loader.require("src/shared/Themes/MoonlightFestival/Festiva
 local FestivalConfig = require("../src/shared/Config/Festival")
 local ParadeLook = Loader.require("src/shared/Themes/MoonlightFestival/Parade")
 local ParadeConfig = require("../src/shared/Config/Parade")
+local ArenaConfig = require("../src/shared/Config/Arena")
 local ParadeRules = require("../src/shared/Parade")
 local Kit = Loader.require("src/shared/Kit")
 
@@ -667,6 +668,149 @@ describe("theme scenery", function()
 				end
 			end
 		end
+	end)
+
+	it("lays a lit trail into the woods to a reaper that watches, and marks where each sound plays", function()
+		local map = Map.build()
+		local plaza = map.Plaza
+		local back = plaza.CFrame.Position.Z + plaza.Size.Z / 2
+		-- The arena's stage, where ArenaService puts it.
+		local stage = Instance.new("Part")
+		stage.Size = Vector3.new(ArenaConfig.Height + 1, ArenaConfig.Radius * 2, ArenaConfig.Radius * 2)
+		stage.CFrame = CFrame.new(plaza.CFrame.Position.X, (ArenaConfig.Height - 1) / 2, back + ArenaConfig.Distance)
+			* CFrame.Angles(0, 0, math.pi / 2)
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = plaza, Spawns = { map.Spawn }, Arena = stage }, folder)
+		local parts = partsIn(folder)
+
+		-- The trail: pieces laid end to end from beside the gateway, where its
+		-- sign is.
+		local trail = {}
+		for _, part in parts do
+			if part.Name == "Trail" then
+				table.insert(trail, part)
+			end
+		end
+		assert(#trail >= 3, "the trail has too few pieces")
+		local ends = {}
+		for _, piece in trail do
+			local reach = piece.Size.Z / 2 - 2
+			table.insert(ends, piece.CFrame * Vector3.new(0, 0, -reach))
+			table.insert(ends, piece.CFrame * Vector3.new(0, 0, reach))
+		end
+		local loose = {}
+		for i, point in ends do
+			local met = false
+			for j, other in ends do
+				met = met or (math.ceil(i / 2) ~= math.ceil(j / 2) and (point - other).Magnitude < 0.5)
+			end
+			if not met then
+				table.insert(loose, point)
+			end
+		end
+		expect(#loose).toBe(2)
+		local gate = Vector3.new(plaza.CFrame.Position.X, loose[1].Y, back + 9)
+		local first, last = loose[1], loose[2]
+		if (last - gate).Magnitude < (first - gate).Magnitude then
+			first, last = last, first
+		end
+		assert((first - gate).Magnitude < 12, "the trail doesn't start by the gateway")
+		local signed = false
+		for _, label in folder:GetDescendants() do
+			signed = signed or (label:IsA("TextLabel") and label.Text == Theme.Strings.TrailSign)
+		end
+		assert(signed, "the trail has no sign")
+
+		-- Nothing solid on it, and lanterns all the way along.
+		local length, lights = 0, 0
+		for _, piece in trail do
+			length += piece.Size.Z - 4
+			local half = piece.Size / 2
+			for _, part in parts do
+				if part.CanCollide then
+					local lo, hi = boxIn(part, piece.CFrame)
+					local blocked = lo[1] < half.X and hi[1] > -half.X and lo[3] < half.Z - 2 and hi[3] > 2 - half.Z
+					assert(not (blocked and lo[2] < 6), `a {part.ClassName} at {part.CFrame.Position} blocks the trail`)
+				end
+			end
+		end
+		for _, light in folder:GetDescendants() do
+			if light:IsA("PointLight") then
+				for _, piece in trail do
+					local offset = piece.CFrame:PointToObjectSpace(light.Parent.CFrame.Position)
+					if math.abs(offset.X) < 5 and math.abs(offset.Z) < piece.Size.Z / 2 then
+						lights += 1
+						break
+					end
+				end
+			end
+		end
+		assert(lights >= length / 30, `the trail has {lights} lights along {length} studs`)
+
+		-- The reaper at its end turns its head, which looks back down the trail.
+		local reaper = folder:FindFirstChild("TrailReaper", true)
+		assert(reaper, "the trail has no reaper")
+		local head = reaper:FindFirstChild("Head")
+		local radius = head and head:GetAttribute("WatchRadius")
+		assert(head and head:HasTag("Watcher") and radius, "the trail's reaper can't watch")
+		local pivot = head.WorldPivot
+		local flat = Vector3.new(pivot.Position.X, last.Y, pivot.Position.Z)
+		assert((flat - last).Magnitude < radius / 2, "the reaper isn't at the end of the trail")
+		local ahead = -math.huge
+		for _, part in partsIn(head) do
+			local depth = pivot:PointToObjectSpace(part.CFrame.Position).Z
+			assert(depth < 0.01, "the reaper's head has something behind its face")
+			ahead = math.max(ahead, -depth)
+		end
+		assert(ahead > 0.3, "the reaper's face isn't on the front of its head")
+		local lastPiece = trail[1]
+		for _, piece in trail do
+			if (piece.CFrame.Position - last).Magnitude < (lastPiece.CFrame.Position - last).Magnitude then
+				lastPiece = piece
+			end
+		end
+		local toward = (lastPiece.CFrame.Position - flat).Unit
+		assert(pivot.LookVector:Dot(toward) > 0.8, "the reaper doesn't look down the trail")
+
+		-- Sound zones, picked the way client/SoundZones does.
+		local zones = {}
+		for _, part in parts do
+			if part:HasTag("SoundZone") then
+				local ambience = part:GetAttribute("Ambience")
+				assert(Theme.Sounds[ambience], `{part.Name} plays {ambience}, which the theme doesn't have`)
+				assert(type(part:GetAttribute("Priority")) == "number", `{part.Name} has no priority`)
+				assert(
+					part.Transparency == 1 and not part.CanCollide and not part.CanTouch and not part.CanQuery,
+					`{part.Name} can be seen or hit`
+				)
+				table.insert(zones, part)
+			end
+		end
+		local function ambienceAt(position: any): string
+			local best, bestPriority, bestVolume = "Ambience", -math.huge, math.huge
+			for _, zone in zones do
+				local offset, half = zone.CFrame:PointToObjectSpace(position), zone.Size / 2
+				if math.abs(offset.X) <= half.X and math.abs(offset.Y) <= half.Y and math.abs(offset.Z) <= half.Z then
+					local priority, volume = zone:GetAttribute("Priority"), zone.Size.X * zone.Size.Y * zone.Size.Z
+					if priority > bestPriority or (priority == bestPriority and volume < bestVolume) then
+						best, bestPriority, bestVolume = zone:GetAttribute("Ambience"), priority, volume
+					end
+				end
+			end
+			return best
+		end
+		local up = Vector3.new(0, 3, 0)
+		expect(ambienceAt(map.Spawn.CFrame.Position + up)).toBe("AmbienceCrowd")
+		for _, plot in map.Plots do
+			expect(ambienceAt(plot.CFrame.Position + up)).toBe("AmbienceCrowd")
+		end
+		local graveyard = folder:FindFirstChild("GraveyardSounds", true)
+		assert(graveyard, "the graveyard has no sound zone")
+		expect(ambienceAt(graveyard.CFrame.Position)).toBe("AmbienceChoir")
+		expect(ambienceAt(Vector3.new(stage.CFrame.Position.X, 4, stage.CFrame.Position.Z))).toBe("AmbienceDrums")
+		-- The bonfire, the woods and the trail's end keep the plain night.
+		expect(ambienceAt(Vector3.new(plaza.CFrame.Position.X, 3, back + 22))).toBe("Ambience")
+		expect(ambienceAt(pivot.Position)).toBe("Ambience")
 	end)
 end)
 

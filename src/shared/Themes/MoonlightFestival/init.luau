@@ -144,6 +144,8 @@ return {
 		-- The PvP arena. ArenaKOs is the leaderboard column counting each
 		-- player's knockouts.
 		ArenaSign = "BONK ARENA",
+		-- The sign at the start of the quiet trail into the woods.
+		TrailSign = "Moonlit Trail",
 		ArenaRules = "Walk in to fight. Walk out to be safe.",
 		ArenaKOs = "KOs",
 		ArenaBonker = "Pumpkin Bonker",
@@ -594,9 +596,12 @@ return {
 		AmbienceCrowd = { Id = "", Volume = 0.3 },
 		AmbienceChoir = { Id = "", Volume = 0.35 },
 		AmbienceDrums = { Id = "", Volume = 0.35 },
-		-- The Terror Train's wail from inside its tunnel, heard near it.
+		-- The Terror Train chuffing and wailing, heard near its lead car, once
+		-- uploaded.
 		TrainWail = { Id = "", Volume = 0.6 },
-		-- The trail's reaper whispering as it turns to watch you.
+		-- The trail's reaper whispering as it turns to watch you. Every sound
+		-- here is made by tools/make_sounds.py, make_festival_sounds.py or
+		-- make_arena_sounds.py, as assets/audio/<snake_case name>.ogg.
 		ReaperWhisper = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/swoosh.wav" },
 	},
 

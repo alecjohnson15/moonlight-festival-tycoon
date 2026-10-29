@@ -432,9 +432,10 @@ function Pieces.bat(parent: Instance, centre: CFrame, size: number)
 	end
 end
 
--- A tall hooded figure in a ragged cloak, leaning on a scythe. A statue, so it
--- never moves; its eyes glow.
-function Pieces.reaper(parent: Instance, base: CFrame, height: number)
+-- A tall hooded figure in a ragged cloak, leaning on a scythe; its eyes
+-- glow. A statue, so it never moves, unless head is given: then its hood
+-- and eyes are built into head, pivoted on the hood, so it can turn.
+function Pieces.reaper(parent: Instance, base: CFrame, height: number, head: Model?)
 	local cloak = P.Bat:Lerp(P.Roof, 0.25)
 	Kit.solid(
 		Kit.block(
@@ -457,20 +458,25 @@ function Pieces.reaper(parent: Instance, base: CFrame, height: number)
 		)
 	end
 	local hood = robe * CFrame.new(0, height * 0.66, 0)
-	Kit.ball(parent, hood, Vector3.new(height * 0.17, height * 0.2, height * 0.18), cloak, M.Fabric)
+	local face = head or parent
+	Kit.ball(face, hood, Vector3.new(height * 0.17, height * 0.2, height * 0.18), cloak, M.Fabric)
 	Kit.ball(
-		parent,
+		face,
 		hood * CFrame.new(0, -height * 0.01, height * 0.06),
 		Vector3.new(height * 0.12, height * 0.14, height * 0.08),
 		P.Eye
 	)
 	for side = -1, 1, 2 do
 		Kit.glow(
-			parent,
+			face,
 			hood * CFrame.new(side * height * 0.025, 0, height * 0.1),
 			Vector3.new(0.18, 0.12, 0.05),
 			P.Washes.Red
 		)
+	end
+	if head then
+		-- Turned so the head's pivot looks the way its face does.
+		head.WorldPivot = hood * CFrame.Angles(0, math.pi, 0)
 	end
 	-- The scythe: a long handle and a curved blade made of short pieces.
 	local handle = robe * CFrame.new(height * 0.2, height * 0.38, height * 0.08)

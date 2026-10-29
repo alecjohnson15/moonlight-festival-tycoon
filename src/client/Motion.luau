@@ -1,22 +1,33 @@
 -- Moves what the theme marks to move: models tagged Float bob and turn,
 -- ones tagged Patrol glide out and back, ones tagged Pop jump up now and
 -- then, ghost trains tagged Train run round their tracks (each car by its
--- Order, so a path can add cars to the end), big wheels tagged Wheel turn
--- with their gondolas hanging level, and lights tagged Flicker flicker. The
--- server builds them still; all of the motion is drawn on this client only,
--- so it costs no network traffic. Anything far from the camera is left
--- alone.
+-- Order, so a path can add cars to the end, and the lead car wailing once
+-- its sound is uploaded), big wheels tagged Wheel turn with their gondolas
+-- hanging level, lights tagged Flicker flicker, and heads tagged Watcher
+-- turn to follow the player while they're within the head's WatchRadius,
+-- with a whisper as they come near. The server builds them still; all of
+-- the motion is drawn on this client only, so it costs no network traffic.
+-- Anything far from the camera is left alone.
 
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local Sounds = require(script.Parent.Sounds)
+
 local NEAR = 350
 local FLICKER_STEP = 1 / 20
+-- How far a watching head turns either way, how fast it follows, and how
+-- long before it whispers again.
+local WATCH_TURN = math.rad(75)
+local WATCH_RATE = 2.5
+local WHISPER_EVERY = 30
 
 type Floater = { Base: CFrame, Height: number, Seconds: number, Spin: number, Axis: Vector3, Phase: number }
 type Patroller = { Base: CFrame, Offset: Vector3, Seconds: number, Phase: number }
 type Popper = { Base: CFrame, Height: number, Seconds: number, Phase: number }
+type Watcher = { Base: CFrame, Radius: number, Turn: number, Near: boolean, WhisperedAt: number }
 
 local Motion = {}
 
@@ -24,8 +35,10 @@ local floaters: { [Model]: Floater } = {}
 local patrollers: { [Model]: Patroller } = {}
 local poppers: { [Model]: Popper } = {}
 local trains: { [Model]: { Model } } = {}
+local wails: { [Model]: Sound } = {}
 local wheels: { [Model]: { Rim: Model?, Gondolas: { Model } } } = {}
 local flickers: { [Light]: number } = {}
+local watchers: { [Model]: Watcher } = {}
 local sinceFlicker = 0
 
 -- Calls added for everything with the tag, now and later, and removed when
@@ -98,6 +111,10 @@ local function addTrain(model: Instance)
 		return a:GetAttribute("Order") < b:GetAttribute("Order")
 	end)
 	trains[model] = cars
+	local body = cars[1] and cars[1]:GetAttribute("Order") == 1 and cars[1]:FindFirstChildWhichIsA("BasePart", true)
+	if body and not wails[model] then
+		wails[model] = Sounds.attach("TrainWail", body, 60)
+	end
 end
 
 local function addWheel(model: Instance)
@@ -112,6 +129,19 @@ local function addWheel(model: Instance)
 	end
 	local rim = model:FindFirstChild("Rim")
 	wheels[model] = { Rim = if rim and rim:IsA("Model") then rim else nil, Gondolas = gondolas }
+end
+
+local function addWatcher(model: Instance)
+	if not model:IsA("Model") then
+		return
+	end
+	watchers[model] = {
+		Base = model:GetPivot(),
+		Radius = model:GetAttribute("WatchRadius") or 20,
+		Turn = 0,
+		Near = false,
+		WhisperedAt = -math.huge,
+	}
 end
 
 local function addFlicker(light: Instance)
@@ -198,6 +228,31 @@ local function onRenderStep(dt: number)
 		end
 	end
 
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	for model, watcher in watchers do
+		if near(watcher.Base.Position, camera) then
+			-- Turns towards the player while they're close, as far as a neck
+			-- would, and slowly back once they've gone.
+			local target = 0
+			local close = false
+			if root and root:IsA("BasePart") then
+				local offset = watcher.Base:PointToObjectSpace(root.Position)
+				close = Vector3.new(offset.X, 0, offset.Z).Magnitude < watcher.Radius
+				if close then
+					target = math.clamp(math.atan2(-offset.X, -offset.Z), -WATCH_TURN, WATCH_TURN)
+				end
+			end
+			if close and not watcher.Near and os.clock() - watcher.WhisperedAt > WHISPER_EVERY then
+				watcher.WhisperedAt = os.clock()
+				Sounds.play("ReaperWhisper")
+			end
+			watcher.Near = close
+			watcher.Turn += (target - watcher.Turn) * math.min(dt * WATCH_RATE * (if close then 1 else 0.4), 1)
+			model:PivotTo(watcher.Base * CFrame.Angles(0, watcher.Turn, 0))
+		end
+	end
+
 	sinceFlicker += dt
 	if sinceFlicker >= FLICKER_STEP then
 		sinceFlicker = 0
@@ -223,12 +278,20 @@ function Motion.start()
 	end)
 	watch("Train", addTrain, function(model)
 		trains[model] = nil
+		local wail = wails[model]
+		if wail then
+			wails[model] = nil
+			wail:Destroy()
+		end
 	end)
 	watch("Wheel", addWheel, function(model)
 		wheels[model] = nil
 	end)
 	watch("Flicker", addFlicker, function(light)
 		flickers[light] = nil
+	end)
+	watch("Watcher", addWatcher, function(model)
+		watchers[model] = nil
 	end)
 	RunService.RenderStepped:Connect(onRenderStep)
 end
