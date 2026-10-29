@@ -8,6 +8,7 @@
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
 local Layout = require(script.Parent.Parent.Parent.Config.Layout)
+local Courtyard = require(script.Parent.Courtyard)
 local Pieces = require(script.Parent.Pieces)
 local Theme = require(script.Parent)
 
@@ -36,6 +37,9 @@ export type Site = {
 
 local Scenery = {}
 
+-- A gap between plots this wide or wider is the arrival courtyard.
+local COURTYARD_MIN_WIDTH = 40
+
 -- The direction from (x, z) towards the middle, as a turn about Y.
 local function inward(x: number, z: number): number
 	return math.atan2(-x, -z)
@@ -60,8 +64,17 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	local gate = Layout.Gate
 	local opening = gate.Size[1] / 2 + 3.5
 
-	-- A cobbled walkway from the gate down the middle, between the buttons.
-	Kit.block(model, at(-1, 0.05, -0.3), V(10, 0.1, 91.4), Kit.color(Theme.Look.Path), M.Cobblestone)
+	-- A cobbled walkway from the gate down the middle, between the buttons,
+	-- to Ghost Catcher's booth at the back.
+	local walkwayEnd = Layout.Activity.Z + Layout.Activity.Size[3] / 2
+	local walkwayStart = gate.Z - gate.Size[3] / 2 - 0.1
+	Kit.block(
+		model,
+		at(-1, 0.05, (walkwayStart + walkwayEnd) / 2),
+		V(10, 0.1, walkwayStart - walkwayEnd),
+		Kit.color(Theme.Look.Path),
+		M.Cobblestone
+	)
 
 	-- The fence, open at the gate.
 	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3)
@@ -88,8 +101,9 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		local x, z = spot[1], spot[2]
 		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, 18))
 	end
+	-- Spaced out a little, as every plot has them.
 	for i = 1, #tops - 1 do
-		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs)
+		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 3)
 	end
 
 	-- The arch over the gate: stone pillars topped with jack-o'-lanterns, a
@@ -144,7 +158,12 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	for _, x in { -10, 8 } do
 		Pieces.pumpkin(model, at(x, 0, -43, random.number(0, 3)), random.number(1, 1.5))
 	end
-	Pieces.cobweb(model, point(-pillarX + 1, pillarHeight, gate.Z + 1.1), point(-pillarX + 1, pillarHeight - 2.4, gate.Z + 1.1), point(-pillarX + 3.2, pillarHeight + 1.6, gate.Z + 1.1))
+	Pieces.cobweb(
+		model,
+		point(-pillarX + 1, pillarHeight, gate.Z + 1.1),
+		point(-pillarX + 1, pillarHeight - 2.4, gate.Z + 1.1),
+		point(-pillarX + 3.2, pillarHeight + 1.6, gate.Z + 1.1)
+	)
 
 	-- Ground mist, and green wisps drifting over the grass.
 	Pieces.mist(model, at(0, 1, 0), Vector2.new(90, 90), 4)
@@ -217,7 +236,13 @@ local function windmill(parent: Instance, base: CFrame)
 		local turn = hub * CFrame.Angles(0, 0, blade * math.pi / 2)
 		local length = if blade == 2 then 5 else 9
 		Kit.block(sails, turn * CFrame.new(0, length / 2 + 0.5, 0.3), V(0.3, length, 0.2), P.DarkWood, M.Wood)
-		Kit.block(sails, turn * CFrame.new(0.9, length / 2 + 1, 0.3), V(1.6, length - 1, 0.1), P.Plaster:Lerp(P.Bat, 0.4), M.Fabric)
+		Kit.block(
+			sails,
+			turn * CFrame.new(0.9, length / 2 + 1, 0.3),
+			V(1.6, length - 1, 0.1),
+			P.Plaster:Lerp(P.Bat, 0.4),
+			M.Fabric
+		)
 	end
 	Kit.float(sails, hub, 0, 1, 24, Vector3.new(0, 0, 1))
 end
@@ -256,7 +281,32 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	end
 	for _, spawn in site.Spawns do
 		local position = spawn.CFrame.Position
-		table.insert(boxes, { position.X, position.Z, 6, 6 })
+		table.insert(boxes, { position.X, position.Z, 14, 12 })
+		Courtyard.spawn(parent, spawn)
+	end
+
+	-- The arrival courtyard fills the widest gap in the row of plots, which
+	-- is the one straight ahead of the spawn.
+	local byX = table.clone(site.Plots)
+	table.sort(byX, function(a, b)
+		return a.CFrame.Position.X < b.CFrame.Position.X
+	end)
+	local courtyard: { Left: BasePart, Right: BasePart, Width: number }? = nil
+	for i = 1, #byX - 1 do
+		local a, b = byX[i], byX[i + 1]
+		local width = (b.CFrame.Position.X - b.Size.X / 2) - (a.CFrame.Position.X + a.Size.X / 2)
+		if width >= COURTYARD_MIN_WIDTH and (not courtyard or width > courtyard.Width) then
+			courtyard = { Left = a, Right = b, Width = width }
+		end
+	end
+	local courtyardFloor: BasePart? = nil
+	if courtyard then
+		local a, b = courtyard.Left, courtyard.Right
+		local centreX = (a.CFrame.Position.X + a.Size.X / 2 + b.CFrame.Position.X - b.Size.X / 2) / 2
+		local top = a.CFrame.Position.Y + a.Size.Y / 2
+		local size = Vector2.new(courtyard.Width - 2, a.Size.Z)
+		courtyardFloor = Courtyard.build(parent, CFrame.new(centreX, top, a.CFrame.Position.Z), size)
+		table.insert(boxes, { centreX, a.CFrame.Position.Z, courtyard.Width / 2, a.Size.Z / 2 })
 	end
 	-- Keeps the woods off the arena, its braziers, and the ramp and open
 	-- ground in front of its entrance (towards -Z).
@@ -290,13 +340,22 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	})
 	for i = 0, 6 do
 		local x = left + (right - left) * i / 6 + random.number(-30, 30)
-		table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, back - 20), Radius = random.number(70, 95) })
-		table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, front + 20), Radius = random.number(70, 95) })
+		table.insert(
+			fills,
+			{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, back - 20), Radius = random.number(70, 95) }
+		)
+		table.insert(
+			fills,
+			{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, front + 20), Radius = random.number(70, 95) }
+		)
 	end
 	for _, x in { left - 20, right + 20 } do
 		for i = 0, 3 do
 			local z = back + (front - back) * i / 3
-			table.insert(fills, { Shape = "Ball", Material = "Grass", Centre = V(x, -34, z), Radius = random.number(70, 95) })
+			table.insert(
+				fills,
+				{ Shape = "Ball", Material = "Grass", Centre = V(x, -34, z), Radius = random.number(70, 95) }
+			)
 		end
 	end
 
@@ -311,7 +370,13 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 			local lit = i % 2 == 0
 			table.insert(
 				tops,
-				Pieces.lanternPost(parent, at(x, backEdge - 1.5, math.pi, plazaTop), 8, P.Candle, if lit then 22 else nil)
+				Pieces.lanternPost(
+					parent,
+					at(x, backEdge - 1.5, math.pi, plazaTop),
+					8,
+					P.Candle,
+					if lit then 22 else nil
+				)
 			)
 			if i % 3 == 1 then
 				Pieces.corn(parent, at(x + 6, backEdge - 2, 0, plazaTop), 4.5, random)
@@ -324,16 +389,31 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		frontZ = backEdge
 	end
 
-	-- A gateway out of the plaza towards the bonfire, with the festival's name.
+	-- A gateway out of the plaza towards the bonfire and the arena, named for
+	-- the arena on the plaza side so it isn't mistaken for the way to the
+	-- plots, and for the festival on the way back.
 	local gateZ = frontZ + 4
 	for side = -1, 1, 2 do
-		Kit.solid(Kit.block(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 6, 0), V(1.6, 12, 1.6), P.DarkWood, M.Wood))
+		Kit.solid(
+			Kit.block(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 6, 0), V(1.6, 12, 1.6), P.DarkWood, M.Wood)
+		)
 		Pieces.jackOLantern(parent, at(middleX + side * 7, gateZ) * CFrame.new(0, 12, 0), 1.8, true)
 	end
-	for _, yaw in { 0, math.pi } do
-		Pieces.sign(parent, at(middleX, gateZ, yaw) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
-	end
-	Kit.block(parent, at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0), V(8, 0.1, 12), Kit.color(Theme.Look.Path), M.Cobblestone)
+	Pieces.sign(
+		parent,
+		at(middleX, gateZ, math.pi) * CFrame.new(0, 10.5, 0.15),
+		Vector2.new(12, 2.2),
+		Theme.Strings.ArenaSign,
+		W.Orange
+	)
+	Pieces.sign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
+	Kit.block(
+		parent,
+		at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0),
+		V(8, 0.1, 12),
+		Kit.color(Theme.Look.Path),
+		M.Cobblestone
+	)
 	claim(middleX, gateZ, 9, 3)
 
 	-- The bonfire, with log benches round it and a guest who never left.
@@ -342,7 +422,13 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	claim(middleX, fireZ, 14, 14)
 	for i = 0, 9 do
 		local angle = i * math.pi / 5
-		Kit.ball(parent, fire * CFrame.new(math.cos(angle) * 4.5, 0.4, math.sin(angle) * 4.5), V(1.4, 0.9, 1.2), P.DarkStone, M.Slate)
+		Kit.ball(
+			parent,
+			fire * CFrame.new(math.cos(angle) * 4.5, 0.4, math.sin(angle) * 4.5),
+			V(1.4, 0.9, 1.2),
+			P.DarkStone,
+			M.Slate
+		)
 	end
 	for i = 0, 3 do
 		Kit.log(parent, fire * CFrame.new(0, 0.6, 0) * CFrame.Angles(0, i * math.pi / 4, 0.25), 5, 0.6, P.Trunk, M.Wood)
@@ -397,15 +483,34 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		Pieces.reaper(parent, yard(side * 6, -hd + 3, math.pi), 7)
 		Pieces.bareTree(parent, yard(side * (hw - 4), hd - 4), 18, random)
 		Pieces.lanternPost(parent, yard(side * 4, -hd - 1, math.pi), 6, W.Toxic, 16)
-		Kit.wash(parent, yard(side * (hw - 1), -hd + 1).Position + V(0, 0.4, 0), yard(0, 0).Position + V(0, 3, 0), W.Toxic, 40, 2)
+		Kit.wash(
+			parent,
+			yard(side * (hw - 1), -hd + 1).Position + V(0, 0.4, 0),
+			yard(0, 0).Position + V(0, 3, 0),
+			W.Toxic,
+			40,
+			2
+		)
 	end
 	Pieces.mist(parent, yard(0, 0) * CFrame.new(0, 1, 0), Vector2.new(yardWidth, yardDepth), 6)
 
 	-- A pond off to the other side, with lanterns floating on it.
 	local pondX, pondZ, pondRadius = middleX + 72, fireZ + 18, 18
 	claim(pondX, pondZ, pondRadius + 6, pondRadius + 6)
-	table.insert(fills, { Shape = "Cylinder", Material = "Mud", CFrame = CFrame.new(pondX, -1, pondZ), Height = 2, Radius = pondRadius + 4 })
-	table.insert(fills, { Shape = "Cylinder", Material = "Water", CFrame = CFrame.new(pondX, -2.5, pondZ), Height = 5, Radius = pondRadius })
+	table.insert(fills, {
+		Shape = "Cylinder",
+		Material = "Mud",
+		CFrame = CFrame.new(pondX, -1, pondZ),
+		Height = 2,
+		Radius = pondRadius + 4,
+	})
+	table.insert(fills, {
+		Shape = "Cylinder",
+		Material = "Water",
+		CFrame = CFrame.new(pondX, -2.5, pondZ),
+		Height = 5,
+		Radius = pondRadius,
+	})
 	for i = 0, 4 do
 		local angle = i * math.pi * 2 / 5 + random.number(-0.3, 0.3)
 		local distance = random.number(4, pondRadius - 4)
@@ -473,10 +578,12 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	scatter(left + 10, minX - 12, minZ, frontZ, 18, 0.5, 14, 24)
 	scatter(maxX + 12, right - 10, minZ, frontZ, 18, 0.5, 14, 24)
 	-- Between the plots, a few trees in each gap.
-	for i = 1, #site.Plots - 1 do
-		local a, b = site.Plots[i], site.Plots[i + 1]
-		local gapX = (a.CFrame.Position.X + b.CFrame.Position.X) / 2
-		scatter(gapX, gapX, a.CFrame.Position.Z - 36, a.CFrame.Position.Z + 36, 18, 0.8, 9, 14)
+	for i = 1, #byX - 1 do
+		local a, b = byX[i], byX[i + 1]
+		if not courtyard or a ~= courtyard.Left then
+			local gapX = (a.CFrame.Position.X + b.CFrame.Position.X) / 2
+			scatter(gapX, gapX, a.CFrame.Position.Z - 36, a.CFrame.Position.Z + 36, 18, 0.8, 9, 14)
+		end
 	end
 
 	-- Mist rolling through the woods behind the plots and beyond the plaza.
@@ -489,6 +596,9 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	local floors = table.clone(site.Plots)
 	if plaza then
 		table.insert(floors, plaza)
+	end
+	if courtyardFloor then
+		table.insert(floors, courtyardFloor)
 	end
 	for _, floor in floors do
 		local top = floor.CFrame.Position.Y + floor.Size.Y / 2 + 4

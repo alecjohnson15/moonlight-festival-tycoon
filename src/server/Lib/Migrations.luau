@@ -14,6 +14,8 @@ export type Save = {
 	Receipts: { Ids: { [string]: number }, Order: { string } },
 	Stats: { ServeCount: number },
 	Arena: { KOs: number },
+	-- Ghost Catcher: the most wisps caught in one round, and rounds played.
+	Activity: { Best: number, Rounds: number },
 }
 
 type Step = (data: any) -> ()
@@ -36,6 +38,7 @@ local function template(): Save
 		Receipts = { Ids = {}, Order = {} },
 		Stats = { ServeCount = 0 },
 		Arena = { KOs = 0 },
+		Activity = { Best = 0, Rounds = 0 },
 	}
 end
 

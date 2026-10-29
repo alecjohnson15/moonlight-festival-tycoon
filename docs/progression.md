@@ -84,6 +84,18 @@ Every path averages 89 to 92 minutes across the routes that take it, so no
 choice is a trap and none is a shortcut. Real players take a little longer
 than the simulation, since they also have to walk to each pad.
 
+### Ghost Catcher
+
+Ghost Catcher (`Config/Activity.luau`) is the repeatable activity between
+purchases: a 25 second round of wisps to catch, then a 65 second rest. Each
+wisp pays 0.4 seconds of the plot's income and a perfect round 2 seconds more,
+so a player who plays every round from start to finish earns at most about
+7.5% more than passive income (`tests/Activity.spec.luau` holds it there).
+That takes the fastest route from 86 minutes to just over 80, the floor of the
+pacing rule; a player who never plays it is not held back. In the first few
+minutes each wisp pays at least 2 coins, which is worth more than income then
+and makes the first rounds a real boost.
+
 ## Retuning
 
 `tools/tune_balance.luau` is a scratch tuner that isn't shipped. It picks costs

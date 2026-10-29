@@ -281,8 +281,7 @@ local function swing(player: Player, tool: Tool)
 	fighter.LastSwing = now
 	local root = fighter.Root
 	local facing = root.CFrame.LookVector
-	local target =
-		Combat.swingTarget(root.Position, facing, targets(player), weapon.Reach, weapon.Arc, Arena.HitHeight)
+	local target = Combat.swingTarget(root.Position, facing, targets(player), weapon.Reach, weapon.Arc, Arena.HitHeight)
 	if target then
 		local velocity = Combat.knockback(root.Position, target.Position, facing, weapon.Knockback, Arena.Lift)
 		hit(player, target.Id, weapon.Damage, velocity, weaponId)

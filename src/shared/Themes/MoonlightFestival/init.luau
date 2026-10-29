@@ -16,8 +16,9 @@ return {
 
 	Strings = {
 		PlotOwner = "%s's Haunt",
-		ClaimGate = "Touch to claim",
-		ClaimHint = "Walk into a free gate to claim your haunted festival",
+		ClaimGate = "Free! Walk in to claim",
+		-- The arrows by the spawn, pointing along the plaza to the plots.
+		ClaimSign = "Claim a haunt",
 		Coins = "Coins",
 		IncomePerSecond = "+%d / sec",
 		VisitorsPerSecond = "%s visitors / sec",
@@ -33,6 +34,33 @@ return {
 		RideRound = "%s riders every %s sec",
 		RideNext = "Next ride in %s",
 		Payout = "+%s",
+
+		-- The guide: the goal line at the bottom of the screen, the beam that
+		-- points the way, and the notes that pop up over it.
+		GoalClaim = "Walk into a glowing gate to claim your own haunt",
+		GoalBuy = "Step on the glowing pad to build: %s",
+		GoalSave = "Next: %s",
+		GoalProgress = "%s / %s coins",
+		GoalPick = "Pick a path for your %s. Step on a pad to see what it does",
+		GoalConfirm = "Step off and on %s again to pick it",
+		GoalDone = "Your haunt is complete!",
+		GoalActivity = "Saving for %s. Catch ghosts at the Ghost Catcher while you wait",
+		Welcome = "Welcome to your haunt!",
+		WelcomeHint = "Your festival starts here. Step on the glowing pad",
+		ShortCoins = "Need %s more coins for %s",
+		ShortHint = "Your festival keeps earning while you wait",
+		PathLocks = "Locks for good: %s",
+		PathGain = "%s now",
+		PathConfirm = "Step off, then on again, to pick it",
+		ActivityName = "Ghost Catcher",
+		ActivityReady = "Step on the pad to play!",
+		ActivityWait = "Next round in %ds",
+		ActivityPlaying = "Catch the wisps!",
+		ActivityCount = "%d / %d caught",
+		ActivityResult = "Caught %d of %d",
+		ActivityEarned = "+%s coins",
+		ActivityPerfect = "Perfect round!",
+		ActivityBest = "Best: %d",
 
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
@@ -229,6 +257,8 @@ return {
 		Candle = "#FFD27A",
 		Glow = "#FFA43D",
 		Moon = "#CFE0FF",
+		-- The festival's landmark is lit in this, and nothing else is.
+		Moonlight = "#FFE9A8",
 		Ghost = "#EEF3FF",
 		Eye = "#1E1A2B",
 		Water = "#7FD3FF",
@@ -330,18 +360,26 @@ return {
 	-- Sounds and music, as Roblox asset ids ("rbxassetid://123"). Empty means
 	-- silent. The original sounds for this pack are in assets/audio; upload
 	-- them and paste their ids here (see the README). Volume is 0 to 1. Music
-	-- and Music2 are two songs that play in turn.
+	-- and Music2 are two songs that play in turn. Until a cue is uploaded it
+	-- plays its Fallback, one of the plain sounds that come with Roblox
+	-- ("rbxasset://sounds/..."), so buying and claiming are never silent.
 	Sounds = {
 		Music = { Id = "", Volume = 0.3 },
 		Music2 = { Id = "", Volume = 0.3 },
 		Ambience = { Id = "", Volume = 0.35 },
-		Claim = { Id = "", Volume = 0.6 },
-		Purchase = { Id = "", Volume = 0.6 },
+		Claim = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		Purchase = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
 		Build = { Id = "", Volume = 0.5 },
 		Payout = { Id = "", Volume = 0.5 },
+		-- A pad that can't be afforded yet.
+		Deny = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
-		Thump = { Id = "", Volume = 0.6 },
-		Whoosh = { Id = "", Volume = 0.5 },
+		Thump = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/action_jump_land.mp3" },
+		Whoosh = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
+		-- Ghost Catcher: a round starting, a wisp caught and a round over.
+		RoundStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Catch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		RoundEnd = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

@@ -118,19 +118,21 @@ end
 local function buildGreyboxMap(): Folder
 	local folder = Instance.new("Folder")
 	folder.Name = "Plots"
-	local size, spacing, count = Layout.PlotSize, Layout.PlotSpacing, Layout.PlotCount
-	for i = 1, count do
-		local x = (i - (count + 1) / 2) * spacing
+	local size = Layout.PlotSize
+	for i = 1, Layout.PlotCount do
+		local x = Layout.plotX(i)
 		makePart(`Plot{i}`, Vector3.new(size, 1, size), CFrame.new(x, 0, 0), Color3.fromRGB(70, 92, 68), folder)
 	end
 	folder.Parent = Workspace
 
-	-- A walkway along the front of the plots, with the spawn in the middle.
-	local plazaDepth = 40
+	-- A walkway along the front of the plots, with the spawn in the middle,
+	-- in front of the courtyard between the middle two plots. Players spawn
+	-- facing the courtyard (-Z).
+	local plazaDepth = Layout.PlazaDepth
 	local plazaZ = size / 2 + plazaDepth / 2
 	makePart(
 		"Plaza",
-		Vector3.new(count * spacing, 1, plazaDepth),
+		Vector3.new(Layout.PlazaWidth, 1, plazaDepth),
 		CFrame.new(0, 0, plazaZ),
 		Color3.fromRGB(60, 60, 72),
 		Workspace
@@ -170,7 +172,8 @@ local function finish(built: Instance, withEffect: boolean?)
 end
 
 -- Boosts and vendors have no slot of their own. If the theme draws one, it
--- is added to the building it improves, so it goes when that building does.
+-- is added to the building it improves, so it goes when that building does,
+-- in that building's slot or the yard beside it.
 local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: boolean?)
 	local builder = Theme.Props[upgrade.Id]
 	local station = folder:FindFirstChild(upgrade.Building)
@@ -179,7 +182,7 @@ local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: b
 		return
 	end
 	local size = Vector3.new(slot.Size[1], slot.Size[2], slot.Size[3])
-	local model = builder(slotOrigin(plot, slot), size)
+	local model = builder(slotOrigin(plot, slot), size, slot.Yard and slotOrigin(plot, slot.Yard))
 	model.Name = upgrade.Id
 	finish(model, withEffect)
 	model.Parent = station
@@ -340,13 +343,31 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 	-- turned upright.
 	local upright = CFrame.Angles(0, 0, math.pi / 2)
 	local floor = plot.CFrame * CFrame.new(spot.X, plot.Size.Y / 2, spot.Z)
-	local button = makePart(upgrade.Id, Vector3.new(0.6, size - 0.6, size - 0.6), floor * CFrame.new(0, 0.3, 0) * upright, BUTTON_COLOR, folder)
+	local button = makePart(
+		upgrade.Id,
+		Vector3.new(0.6, size - 0.6, size - 0.6),
+		floor * CFrame.new(0, 0.3, 0) * upright,
+		BUTTON_COLOR,
+		folder
+	)
 	button.Shape = Enum.PartType.Cylinder
 	button.Material = Enum.Material.Neon
 	button.CanCollide = false
 	button.CanTouch = false
 	button:SetAttribute("Cost", upgrade.Cost)
-	local rim = makePart("Rim", Vector3.new(0.4, size, size), floor * CFrame.new(0, 0.2, 0) * upright, Color3.fromHex(Theme.Palette.ButtonRim), button)
+	button:SetAttribute("Building", upgrade.Building)
+	button:SetAttribute("Path", upgrade.Path)
+	-- The first pad of each path, while the building has no path yet. Picking
+	-- one locks the others for good, so the first step only previews it.
+	local choosing = upgrade.Path ~= nil and Progression.chosenPaths(owned, Balance.Upgrades)[upgrade.Building] == nil
+	button:SetAttribute("Choice", choosing or nil)
+	local rim = makePart(
+		"Rim",
+		Vector3.new(0.4, size, size),
+		floor * CFrame.new(0, 0.2, 0) * upright,
+		Color3.fromHex(Theme.Palette.ButtonRim),
+		button
+	)
 	rim.Shape = Enum.PartType.Cylinder
 	rim.CanCollide = false
 	rim.CanTouch = false
@@ -378,14 +399,18 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 
 	-- A pad that appears under the owner, where they just bought the one
 	-- before it, waits for them to step off first.
-	local waitingForStepOff = standingOn(player, floor)
-	if waitingForStepOff then
+	local waitingForStepOff = false
+	local function waitForStepOff()
+		waitingForStepOff = true
 		task.spawn(function()
 			while button.Parent and standingOn(player, floor) do
 				task.wait(0.2)
 			end
 			waitingForStepOff = false
 		end)
+	end
+	if standingOn(player, floor) then
+		waitForStepOff()
 	end
 
 	trigger.Touched:Connect(function(hit)
@@ -395,10 +420,28 @@ local function makeButton(player: Player, plot: BasePart, upgrade, folder: Folde
 			return
 		end
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 and button:GetAttribute("Sold") == nil then
-			for _, callback in buttonCallbacks do
-				task.spawn(callback, player, upgrade.Id)
+		if not humanoid or humanoid.Health <= 0 or button:GetAttribute("Sold") ~= nil then
+			return
+		end
+		if choosing then
+			-- The first step arms the pad, and the owner's screen shows what
+			-- the path does and what it locks. Stepping off and back on
+			-- within Layout.ConfirmSeconds picks it.
+			local now = Workspace:GetServerTimeNow()
+			local armedAt = button:GetAttribute("ArmedAt")
+			if armedAt == nil or now - armedAt > Layout.ConfirmSeconds then
+				for _, other in folder:GetChildren() do
+					if other ~= button and other:GetAttribute("Building") == upgrade.Building then
+						other:SetAttribute("ArmedAt", nil)
+					end
+				end
+				button:SetAttribute("ArmedAt", now)
+				waitForStepOff()
+				return
 			end
+		end
+		for _, callback in buttonCallbacks do
+			task.spawn(callback, player, upgrade.Id)
 		end
 	end)
 end

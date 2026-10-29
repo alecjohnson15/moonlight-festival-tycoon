@@ -1,8 +1,9 @@
 -- Plays the theme's sounds on this client: one-off effects by name, the
 -- music as a playlist that goes round the theme's songs in turn, and the
 -- eerie ambience on a loop. The player can turn the music and ambience off. A
--- sound whose id is empty in the theme is silent, so the game runs before any
--- audio is uploaded.
+-- sound whose id is empty in the theme plays its fallback, one of Roblox's
+-- own sounds, or is silent if it has none, so the game runs before any audio
+-- is uploaded.
 
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,18 +26,27 @@ local function hasId(name: string): boolean
 	return spec ~= nil and spec.Id ~= ""
 end
 
+local function soundId(name: string): string?
+	local spec = Theme.Sounds[name]
+	if spec and spec.Id ~= "" then
+		return spec.Id
+	end
+	return spec and spec.Fallback
+end
+
 local function get(name: string): Sound?
 	local sound = made[name]
 	if sound then
 		return sound
 	end
-	if not hasId(name) then
+	local id = soundId(name)
+	if not id then
 		return nil
 	end
 	local spec = Theme.Sounds[name]
 	local created = Instance.new("Sound")
 	created.Name = name
-	created.SoundId = spec.Id
+	created.SoundId = id
 	created.Volume = spec.Volume
 	created.Parent = SoundService
 	if table.find(PLAYLIST, name) then

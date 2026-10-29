@@ -687,6 +687,17 @@ def make_payout():
     write("payout", [normalise(reverb(track, seconds=1, wet=0.2)[: int(1.2 * RATE)])])
 
 
+def make_deny():
+    """Not yet: two soft, low wooden knocks, the second one lower."""
+    reseed(10)
+    track = np.zeros(int(0.7 * RATE))
+    for at, name in ((0, "A3"), (0.16, "E3")):
+        place(track, thud(0.25, 0.5, 220, 120), at)
+        place(track, music_box(note(name), 0.35, 0.5), at)
+        place(track, band(noise(0.05), 400, 1800) * np.exp(-times(0.05) * 60) * 0.3, at)
+    write("deny", [normalise(reverb(track, seconds=0.5, wet=0.15, seed=10)[: int(0.7 * RATE)], 0.6)])
+
+
 def make_thump():
     """A big wooden mallet landing: a deep bonk with a woody knock on top."""
     reseed(8)
@@ -705,6 +716,38 @@ def make_whoosh():
     write("whoosh", [normalise(reverb(swish, seconds=0.4, wet=0.1, seed=9)[: int(0.55 * RATE)])])
 
 
+def make_round_start():
+    """Ghost Catcher starting: a ghostly rising whoosh and a bright bell."""
+    reseed(11)
+    track = np.zeros(int(1.6 * RATE))
+    rise = sweep(noise(0.9), 300, 4000) * np.sin(np.pi * times(0.9) / 0.9) ** 2
+    place(track, rise * 0.7, 0)
+    place(track, bell(note("A5"), 1.2, 0.5), 0.75)
+    place(track, music_box(note("E6"), 0.8, 0.35), 0.8)
+    write("round_start", [normalise(reverb(track, seconds=1.2, wet=0.25, seed=11)[: int(1.6 * RATE)], 0.8)])
+
+
+def make_catch():
+    """A wisp caught: a quick sparkly pluck that jumps up a fifth."""
+    reseed(12)
+    track = np.zeros(int(0.7 * RATE))
+    place(track, music_box(note("E6"), 0.4, 0.6), 0)
+    place(track, music_box(note("B6"), 0.5, 0.5), 0.06)
+    shimmer = band(noise(0.3), 6000, 12000) * np.exp(-times(0.3) * 14) * 0.2
+    place(track, shimmer, 0.05)
+    write("catch", [normalise(reverb(track, seconds=0.6, wet=0.2, seed=12)[: int(0.7 * RATE)], 0.7)])
+
+
+def make_round_end():
+    """Ghost Catcher over: a little music-box run down and back up."""
+    reseed(13)
+    track = np.zeros(int(1.8 * RATE))
+    for i, name in enumerate(["A5", "E5", "C5", "E5", "A5"]):
+        place(track, music_box(note(name), 0.9, 0.5), i * 0.12)
+    place(track, organ(note("A3"), 1.4, 0.12, attack=0.1, release=0.8), 0.1)
+    write("round_end", [normalise(reverb(track, seconds=1.2, wet=0.3, seed=13)[: int(1.8 * RATE)], 0.8)])
+
+
 if __name__ == "__main__":
     make_music()
     make_music2()
@@ -713,5 +756,9 @@ if __name__ == "__main__":
     make_purchase()
     make_build()
     make_payout()
+    make_deny()
     make_thump()
     make_whoosh()
+    make_round_start()
+    make_catch()
+    make_round_end()

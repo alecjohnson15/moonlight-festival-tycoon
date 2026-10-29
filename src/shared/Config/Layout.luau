@@ -6,10 +6,28 @@
 -- The plot's front (+Z) faces the plaza. The production chain runs down the
 -- left side towards the stall at the front, and attractions fill the right.
 
+local PLOT_COUNT = 6
+local PLOT_SPACING = 120
+-- Extra room between the middle two plots for the arrival courtyard, which
+-- players see straight ahead when they spawn on the plaza.
+local COURTYARD_GAP = 36
+
+-- The X of plot index's centre. The plots stand in a row along the plaza,
+-- centred on X = 0, with the courtyard's extra room in the middle of the row.
+local function plotX(index: number): number
+	local x = (index - (PLOT_COUNT + 1) / 2) * PLOT_SPACING
+	return x + math.sign(x) * COURTYARD_GAP / 2
+end
+
 return {
-	PlotCount = 6,
+	PlotCount = PLOT_COUNT,
 	PlotSize = 96,
-	PlotSpacing = 120,
+	PlotSpacing = PLOT_SPACING,
+	CourtyardGap = COURTYARD_GAP,
+	plotX = plotX,
+	-- The plaza runs along the front of the row, end to end.
+	PlazaWidth = PLOT_COUNT * PLOT_SPACING + COURTYARD_GAP,
+	PlazaDepth = 40,
 
 	-- Where a player stands after being moved to their plot.
 	ArrivalOffset = { X = 0, Z = 40 },
@@ -26,8 +44,11 @@ return {
 	-- Paths has a spot that holds that path's tiers, one after another. The
 	-- path spots sit in a row in front of the building, so the choice shows
 	-- as two or three pads side by side. After a pad is bought, the next one
-	-- on the same spot only works once the owner has stepped off.
+	-- on the same spot only works once the owner has stepped off. The first
+	-- step on a path's first pad only previews the path, and a second step
+	-- within ConfirmSeconds picks it.
 	ButtonSize = 5,
+	ConfirmSeconds = 12,
 	Buttons = {
 		starter_stall = {
 			Build = { X = -12, Z = 26 },
@@ -81,13 +102,29 @@ return {
 		},
 	},
 
+	-- Ghost Catcher's booth (Config/Activity), at the back of the walkway and
+	-- facing the gate, and the pad in front of it that starts a round. Size
+	-- is { width, height, depth }, as for Slots.
+	Activity = { X = -1, Z = -40, Size = { 12, 8, 6 }, Pad = { X = -1, Z = -33 } },
+
 	-- Where each station and attraction is built. Size is { width, height,
 	-- depth }: the theme's model fits inside it, and it is the size of the
-	-- greybox block drawn when the theme has no model for that upgrade.
+	-- greybox block drawn when the theme has no model for that upgrade. A
+	-- Yard beside a building is open ground for the things its upgrades add.
 	Slots = {
-		starter_stall = { X = -26, Z = 26, Size = { 12, 8, 8 } },
+		starter_stall = {
+			X = -26,
+			Z = 26,
+			Size = { 12, 8, 8 },
+			Yard = { X = -36, Z = 26, Size = { 8, 8, 8 } },
+		},
 		kitchen = { X = -26, Z = -2, Size = { 14, 10, 12 } },
-		grower = { X = -26, Z = -28, Size = { 18, 3, 18 } },
+		grower = {
+			X = -26,
+			Z = -28,
+			Size = { 18, 3, 18 },
+			Yard = { X = -39, Z = -28, Size = { 8, 3, 18 } },
+		},
 		attraction_1 = { X = 24, Z = 26, Size = { 18, 6, 18 } },
 		attraction_2 = { X = 24, Z = -2, Size = { 14, 14, 14 } },
 		attraction_3 = { X = 24, Z = -30, Size = { 20, 10, 16 } },

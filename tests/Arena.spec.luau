@@ -4,6 +4,7 @@
 
 local TestKit = require("./TestKit")
 local Loader = require("./RobloxLoader")
+local Map = require("./Map")
 local Arena = require("../src/shared/Config/Arena")
 local Cosmetics = require("../src/shared/Config/Cosmetics")
 local Layout = require("../src/shared/Config/Layout")
@@ -108,7 +109,10 @@ describe("arena weapons", function()
 				end
 				assert(near(weapon[stat], expected), `premium {id} has {stat} {weapon[stat]}, not {expected}`)
 			end
-			assert(near(weapon.Special.Damage, Weapons.Specials[weapon.Special.Kind].Damage * Weapons.Tiers.Elite), `premium {id}'s special hits harder than Elite`)
+			assert(
+				near(weapon.Special.Damage, Weapons.Specials[weapon.Special.Kind].Damage * Weapons.Tiers.Elite),
+				`premium {id}'s special hits harder than Elite`
+			)
 			-- At most one fewer swing to win than the Elite version.
 			local hits = math.ceil(Arena.Health / weapon.Damage)
 			assert(hits >= math.ceil(Arena.Health / elite.Damage) - 1, `premium {id} wins in far fewer hits`)
@@ -147,7 +151,8 @@ describe("arena combat", function()
 	end)
 
 	it("finds everyone round a point and along a path, nearest first", function()
-		local fighters = { fighter("a", 0, 3, -10), fighter("b", 1, 3, -3), fighter("c", 6, 3, -6), fighter("d", 0, 3, 5) }
+		local fighters =
+			{ fighter("a", 0, 3, -10), fighter("b", 1, 3, -3), fighter("c", 6, 3, -6), fighter("d", 0, 3, 5) }
 		local around = Combat.within(origin, fighters, 7, 6)
 		expect(#around).toBe(2)
 		local path = Combat.along(origin, Vector3.new(0, 3, -20), fighters, 5, 6)
@@ -226,11 +231,17 @@ describe("arena look", function()
 		for id in Weapons do
 			local look = ArenaLook.Specials[id]
 			assert(look and look.Name ~= "", `the theme has no special move look for {id}`)
-			assert(string.match(look.Color, "^#%x%x%x%x%x%x$") and string.match(look.Accent, "^#%x%x%x%x%x%x$"), `{id}'s colours must be #RRGGBB`)
+			assert(
+				string.match(look.Color, "^#%x%x%x%x%x%x$") and string.match(look.Accent, "^#%x%x%x%x%x%x$"),
+				`{id}'s colours must be #RRGGBB`
+			)
 			assert(FLAIRS[look.Flair], `{id} has unknown flair {look.Flair}`)
 		end
 		for _, sound in ArenaLook.Sounds do
-			assert(sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"), "arena sounds must be rbxassetid://<number> or \"\"")
+			assert(
+				sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"),
+				'arena sounds must be rbxassetid://<number> or ""'
+			)
 		end
 	end)
 
@@ -269,18 +280,9 @@ describe("arena look", function()
 	end)
 
 	it("keeps the woods out of the arena and the ground in front of it", function()
-		local plots = {}
-		for i = 1, Layout.PlotCount do
-			local plot = Instance.new("Part")
-			plot.Size = Vector3.new(Layout.PlotSize, 1, Layout.PlotSize)
-			plot.CFrame = CFrame.new((i - (Layout.PlotCount + 1) / 2) * Layout.PlotSpacing, 0, 0)
-			table.insert(plots, plot)
-		end
-		local plaza = Instance.new("Part")
-		plaza.Size = Vector3.new(Layout.PlotCount * Layout.PlotSpacing, 1, 40)
-		plaza.CFrame = CFrame.new(0, 0, Layout.PlotSize / 2 + 20)
+		local map = Map.build()
 		local folder = Instance.new("Folder")
-		Scenery.world({ Plots = plots, Plaza = plaza, Spawns = {}, Arena = makeStage() }, folder)
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = {}, Arena = makeStage() }, folder)
 		local front = CENTRE.Z - Arena.Radius - Arena.RampLength - Arena.ExitDistance - 2
 		for _, part in partsIn(folder) do
 			local at = part.CFrame.Position
@@ -301,7 +303,10 @@ describe("arena look", function()
 		assert(handle and handle:IsA("BasePart"), "the bonker has no Handle")
 		local welded = {}
 		for _, part in partsIn(tool) do
-			assert(not part.Anchored and not part.CanCollide and part.Massless, `{part.Name} would weigh down or snag its holder`)
+			assert(
+				not part.Anchored and not part.CanCollide and part.Massless,
+				`{part.Name} would weigh down or snag its holder`
+			)
 			local weld = part:FindFirstChildOfClass("Weld")
 			if weld then
 				expect(weld.Part0).toBe(handle)

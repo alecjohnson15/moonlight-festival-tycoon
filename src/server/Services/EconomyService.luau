@@ -10,7 +10,6 @@ local DataService = require(script.Parent.DataService)
 
 local EconomyService = {}
 
-
 local function setLeaderstat(player: Player, coins: number)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
@@ -25,8 +24,8 @@ local function setLeaderstat(player: Player, coins: number)
 	value.Value = coins
 end
 
--- Pushes coins, income and visitors to the player's attributes, which
--- replicate to their client for the HUD.
+-- Pushes coins, income, visitors and purchases to the player's attributes,
+-- which replicate to their client for the HUD and the guide.
 function EconomyService.publish(player: Player)
 	local data = DataService.get(player)
 	if not data then
@@ -35,6 +34,13 @@ function EconomyService.publish(player: Player)
 	player:SetAttribute("Coins", data.Coins)
 	player:SetAttribute("IncomePerSecond", Earnings.perSecond(data.Owned, Balance))
 	player:SetAttribute("VisitorsPerSecond", Earnings.visitorsPerSecond(data.Owned, Balance))
+	-- How many upgrades they own, so the client's guide knows how far in
+	-- they are.
+	local purchases = 0
+	for _ in data.Owned do
+		purchases += 1
+	end
+	player:SetAttribute("Purchases", purchases)
 	setLeaderstat(player, data.Coins)
 end
 

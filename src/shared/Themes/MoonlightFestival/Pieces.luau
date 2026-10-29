@@ -42,8 +42,12 @@ function Pieces.jackOLantern(parent: Instance, base: CFrame, size: number, lit: 
 			P.Candle
 		)
 	end
-	local mouth =
-		Kit.glow(parent, middle * CFrame.new(0, -size * 0.11, front - size * 0.01), Vector3.new(size * 0.4, size * 0.09, size * 0.08), P.Candle)
+	local mouth = Kit.glow(
+		parent,
+		middle * CFrame.new(0, -size * 0.11, front - size * 0.01),
+		Vector3.new(size * 0.4, size * 0.09, size * 0.08),
+		P.Candle
+	)
 	if lit then
 		Kit.light(mouth, P.Glow, size * 5, 1.4, true)
 	end
@@ -53,9 +57,21 @@ end
 -- surroundings as well as glowing.
 function Pieces.lantern(parent: Instance, centre: CFrame, size: number, color: Color3?, range: number?): BasePart
 	local glow = color or P.Candle
-	Kit.block(parent, centre * CFrame.new(0, size * 0.6, 0), Vector3.new(size * 0.9, size * 0.2, size * 0.9), P.Metal, M.Metal)
+	Kit.block(
+		parent,
+		centre * CFrame.new(0, size * 0.6, 0),
+		Vector3.new(size * 0.9, size * 0.2, size * 0.9),
+		P.Metal,
+		M.Metal
+	)
 	local body = Kit.glow(parent, centre, Vector3.new(size * 0.65, size, size * 0.65), glow)
-	Kit.block(parent, centre * CFrame.new(0, -size * 0.58, 0), Vector3.new(size * 0.8, size * 0.15, size * 0.8), P.Metal, M.Metal)
+	Kit.block(
+		parent,
+		centre * CFrame.new(0, -size * 0.58, 0),
+		Vector3.new(size * 0.8, size * 0.15, size * 0.8),
+		P.Metal,
+		M.Metal
+	)
 	if range then
 		Kit.light(body, glow, range, 1.6, true)
 	end
@@ -73,9 +89,17 @@ function Pieces.lanternPost(parent: Instance, base: CFrame, height: number, colo
 	return (base * CFrame.new(0, height, 0)).Position
 end
 
--- A string of coloured bulbs sagging between two points.
-function Pieces.stringLights(parent: Instance, a: Vector3, b: Vector3, sag: number, colors: { Color3 })
-	local count = math.max(2, math.floor((b - a).Magnitude / 2.2))
+-- A string of coloured bulbs sagging between two points, about spacing
+-- studs apart (2.2 if not given).
+function Pieces.stringLights(
+	parent: Instance,
+	a: Vector3,
+	b: Vector3,
+	sag: number,
+	colors: { Color3 },
+	spacing: number?
+)
+	local count = math.max(2, math.floor((b - a).Magnitude / (spacing or 2.2)))
 	for i = 1, count - 1 do
 		local t = i / count
 		local point = a:Lerp(b, t) - Vector3.new(0, 4 * sag * t * (1 - t), 0)
@@ -98,6 +122,20 @@ function Pieces.bunting(parent: Instance, a: Vector3, b: Vector3, sag: number, c
 			M.Fabric
 		)
 	end
+end
+
+-- A pointed pennant flying from its pole along cframe's front (-Z), with
+-- cframe at the middle of the edge that's on the pole.
+function Pieces.pennant(parent: Instance, cframe: CFrame, length: number, height: number, color: Color3)
+	local size = Vector3.new(0.08, height / 2, length)
+	Kit.wedge(parent, cframe * CFrame.new(0, height / 4, -length / 2), size, color, M.Fabric)
+	Kit.wedge(
+		parent,
+		cframe * CFrame.new(0, -height / 4, -length / 2) * CFrame.Angles(0, 0, math.pi),
+		size,
+		color,
+		M.Fabric
+	)
 end
 
 -- A ghost with hollow eyes, facing +Z. It is its own model so it can float.
@@ -127,7 +165,12 @@ function Pieces.ghost(parent: Instance, centre: CFrame, size: number): Model
 			P.Ghost
 		)
 	end
-	Kit.ball(model, front * CFrame.new(0, -size * 0.14, -size * 0.45), Vector3.new(size * 0.2, size * 0.26, size * 0.06), P.Eye)
+	Kit.ball(
+		model,
+		front * CFrame.new(0, -size * 0.14, -size * 0.45),
+		Vector3.new(size * 0.2, size * 0.26, size * 0.06),
+		P.Eye
+	)
 	Kit.light(body, P.EerieGlow, size * 4, 0.9)
 	return model
 end
@@ -141,7 +184,12 @@ function Pieces.tree(parent: Instance, base: CFrame, height: number, random: Kit
 		local size = height * random.number(0.38, 0.5)
 		Kit.ball(
 			parent,
-			base * CFrame.new(math.cos(angle) * height * 0.13, height * random.number(0.6, 0.78), math.sin(angle) * height * 0.13),
+			base
+				* CFrame.new(
+					math.cos(angle) * height * 0.13,
+					height * random.number(0.6, 0.78),
+					math.sin(angle) * height * 0.13
+				),
 			Vector3.new(size, size * 0.85, size),
 			leaves:Lerp(random.pick(P.Foliage), 0.3)
 		)
@@ -158,7 +206,9 @@ function Pieces.bareTree(parent: Instance, base: CFrame, height: number, random:
 		local angle = i * math.pi / 2 + random.number(-0.4, 0.4)
 		local from = (base * CFrame.new(0, height * random.number(0.5, 0.75), 0)).Position
 		local reach = height * random.number(0.25, 0.4)
-		local to = (base * CFrame.new(math.cos(angle) * reach, height * random.number(0.85, 1), math.sin(angle) * reach)).Position
+		local to = (
+			base * CFrame.new(math.cos(angle) * reach, height * random.number(0.85, 1), math.sin(angle) * reach)
+		).Position
 		Kit.span(parent, from, to, width * 0.45, width * 0.45, P.Trunk, M.Wood)
 	end
 end
@@ -166,12 +216,15 @@ end
 -- A fence of posts and two rails from a to b, both on the ground.
 function Pieces.fence(parent: Instance, a: Vector3, b: Vector3, height: number)
 	local count = math.max(1, math.floor((b - a).Magnitude / 4 + 0.5))
+	-- Every post faces along the fence. (Facing each post at b would leave the
+	-- last one, which stands on b, with no direction to face.)
+	local along = CFrame.lookAt(a, b).Rotation
 	for i = 0, count do
 		local point = a:Lerp(b, i / count)
 		Kit.solid(
 			Kit.block(
 				parent,
-				CFrame.lookAt(point, b) + Vector3.new(0, height / 2, 0),
+				CFrame.new(point + Vector3.new(0, height / 2, 0)) * along,
 				Vector3.new(0.4, height, 0.4),
 				P.Wood,
 				M.WoodPlanks
@@ -187,7 +240,15 @@ end
 -- A rounded gravestone with moss on top. Friendly, not grim.
 function Pieces.gravestone(parent: Instance, base: CFrame, size: number)
 	local tilt = base * CFrame.Angles(0.08, 0, 0.05)
-	Kit.solid(Kit.block(parent, tilt * CFrame.new(0, size * 0.5, 0), Vector3.new(size * 0.9, size, size * 0.25), P.Stone, M.Slate))
+	Kit.solid(
+		Kit.block(
+			parent,
+			tilt * CFrame.new(0, size * 0.5, 0),
+			Vector3.new(size * 0.9, size, size * 0.25),
+			P.Stone,
+			M.Slate
+		)
+	)
 	Kit.log(
 		parent,
 		tilt * CFrame.new(0, size, 0) * CFrame.Angles(0, math.pi / 2, 0),
@@ -196,7 +257,13 @@ function Pieces.gravestone(parent: Instance, base: CFrame, size: number)
 		P.Stone,
 		M.Slate
 	)
-	Kit.block(parent, tilt * CFrame.new(0, size * 1.38, 0), Vector3.new(size * 0.5, size * 0.1, size * 0.27), P.Moss, M.Grass)
+	Kit.block(
+		parent,
+		tilt * CFrame.new(0, size * 1.38, 0),
+		Vector3.new(size * 0.5, size * 0.1, size * 0.27),
+		P.Moss,
+		M.Grass
+	)
 end
 
 -- A clump of corn stalks.
@@ -209,7 +276,10 @@ function Pieces.corn(parent: Instance, base: CFrame, height: number, random: Kit
 			local angle = leaf * math.pi + random.number(-0.5, 0.5)
 			Kit.block(
 				parent,
-				spot * CFrame.new(0, tall * (0.35 + leaf * 0.2), 0) * CFrame.Angles(0, angle, 0.7) * CFrame.new(0.5, 0, 0),
+				spot
+					* CFrame.new(0, tall * (0.35 + leaf * 0.2), 0)
+					* CFrame.Angles(0, angle, 0.7)
+					* CFrame.new(0.5, 0, 0),
 				Vector3.new(1.1, 0.06, 0.25),
 				P.CornLeaf,
 				M.Grass
@@ -264,7 +334,9 @@ function Pieces.roof(
 		for side = -1, 1, 2 do
 			Kit.wedge(
 				parent,
-				base * CFrame.new(x, height + rise / 2, side * depth / 4) * CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
+				base
+					* CFrame.new(x, height + rise / 2, side * depth / 4)
+					* CFrame.Angles(0, if side > 0 then math.pi else 0, 0),
 				Vector3.new(0.4, rise, depth / 2),
 				P.DarkWood,
 				M.WoodPlanks
@@ -279,7 +351,12 @@ function Pieces.skeleton(parent: Instance, base: CFrame, size: number)
 	local bone = P.Bone
 	local hip = base * CFrame.new(0, size * 0.12, 0)
 	Kit.block(parent, hip, Vector3.new(size * 0.35, size * 0.12, size * 0.18), bone)
-	Kit.block(parent, hip * CFrame.new(0, size * 0.32, -size * 0.06) * CFrame.Angles(-0.2, 0, 0), Vector3.new(size * 0.08, size * 0.55, size * 0.08), bone)
+	Kit.block(
+		parent,
+		hip * CFrame.new(0, size * 0.32, -size * 0.06) * CFrame.Angles(-0.2, 0, 0),
+		Vector3.new(size * 0.08, size * 0.55, size * 0.08),
+		bone
+	)
 	for i = 0, 2 do
 		Kit.block(
 			parent,
@@ -291,7 +368,12 @@ function Pieces.skeleton(parent: Instance, base: CFrame, size: number)
 	local skull = hip * CFrame.new(0, size * 0.72, -size * 0.12)
 	Kit.ball(parent, skull, Vector3.new(size * 0.3, size * 0.32, size * 0.3), bone)
 	for side = -1, 1, 2 do
-		Kit.ball(parent, skull * CFrame.new(side * size * 0.07, size * 0.02, size * 0.13), Vector3.new(size * 0.09, size * 0.1, size * 0.06), P.Eye)
+		Kit.ball(
+			parent,
+			skull * CFrame.new(side * size * 0.07, size * 0.02, size * 0.13),
+			Vector3.new(size * 0.09, size * 0.1, size * 0.06),
+			P.Eye
+		)
 		Kit.block(
 			parent,
 			hip * CFrame.new(side * size * 0.1, -size * 0.05, size * 0.3),
@@ -320,7 +402,8 @@ function Pieces.cobweb(parent: Instance, corner: Vector3, a: Vector3, b: Vector3
 	end
 	for _, ring in { 0.45, 0.8 } do
 		for i = 1, spokes do
-			local thread = Kit.span(parent, corner:Lerp(ends[i], ring), corner:Lerp(ends[i + 1], ring), 0.04, 0.04, P.Cobweb)
+			local thread =
+				Kit.span(parent, corner:Lerp(ends[i], ring), corner:Lerp(ends[i + 1], ring), 0.04, 0.04, P.Cobweb)
 			thread.Transparency = 0.45
 		end
 	end
@@ -336,7 +419,12 @@ function Pieces.bat(parent: Instance, centre: CFrame, size: number)
 			Vector3.new(0.05, size * 0.35, size * 0.6),
 			P.Bat
 		)
-		Kit.glow(parent, centre * CFrame.new(side * size * 0.06, size * 0.05, size * 0.22), Vector3.new(0.12, 0.12, 0.05), P.Washes.Red)
+		Kit.glow(
+			parent,
+			centre * CFrame.new(side * size * 0.06, size * 0.05, size * 0.22),
+			Vector3.new(0.12, 0.12, 0.05),
+			P.Washes.Red
+		)
 	end
 end
 
@@ -344,17 +432,41 @@ end
 -- never moves; its eyes glow.
 function Pieces.reaper(parent: Instance, base: CFrame, height: number)
 	local cloak = P.Bat:Lerp(P.Roof, 0.25)
-	Kit.solid(Kit.block(parent, base * CFrame.new(0, height * 0.12, 0), Vector3.new(height * 0.3, height * 0.24, height * 0.3), P.DarkStone, M.Slate))
+	Kit.solid(
+		Kit.block(
+			parent,
+			base * CFrame.new(0, height * 0.12, 0),
+			Vector3.new(height * 0.3, height * 0.24, height * 0.3),
+			P.DarkStone,
+			M.Slate
+		)
+	)
 	local robe = base * CFrame.new(0, height * 0.24, 0)
 	for i = 0, 3 do
 		local width = height * (0.3 - i * 0.04)
-		Kit.block(parent, robe * CFrame.new(0, height * (0.1 + i * 0.13), 0), Vector3.new(width, height * 0.14, width * 0.8), cloak, M.Fabric)
+		Kit.block(
+			parent,
+			robe * CFrame.new(0, height * (0.1 + i * 0.13), 0),
+			Vector3.new(width, height * 0.14, width * 0.8),
+			cloak,
+			M.Fabric
+		)
 	end
 	local hood = robe * CFrame.new(0, height * 0.66, 0)
 	Kit.ball(parent, hood, Vector3.new(height * 0.17, height * 0.2, height * 0.18), cloak, M.Fabric)
-	Kit.ball(parent, hood * CFrame.new(0, -height * 0.01, height * 0.06), Vector3.new(height * 0.12, height * 0.14, height * 0.08), P.Eye)
+	Kit.ball(
+		parent,
+		hood * CFrame.new(0, -height * 0.01, height * 0.06),
+		Vector3.new(height * 0.12, height * 0.14, height * 0.08),
+		P.Eye
+	)
 	for side = -1, 1, 2 do
-		Kit.glow(parent, hood * CFrame.new(side * height * 0.025, 0, height * 0.1), Vector3.new(0.18, 0.12, 0.05), P.Washes.Red)
+		Kit.glow(
+			parent,
+			hood * CFrame.new(side * height * 0.025, 0, height * 0.1),
+			Vector3.new(0.18, 0.12, 0.05),
+			P.Washes.Red
+		)
 	end
 	-- The scythe: a long handle and a curved blade made of short pieces.
 	local handle = robe * CFrame.new(height * 0.2, height * 0.38, height * 0.08)
@@ -403,9 +515,26 @@ function Pieces.mist(parent: Instance, cframe: CFrame, size: Vector2, rate: numb
 	})
 end
 
+-- A signpost on base with a board of text facing +Z and a glowing arrow on
+-- its end, pointing along +X, or -X when pointing is -1.
+function Pieces.arrowSign(parent: Instance, base: CFrame, text: string, color: Color3, pointing: number)
+	Kit.solid(Kit.post(parent, base * CFrame.new(0, 2.1, 0), 4.2, 0.45, P.DarkWood, M.Wood))
+	local width = 7
+	local board = base * CFrame.new(pointing * 1.5, 4, 0)
+	Pieces.sign(parent, board, Vector2.new(width, 1.6), text, color)
+	local tip = board * CFrame.new(pointing * (width / 2 + 1.3), 0, 0)
+	for side = -1, 1, 2 do
+		local bar = tip
+			* CFrame.new(-pointing * 0.35, side * 0.35, 0)
+			* CFrame.Angles(0, 0, -side * pointing * math.pi / 4)
+		Kit.glow(parent, bar, Vector3.new(1.2, 0.3, 0.3), color)
+	end
+end
+
 -- A sign board with text on its front (+Z).
 function Pieces.sign(parent: Instance, cframe: CFrame, size: Vector2, text: string, color: Color3?)
-	local board = Kit.block(parent, cframe * CFrame.Angles(0, math.pi, 0), Vector3.new(size.X, size.Y, 0.2), P.DarkWood, M.Wood)
+	local board =
+		Kit.block(parent, cframe * CFrame.Angles(0, math.pi, 0), Vector3.new(size.X, size.Y, 0.2), P.DarkWood, M.Wood)
 	local gui = Kit.new("SurfaceGui", board, {
 		Face = Enum.NormalId.Front,
 		SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,

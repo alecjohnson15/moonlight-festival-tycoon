@@ -35,11 +35,15 @@ local function ghost(model: Model)
 	}
 	for i = 0, 5 do
 		local angle = i * math.pi / 3
-		table.insert(parts, Kit.ball(model, at(math.cos(angle) * 0.62, 0.5, math.sin(angle) * 0.62), V(0.7, 0.6, 0.7), sheet))
+		table.insert(
+			parts,
+			Kit.ball(model, at(math.cos(angle) * 0.62, 0.5, math.sin(angle) * 0.62), V(0.7, 0.6, 0.7), sheet)
+		)
 	end
 	for side = -1, 1, 2 do
 		Kit.ball(model, at(side * 0.3, 2.85, -0.71), V(0.26, 0.4, 0.14), P.Eye)
-		local arm = Kit.ball(model, at(side * 0.95, 1.9, -0.15) * CFrame.Angles(0, 0, side * 0.6), V(0.55, 0.35, 0.35), sheet)
+		local arm =
+			Kit.ball(model, at(side * 0.95, 1.9, -0.15) * CFrame.Angles(0, 0, side * 0.6), V(0.55, 0.35, 0.35), sheet)
 		table.insert(parts, arm)
 	end
 	Kit.ball(model, at(0, 2.35, -0.79), V(0.3, 0.38, 0.12), P.Eye)
@@ -62,7 +66,12 @@ local function pumpkinKid(model: Model, random: Kit.Random)
 	Kit.ball(model, body, V(1.9, 1.5, 1.7), P.Pumpkin)
 	Kit.ball(model, body, V(1.1, 1.54, 1.74), P.PumpkinDark)
 	for side = -1, 1, 2 do
-		Kit.glow(model, body * CFrame.new(side * 0.32, 0.22, -0.77) * CFrame.Angles(0, 0, math.pi / 4), V(0.22, 0.22, 0.1), P.Candle)
+		Kit.glow(
+			model,
+			body * CFrame.new(side * 0.32, 0.22, -0.77) * CFrame.Angles(0, 0, math.pi / 4),
+			V(0.22, 0.22, 0.1),
+			P.Candle
+		)
 		Kit.ball(model, body * CFrame.new(side * 0.95, 0.05, -0.1), V(0.5, 0.5, 0.5), P.Pumpkin)
 		Kit.ball(model, body * CFrame.new(side * 1.05, -0.3, -0.25), V(0.32, 0.32, 0.32), skin)
 	end
@@ -149,7 +158,12 @@ local function mummy(model: Model, random: Kit.Random)
 	end
 	Kit.block(model, at(0, 1.7, 0), V(1.3, 1.4, 0.8), wrap)
 	for i, y in { 1.25, 1.65, 2.05 } do
-		Kit.block(model, at(0, y, 0) * CFrame.Angles(0, 0, if i % 2 == 0 then 0.12 else -0.12), V(1.36, 0.14, 0.86), shade)
+		Kit.block(
+			model,
+			at(0, y, 0) * CFrame.Angles(0, 0, if i % 2 == 0 then 0.12 else -0.12),
+			V(1.36, 0.14, 0.86),
+			shade
+		)
 	end
 	local head = at(0, 2.95, 0)
 	Kit.ball(model, head, V(1, 1.05, 1), wrap)

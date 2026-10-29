@@ -146,7 +146,13 @@ function Arena.dress(stage: BasePart, parent: Instance): Model
 			P.Candle
 		)
 	end
-	Pieces.stringLights(model, tops[1] + V(0, -0.6, 0), tops[2] + V(0, -0.6, 0), 1.2, { W.Red, P.Candle, W.Purple, W.Toxic })
+	Pieces.stringLights(
+		model,
+		tops[1] + V(0, -0.6, 0),
+		tops[2] + V(0, -0.6, 0),
+		1.2,
+		{ W.Red, P.Candle, W.Purple, W.Toxic }
+	)
 
 	-- A signpost beside the ramp with the rules.
 	local post = centre * CFrame.new(halfGap + 4, ground, frontZ - Config.RampLength / 2) * CFrame.Angles(0, math.pi, 0)

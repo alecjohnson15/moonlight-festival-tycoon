@@ -1,6 +1,6 @@
 -- Moves what the theme marks to move: models tagged Float bob and turn, ghost
--- trains tagged Train run round their tracks, and lights tagged Flicker
--- flicker. The server builds them still; all of the motion is drawn on this
+-- trains tagged Train run round their tracks, big wheels tagged Wheel turn
+-- with their gondolas hanging level, and lights tagged Flicker flicker. The server builds them still; all of the motion is drawn on this
 -- client only, so it costs no network traffic. Anything far from the camera is
 -- left alone.
 
@@ -17,6 +17,7 @@ local Motion = {}
 
 local floaters: { [Model]: Floater } = {}
 local trains: { [Model]: { Model } } = {}
+local wheels: { [Model]: { Rim: Model?, Gondolas: { Model } } } = {}
 local flickers: { [Light]: number } = {}
 local sinceFlicker = 0
 
@@ -62,6 +63,20 @@ local function addTrain(model: Instance)
 	trains[model] = cars
 end
 
+local function addWheel(model: Instance)
+	if not model:IsA("Model") then
+		return
+	end
+	local gondolas = {}
+	for _, child in model:GetChildren() do
+		if child:IsA("Model") and child:GetAttribute("Seat") then
+			table.insert(gondolas, child)
+		end
+	end
+	local rim = model:FindFirstChild("Rim")
+	wheels[model] = { Rim = if rim and rim:IsA("Model") then rim else nil, Gondolas = gondolas }
+end
+
 local function addFlicker(light: Instance)
 	if light:IsA("Light") then
 		flickers[light] = light.Brightness
@@ -96,10 +111,29 @@ local function onRenderStep(dt: number)
 			local lead = now / lap * math.pi * 2
 			for index, car in cars do
 				local angle = lead - (index - 1) * gap
-				local spot = centre:PointToWorldSpace(Vector3.new(math.cos(angle) * radiusX, 0, math.sin(angle) * radiusZ))
+				local spot =
+					centre:PointToWorldSpace(Vector3.new(math.cos(angle) * radiusX, 0, math.sin(angle) * radiusZ))
 				local heading =
 					centre:VectorToWorldSpace(Vector3.new(-math.sin(angle) * radiusX, 0, math.cos(angle) * radiusZ))
 				car:PivotTo(CFrame.lookAt(spot, spot + heading))
+			end
+		end
+	end
+
+	for model, wheel in wheels do
+		local centre = model:GetAttribute("Centre")
+		if centre and near(centre.Position, camera) then
+			local radius = model:GetAttribute("Radius") or 1
+			local turn = -now / (model:GetAttribute("LapSeconds") or 60) * math.pi * 2
+			if wheel.Rim then
+				wheel.Rim:PivotTo(centre * CFrame.Angles(0, 0, turn))
+			end
+			local count = #wheel.Gondolas
+			for _, gondola in wheel.Gondolas do
+				local angle = turn + (gondola:GetAttribute("Seat") or 0) / count * math.pi * 2
+				local spot =
+					centre:PointToWorldSpace(Vector3.new(math.cos(angle) * radius, math.sin(angle) * radius, 0))
+				gondola:PivotTo(CFrame.new(spot) * centre.Rotation)
 			end
 		end
 	end
@@ -124,6 +158,9 @@ function Motion.start()
 	watch("Train", addTrain, function(model)
 		trains[model] = nil
 	end)
+	watch("Wheel", addWheel, function(model)
+		wheels[model] = nil
+	end)
 	watch("Flicker", addFlicker, function(light)
 		flickers[light] = nil
 	end)
@@ -135,7 +172,7 @@ end
 function Motion.moves(instance: Instance): boolean
 	local current: Instance? = instance
 	while current do
-		if current:HasTag("Float") or current:HasTag("Train") then
+		if current:HasTag("Float") or current:HasTag("Train") or current:HasTag("Wheel") then
 			return true
 		end
 		current = current.Parent

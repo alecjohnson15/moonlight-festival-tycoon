@@ -13,6 +13,7 @@ require("./Saves.spec")
 require("./RateLimiter.spec")
 require("./Wardrobe.spec")
 require("./Arena.spec")
+require("./Activity.spec")
 
 local failures = TestKit.run()
 process.exit(if failures > 0 then 1 else 0)

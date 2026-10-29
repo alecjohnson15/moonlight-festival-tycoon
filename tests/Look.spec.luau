@@ -5,6 +5,7 @@
 
 local TestKit = require("./TestKit")
 local Loader = require("./RobloxLoader")
+local Map = require("./Map")
 local Balance = require("../src/shared/Config/Balance")
 local Layout = require("../src/shared/Config/Layout")
 local Progression = require("../src/shared/Progression")
@@ -17,6 +18,7 @@ local Instance, Vector3, CFrame = roblox.Instance, roblox.Vector3, roblox.CFrame
 local Props = Loader.require("src/shared/Themes/MoonlightFestival/Props")
 local Scenery = Loader.require("src/shared/Themes/MoonlightFestival/Scenery")
 local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
+local ActivityLook = Loader.require("src/shared/Themes/MoonlightFestival/Activity")
 local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
@@ -43,7 +45,8 @@ local function boxIn(part: any, frame: any): (any, any)
 	for _, sx in { -1, 1 } do
 		for _, sy in { -1, 1 } do
 			for _, sz in { -1, 1 } do
-				local corner = frame:PointToObjectSpace(part.CFrame * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z))
+				local corner =
+					frame:PointToObjectSpace(part.CFrame * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z))
 				local values = { corner.X, corner.Y, corner.Z }
 				for axis = 1, 3 do
 					lo[axis] = math.min(lo[axis], values[axis])
@@ -53,6 +56,23 @@ local function boxIn(part: any, frame: any): (any, any)
 		end
 	end
 	return lo, hi
+end
+
+-- Whether every number in a part's CFrame is a number. A CFrame turned to
+-- look at its own position has none, and the part vanishes in Roblox.
+local function finite(part: any): boolean
+	for _, value in { part.CFrame:GetComponents() } do
+		if value ~= value or math.abs(value) == math.huge then
+			return false
+		end
+	end
+	return true
+end
+
+local function assertFinite(root: any, label: string)
+	for _, part in partsIn(root) do
+		assert(finite(part), `{label}: a {part.ClassName} near {part.CFrame.Position} has no proper direction`)
+	end
 end
 
 -- Whether a box overlaps a region given as { minX, minY, minZ, maxX, maxY, maxZ }.
@@ -83,17 +103,38 @@ local function lightCount(root: any): number
 	return count
 end
 
--- Checks every visible part of a build stays inside the slot's footprint, on
--- or above the floor and not far above the slot.
-local function assertInside(model: any, origin: any, size: any, label: string)
-	for _, part in partsIn(model) do
-		assert(part.Anchored, `{label}: {part.Name} is not anchored`)
+-- Why a part isn't inside a slot's footprint, on or above the floor and not
+-- far above the slot, or nil if it is.
+local function outside(part: any, origin: any, size: any): string?
+	local lo, hi = boxIn(part, origin)
+	if lo[1] < -size.X / 2 - TOLERANCE or hi[1] > size.X / 2 + TOLERANCE then
+		return "sticks out sideways"
+	elseif lo[3] < -size.Z / 2 - TOLERANCE or hi[3] > size.Z / 2 + TOLERANCE then
+		return "sticks out front or back"
+	elseif lo[2] < -TOLERANCE then
+		return "goes below the floor"
+	elseif hi[2] > size.Y + 4 then
+		return "is far above its slot"
+	end
+	return nil
+end
+
+local function assertPlaced(part: any, origin: any, problem: string?, label: string)
+	assert(part.Anchored, `{label}: {part.Name} is not anchored`)
+	if problem then
 		local lo, hi = boxIn(part, origin)
-		local where = `{label}: a {part.ClassName} reaching ({lo[1]}, {lo[2]}, {lo[3]}) to ({hi[1]}, {hi[2]}, {hi[3]})`
-		assert(lo[1] >= -size.X / 2 - TOLERANCE and hi[1] <= size.X / 2 + TOLERANCE, `{where} sticks out sideways`)
-		assert(lo[3] >= -size.Z / 2 - TOLERANCE and hi[3] <= size.Z / 2 + TOLERANCE, `{where} sticks out front or back`)
-		assert(lo[2] >= -TOLERANCE, `{where} goes below the floor`)
-		assert(hi[2] <= size.Y + 4, `{where} is far above its slot`)
+		assert(
+			false,
+			`{label}: a {part.ClassName} reaching ({lo[1]}, {lo[2]}, {lo[3]}) to ({hi[1]}, {hi[2]}, {hi[3]}) {problem}`
+		)
+	end
+end
+
+-- Checks every part of a build stays inside the slot.
+local function assertInside(model: any, origin: any, size: any, label: string)
+	assertFinite(model, label)
+	for _, part in partsIn(model) do
+		assertPlaced(part, origin, outside(part, origin, size), label)
 	end
 end
 
@@ -121,19 +162,79 @@ describe("theme props", function()
 		end
 	end)
 
-	it("adds each drawn upgrade inside the slot of the building it improves", function()
-		for id, builder in Props do
-			local upgrade = Progression.find(Balance.Upgrades, id)
-			assert(upgrade, `the theme has a model for unknown upgrade {id}`)
-			if upgrade.Building then
-				local slot = Layout.Slots[upgrade.Building]
+	it("adds every upgrade to the building it improves, inside its slot or yard", function()
+		-- Parts and lights for each building's shared upgrades, and for each of
+		-- its paths. A plot only ever has one path per building built, so the
+		-- budget counts the heaviest.
+		local shared: { [string]: { number } } = {}
+		local paths: { [string]: { [string]: { number } } } = {}
+		local function tally(totals: { [string]: { number } }, key: string, model: any)
+			local counts = totals[key] or { 0, 0 }
+			counts[1] += #partsIn(model)
+			counts[2] += lightCount(model)
+			totals[key] = counts
+		end
+
+		for _, upgrade in Balance.Upgrades do
+			local id, building = upgrade.Id, upgrade.Building
+			if building then
+				local builder = Props[id]
+				assert(builder, `the theme draws nothing for {id}, so buying it changes nothing you can see`)
+				local slot = Layout.Slots[building]
 				local origin, size = slotOrigin(slot), slotSize(slot)
-				local model = builder(origin, size)
+				local yard = slot.Yard and slotOrigin(slot.Yard)
+				local model = builder(origin, size, yard)
+				expect(model.ClassName).toBe("Model")
 				expect(model.PrimaryPart).toBe(nil)
-				assertInside(model, origin, size, id)
-				plotParts += #partsIn(model)
-				plotLights += lightCount(model)
+				assertFinite(model, id)
+				for _, part in partsIn(model) do
+					local problem = outside(part, origin, size)
+					if problem and yard and outside(part, yard, slotSize(slot.Yard)) == nil then
+						problem = nil
+					end
+					assertPlaced(part, origin, problem, id)
+				end
+				if upgrade.Path then
+					paths[building] = paths[building] or {}
+					tally(paths[building], upgrade.Path, model)
+				else
+					tally(shared, building, model)
+				end
 			end
+		end
+		for id in Props do
+			assert(Progression.find(Balance.Upgrades, id), `the theme has a model for unknown upgrade {id}`)
+		end
+
+		for _, counts in shared do
+			plotParts += counts[1]
+			plotLights += counts[2]
+		end
+		for _, byPath in paths do
+			local parts, lights = 0, 0
+			for _, counts in byPath do
+				parts, lights = math.max(parts, counts[1]), math.max(lights, counts[2])
+			end
+			plotParts += parts
+			plotLights += lights
+		end
+	end)
+
+	it("builds Ghost Catcher's booth inside its place, and wisps nobody can bump into", function()
+		local spec = Layout.Activity
+		local origin, size = slotOrigin(spec), slotSize(spec)
+		local booth = ActivityLook.booth(origin, size)
+		assertInside(booth, origin, size, "the activity booth")
+		local status = booth:FindFirstChild("Status", true)
+		assert(status and status:FindFirstChildWhichIsA("SurfaceGui"), "the booth has no Status board")
+		plotParts += #partsIn(booth)
+		plotLights += lightCount(booth)
+
+		local wisp = ActivityLook.wisp()
+		assert(wisp.PrimaryPart, "a wisp has no body")
+		assertFinite(wisp, "a wisp")
+		for _, part in partsIn(wisp) do
+			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `a wisp's {part.Name} can be hit`)
 		end
 	end)
 
@@ -166,23 +267,21 @@ describe("theme props", function()
 end)
 
 describe("theme scenery", function()
-	local function makePlot(cframe: any): any
-		local plot = Instance.new("Part")
-		plot.Name = "Plot1"
-		plot.Size = Vector3.new(Layout.PlotSize, 1, Layout.PlotSize)
-		plot.CFrame = cframe
-		return plot
-	end
-
 	it("dresses a plot without touching its slots, buttons, gate or walkway", function()
-		local plot = makePlot(PLOT_CFRAME)
+		local plot = Map.plot(PLOT_CFRAME)
 		local model = Scenery.plot(plot, 1, Instance.new("Folder"))
 		local floor = PLOT_CFRAME * CFrame.new(0, 0.5, 0)
+		assertFinite(model, "plot dressing")
 
 		local keepOut: { { any } } = {}
 		for id, slot in Layout.Slots do
-			local w, h, d = slot.Size[1], slot.Size[2], slot.Size[3]
-			table.insert(keepOut, { `slot {id}`, { slot.X - w / 2, 0, slot.Z - d / 2, slot.X + w / 2, h, slot.Z + d / 2 } })
+			for _, box in { slot, slot.Yard } do
+				local w, h, d = box.Size[1], box.Size[2], box.Size[3]
+				table.insert(
+					keepOut,
+					{ `slot {id}`, { box.X - w / 2, 0, box.Z - d / 2, box.X + w / 2, h, box.Z + d / 2 } }
+				)
+			end
 		end
 		local half = Layout.ButtonSize / 2
 		for building, spots in Layout.Buttons do
@@ -198,6 +297,15 @@ describe("theme scenery", function()
 		local gate = Layout.Gate
 		local gw, gh, gd = gate.Size[1] / 2, gate.Size[2], gate.Size[3] / 2
 		table.insert(keepOut, { "gate", { gate.X - gw, 0, gate.Z - gd, gate.X + gw, gh, gate.Z + gd } })
+		local booth = Layout.Activity
+		local bw, bh, bd = booth.Size[1] / 2, booth.Size[2], booth.Size[3] / 2
+		table.insert(keepOut, { "activity booth", { booth.X - bw, 0, booth.Z - bd, booth.X + bw, bh, booth.Z + bd } })
+		local start = booth.Pad
+		-- It stands on the walkway, so only what's over the walkway counts.
+		table.insert(
+			keepOut,
+			{ "activity pad", { start.X - half, 0.1, start.Z - half, start.X + half, 6, start.Z + half } }
+		)
 
 		local edge = Layout.PlotSize / 2
 		for _, part in partsIn(model) do
@@ -221,7 +329,8 @@ describe("theme scenery", function()
 	end)
 
 	it("keeps a fully built plot within a part and light budget", function()
-		-- Every plot can be fully built at once, so this is what each costs.
+		-- Every plot can be fully built at once, on its heaviest paths, so this
+		-- is the most each costs.
 		print(`  a fully built plot has {plotParts} parts and {plotLights} lights`)
 		assert(plotParts < 1500, `a fully built plot has {plotParts} parts`)
 		assert(plotLights < 60, `a fully built plot has {plotLights} lights`)
@@ -229,22 +338,14 @@ describe("theme scenery", function()
 
 	it("dresses the world around the plots without building on them", function()
 		-- The same map PlotService generates.
-		local plots = {}
-		local count, spacing = Layout.PlotCount, Layout.PlotSpacing
-		for i = 1, count do
-			table.insert(plots, makePlot(CFrame.new((i - (count + 1) / 2) * spacing, 0, 0)))
-		end
-		local plaza = Instance.new("Part")
-		plaza.Size = Vector3.new(count * spacing, 1, 40)
-		plaza.CFrame = CFrame.new(0, 0, Layout.PlotSize / 2 + 20)
-		local spawn = Instance.new("SpawnLocation")
-		spawn.Size = Vector3.new(8, 1, 8)
-		spawn.CFrame = CFrame.new(0, 1, Layout.PlotSize / 2 + 20)
+		local map = Map.build()
+		local plots, plaza, spawn = map.Plots, map.Plaza, map.Spawn
 
 		local folder = Instance.new("Folder")
 		local fills = Scenery.world({ Plots = plots, Plaza = plaza, Spawns = { spawn } }, folder)
 		local parts = partsIn(folder)
 		print(`  the world has {#parts} parts and {lightCount(folder)} lights`)
+		assertFinite(folder, "the world")
 		assert(#parts < 9000, `the world has {#parts} parts`)
 
 		local half = Layout.PlotSize / 2
@@ -266,13 +367,19 @@ describe("theme scenery", function()
 		assert(#fills > 0, "no terrain to fill")
 		for _, fill in fills do
 			assert(roblox.Enum.Material[fill.Material], `unknown terrain material {fill.Material}`)
-			assert(fill.Shape == "Block" or fill.Shape == "Ball" or fill.Shape == "Cylinder", `unknown fill {fill.Shape}`)
+			assert(
+				fill.Shape == "Block" or fill.Shape == "Ball" or fill.Shape == "Cylinder",
+				`unknown fill {fill.Shape}`
+			)
 		end
 
 		-- Terrain left under a floor shows through it and buries its buttons,
 		-- so the last fills clear the ground under every plot and the plaza.
 		local floors = table.clone(plots)
 		table.insert(floors, plaza)
+		local courtyardFloor = folder:FindFirstChild("CourtyardFloor", true)
+		assert(courtyardFloor, "the courtyard has no floor")
+		table.insert(floors, courtyardFloor)
 		for _, floor in floors do
 			local cleared = false
 			for index, fill in fills do
@@ -295,6 +402,79 @@ describe("theme scenery", function()
 				end
 			end
 			assert(cleared, `the ground under {floor.Name} is not cleared`)
+		end
+	end)
+
+	-- Whether the segment from a to b passes through a part's box.
+	local function crosses(part: any, a: any, b: any): boolean
+		local half = part.Size / 2
+		local from, to = part.CFrame:PointToObjectSpace(a), part.CFrame:PointToObjectSpace(b)
+		local enter, leave = 0, 1
+		for _, axis in { "X", "Y", "Z" } do
+			local start, delta, extent = from[axis], to[axis] - from[axis], half[axis]
+			if math.abs(delta) < 1e-9 then
+				if math.abs(start) > extent then
+					return false
+				end
+			else
+				local near, far = (-extent - start) / delta, (extent - start) / delta
+				if near > far then
+					near, far = far, near
+				end
+				enter, leave = math.max(enter, near), math.min(leave, far)
+				if enter > leave then
+					return false
+				end
+			end
+		end
+		return true
+	end
+
+	it("shows the landmark and the nearest gates from the spawn", function()
+		local map = Map.build()
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = { map.Spawn } }, folder)
+		local wheel = folder:FindFirstChild("MoonlightWheel", true)
+		assert(wheel and wheel:HasTag("Wheel"), "the courtyard has no tagged wheel")
+		local centre = wheel:GetAttribute("Centre")
+		assert(centre and wheel:GetAttribute("Radius") and wheel:GetAttribute("LapSeconds"), "the wheel can't turn")
+		local rim = wheel:FindFirstChild("Rim")
+		assert(rim and (rim.WorldPivot.Position - centre.Position).Magnitude < 0.01, "the rim doesn't turn on the hub")
+		local seats = 0
+		for _, child in wheel:GetChildren() do
+			if child:GetAttribute("Seat") ~= nil then
+				seats += 1
+			end
+		end
+		expect(seats).toBe(8)
+
+		-- The wheel stands in the gap between the middle two plots.
+		local half = Layout.PlotSize / 2
+		local left, right = Layout.plotX(Layout.PlotCount / 2) + half, Layout.plotX(Layout.PlotCount / 2 + 1) - half
+		for _, part in partsIn(wheel) do
+			local lo, hi = boxIn(part, CFrame.new())
+			assert(lo[1] > left and hi[1] < right, `the wheel reaches over a plot at x = {lo[1]} to {hi[1]}`)
+		end
+
+		-- A player's eyes on the spawn see the hub and the two nearest gates,
+		-- past anything solid to look at. The gates stand where PlotService
+		-- puts them.
+		local spawnTop = map.Spawn.CFrame.Position + Vector3.new(0, map.Spawn.Size.Y / 2, 0)
+		local eye = spawnTop + Vector3.new(0, 5, 0)
+		local targets = { { "the wheel's hub", centre.Position, wheel } }
+		for _, index in { Layout.PlotCount / 2, Layout.PlotCount / 2 + 1 } do
+			local gate = map.Plots[index].CFrame
+				* CFrame.new(Layout.Gate.X, 0.5 + Layout.Gate.Size[2] / 2, Layout.Gate.Z)
+			table.insert(targets, { `the gate of Plot{index}`, gate.Position, nil })
+		end
+		for _, target in targets do
+			for _, part in partsIn(folder) do
+				local skip = part.Transparency > 0.5 or (target[3] and part:IsDescendantOf(target[3]))
+				if not skip and crosses(part, eye, target[2]) then
+					local at = part.CFrame.Position
+					error(`a {part.ClassName} at ({at.X}, {at.Y}, {at.Z}) hides {target[1]} from the spawn`)
+				end
+			end
 		end
 	end)
 end)
@@ -376,11 +556,19 @@ describe("theme look", function()
 	end)
 
 	it("gives every sound an asset id or nothing, and a volume", function()
-		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout" } do
-			local sound = Theme.Sounds[name]
-			assert(sound, `the theme has no {name} sound`)
-			assert(sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"), `{name} must be rbxassetid://<number> or ""`)
+		for _, name in { "Music", "Music2", "Ambience", "Claim", "Purchase", "Build", "Payout", "Deny" } do
+			assert(Theme.Sounds[name], `the theme has no {name} sound`)
+		end
+		for name, sound in Theme.Sounds do
+			assert(
+				sound.Id == "" or string.match(sound.Id, "^rbxassetid://%d+$"),
+				`{name} must be rbxassetid://<number> or ""`
+			)
 			assert(sound.Volume >= 0 and sound.Volume <= 1, `{name} volume must be 0 to 1`)
+			assert(
+				sound.Fallback == nil or string.match(sound.Fallback, "^rbxasset://sounds/[%w_]+%.%w+$"),
+				`{name} falls back to rbxasset://sounds/<file>, one of Roblox's own sounds`
+			)
 		end
 	end)
 end)
