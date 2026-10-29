@@ -15,6 +15,7 @@ require("./Wardrobe.spec")
 require("./Arena.spec")
 require("./Activity.spec")
 require("./Festival.spec")
+require("./Parade.spec")
 
 local failures = TestKit.run()
 process.exit(if failures > 0 then 1 else 0)

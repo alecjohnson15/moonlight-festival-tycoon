@@ -1,6 +1,6 @@
--- Ghost Catcher's rules: where and when wisps appear, what counts as a catch,
--- what rounds pay, and that playing them back to back can't break the
--- 90-minute pacing.
+-- Ghost Catcher's rules: where and when wisps appear, what counts as a catch
+-- and what rounds pay. Parade.spec checks that playing them back to back,
+-- with every parade too, can't break the 90-minute pacing.
 
 local TestKit = require("./TestKit")
 local Activity = require("../src/shared/Activity")
@@ -81,14 +81,6 @@ describe("Ghost Catcher", function()
 		expect(Activity.wispReward(Config, 1000)).toBe(math.floor(1000 * Config.RewardSeconds + 0.5))
 		expect(Activity.perfectReward(Config, 0)).toBe(Config.MinReward * 2)
 		expect(Activity.perfectReward(Config, 1000)).toBe(math.floor(1000 * Config.PerfectSeconds + 0.5))
-	end)
-
-	it("can't make the run shorter than 80 minutes, even played back to back", function()
-		-- The pacing tests run on passive income alone, and the fastest route
-		-- takes 86 minutes; 86 / 1.075 is just over 80 (docs/progression.md).
-		local share = Activity.bonusShare(Config)
-		print(`  rounds back to back add {math.floor(share * 1000 + 0.5) / 10}% to income`)
-		assert(share <= 0.075, `rounds back to back add {share * 100}% to income`)
 	end)
 end)
 

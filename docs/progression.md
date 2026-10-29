@@ -67,10 +67,10 @@ The old rule was "no next upgrade is more than 120 seconds away". That rule
 can't make a 90 minute game: with a 2 minute cap and 42 purchases, the whole
 tree would be over in well under 90 minutes unless purchases were made tiny.
 
-The new rule, in `tests/Earnings.spec.luau` (`PACING`), plays every one of the
-144 routes. Each simulated player earns passive income only and always buys the
-cheapest upgrade open to them on their route. Every route must then meet all
-of these:
+The new rule, in `tests/Pacing.luau` and checked by `tests/Earnings.spec.luau`,
+plays every one of the 144 routes. Each simulated player earns passive income
+only and always buys the cheapest upgrade open to them on their route. Every
+route must then meet all of these:
 
 | Rule | Limit | Shipped numbers |
 | --- | --- | --- |
@@ -84,17 +84,30 @@ Every path averages 89 to 92 minutes across the routes that take it, so no
 choice is a trap and none is a shortcut. Real players take a little longer
 than the simulation, since they also have to walk to each pad.
 
-### Ghost Catcher
+### Ghost Catcher and the Moonlight Parade
 
 Ghost Catcher (`Config/Activity.luau`) is the repeatable activity between
-purchases: a 25 second round of wisps to catch, then a 65 second rest. Each
+purchases: a 25 second round of wisps to catch, then a 72 second rest. Each
 wisp pays 0.4 seconds of the plot's income and a perfect round 2 seconds more,
 so a player who plays every round from start to finish earns at most about
-7.5% more than passive income (`tests/Activity.spec.luau` holds it there).
-That takes the fastest route from 86 minutes to just over 80, the floor of the
-pacing rule; a player who never plays it is not held back. In the first few
-minutes each wisp pays at least 2 coins, which is worth more than income then
-and makes the first rounds a real boost.
+6.9% more than passive income. In the first few minutes each wisp pays at
+least 2 coins, which is worth more than income then and makes the first
+rounds a real boost.
+
+The Moonlight Parade (`Config/Parade.luau`) circles the wheel in the
+courtyard for a minute every 10 minutes, the first one 2.5 minutes after the
+server starts. Each of the first 6 lanterns a player catches in a parade pays
+0.3 seconds of their income (at least 2 coins), and if the server catches
+60% of the lanterns, everyone who caught one gets 1 second more (at least 5
+coins). Catching everything in every parade adds at most about 0.5% to
+income. The parade is there to bring the server together, not to pay; what
+it really gives is decorations and a colour for the player's festival.
+
+Together, a player who plays every Ghost Catcher round and every parade
+earns at most about 7.4% more than passive income, which takes the fastest
+route from 86 minutes to just over 80, the floor of the pacing rule
+(`tests/Parade.spec.luau` holds it there). A player who skips both is not
+held back.
 
 ## Retuning
 

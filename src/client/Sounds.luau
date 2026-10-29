@@ -1,9 +1,10 @@
 -- Plays the theme's sounds on this client: one-off effects by name, the
--- music as a playlist that goes round the theme's songs in turn, and the
--- eerie ambience on a loop. The player can turn the music and ambience off. A
--- sound whose id is empty in the theme plays its fallback, one of Roblox's
--- own sounds, or is silent if it has none, so the game runs before any audio
--- is uploaded.
+-- music as a playlist that goes round the theme's songs in turn, the eerie
+-- ambience on a loop, and loops for events such as the parade's march, which
+-- turn the music down while they play. The player can turn the music,
+-- ambience and event loops off. A sound whose id is empty in the theme plays
+-- its fallback, one of Roblox's own sounds, or is silent if it has none, so
+-- the game runs before any audio is uploaded.
 
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,11 +13,15 @@ local Theme = require(ReplicatedStorage:WaitForChild("Shared").Config.Theme)
 
 local PLAYLIST = { "Music", "Music2" }
 local AMBIENCE = "Ambience"
+-- How loud the music is while an event loop plays.
+local DUCKED = 0.25
 
 local Sounds = {}
 
 local made: { [string]: Sound } = {}
 local loopsOn = true
+-- The event loops playing now.
+local events: { [string]: boolean } = {}
 -- Which of the songs with an id is playing, by its place in that list.
 local current = 0
 local playNextSong: () -> ()
@@ -90,6 +95,41 @@ function Sounds.play(name: string)
 	end
 end
 
+-- Turns the songs down while an event loop plays, and back up after.
+local function duck()
+	local scale = if next(events) and loopsOn then DUCKED else 1
+	for _, name in PLAYLIST do
+		local song = made[name]
+		if song then
+			song.Volume = Theme.Sounds[name].Volume * scale
+		end
+	end
+end
+
+-- Starts an event's loop, if loops are on and it has a sound.
+function Sounds.startLoop(name: string)
+	local sound = get(name)
+	if not sound or events[name] then
+		return
+	end
+	events[name] = true
+	sound.Looped = true
+	if loopsOn then
+		sound.TimePosition = 0
+		sound:Play()
+	end
+	duck()
+end
+
+function Sounds.stopLoop(name: string)
+	local sound = made[name]
+	events[name] = nil
+	if sound then
+		sound:Stop()
+	end
+	duck()
+end
+
 -- Whether the theme has any music or ambience to turn on and off.
 function Sounds.hasLoops(): boolean
 	return #songs() > 0 or hasId(AMBIENCE)
@@ -123,6 +163,15 @@ function Sounds.setLoops(on: boolean)
 	if on and not playing then
 		playNextSong()
 	end
+	for name in events do
+		local sound = made[name]
+		if sound and not on then
+			sound:Stop()
+		elseif sound and not sound.IsPlaying then
+			sound:Play()
+		end
+	end
+	duck()
 end
 
 function Sounds.start()

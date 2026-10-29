@@ -8,7 +8,9 @@ An original Roblox tycoon: players turn an empty plot into a festival, earn coin
 - **Plots:** players spawn on the plaza and claim a plot by walking into its gate. The gate then turns see-through and shows the owner's name, and they respawn on their plot from then on. With no `Workspace.Plots` folder in the place, the server generates a row of plots, gates and a spawn plaza, so the game runs from an empty place file. A place that brings its own plots can give each one a `Gate` part.
 - **Buy buttons:** everything is bought by stepping on round pads on the plot floor, each showing its name, price and what it adds per second. A pad appears, fading in, once its requirement is owned. Stepping on it builds the upgrade, which rises out of the ground part by part with a burst of sparks while "+N / sec" rises off it, and the pad fades away. On your own screen, pads you can afford glow and pulse, and the rest turn red. Stepping on one you can't afford yet says how many more coins it needs. The first pad of each path only previews the path on the first step (what it does, what it adds, what it locks, and a see-through model of what it builds); stepping off and on again within 12 seconds picks it.
 - **Guide:** a line at the bottom of the screen always says what to do next: claim a gate, step on a named pad, or save up for the next one with a coin bar. For the first six purchases, and whenever you could buy something but haven't for 40 seconds, a beam runs from you to that goal with an arrow over it. Free gates shine with a tall gold beacon until you have a plot. Saving up for something more than 20 seconds away, it suggests Ghost Catcher.
-- **Ghost Catcher:** the repeatable thing to do between purchases. Every claimed plot has a booth at the back of its walkway; step on its pad and, for 25 seconds, twelve wisps pop up one after another along the walkway, each waiting six seconds to be caught by running through it. Each pays a bit of your income (at least 2 coins), and catching all twelve pays a bonus. The booth's board counts down the 65 seconds to the next round, and your best round is saved. The server places the wisps and decides every catch. Played nonstop it adds at most about 7.5% to income, so the 90 minute pacing holds (see [docs/progression.md](docs/progression.md)).
+- **Ghost Catcher:** the repeatable thing to do between purchases. Every claimed plot has a booth at the back of its walkway; step on its pad and, for 25 seconds, twelve wisps pop up one after another along the walkway, each waiting six seconds to be caught by running through it. Each pays a bit of your income (at least 2 coins), and catching all twelve pays a bonus. The booth's board counts down the 72 seconds to the next round, and your best round is saved. The server places the wisps and decides every catch. Played nonstop it adds at most about 7% to income, so the 90 minute pacing holds (see [docs/progression.md](docs/progression.md)).
+- **Your own festival:** every plot gets a name ("The Grinning Lantern Carnival", picked from three word lists and changeable), a name sign over its gate, a board by the walkway to decorate from, and a trophy shelf with a cup for each finished path, your best Ghost Catcher round, your arena KOs and your parades. Press **Festival** on the left, or the board's **Decorate** prompt, to rename it, pick a colour scheme for the stall, the booth and the decorations, and choose what stands in each of six spots round the plot (hay bales, a graveyard corner, pumpkins, a witch's cauldron, a lantern arch, a moon fountain, a bat topiary, a ghost statue, a parade float or a skeleton drummer). More pieces and colours unlock by building things every route gets, by Ghost Catcher scores and by joining parades, and a note says when one does. Choices are saved.
+- **The Moonlight Parade:** every 10 minutes (the first 2.5 minutes after a server starts) three floats and a band of marching ghosts circle the Moonlight Wheel for a minute, letting go of glowing lanterns. Everyone on the server can catch them by running through them, and every catch fills one shared meter. The goal line counts down to it and leads you there, a sign in the courtyard says when the next one starts, and when the meter fills there's confetti, a cheer and a small bonus for everyone who caught one. Parades unlock festival decorations and a colour, and pay too little to change the pacing. Next to the parade's sign, a board lists the server's best Ghost Catchers.
 - **First minute:** claim a gate, step on the free Creepy Treat Stall pad, and the first paid upgrade is affordable within a minute. A test enforces that last part.
 - **Production chain:** the pumpkin patch grows goods, the kitchen cooks as many as it has room for, and the stall sells everything that reaches it, plus what it makes itself. Cooked goods sell for more, so a full kitchen is the next thing to upgrade, and its label says "(full)" when goods are going past it.
 - **Visitors and attractions:** every attraction draws visitors, and there are three types. A walkthrough charges each visitor up to its capacity, a ride runs in rounds and pays per seat filled, and a showpiece is free to visit and earns by drawing a crowd for the others.
@@ -37,6 +39,8 @@ src/
       Arena.luau          the arena's size, place and rules of a fight
       Weapons.luau        every arena weapon's stats and special move
       Activity.luau       Ghost Catcher's rounds, wisps and rewards
+      Festival.luau       festival colours and decorations, and what unlocks them
+      Parade.luau         the Moonlight Parade's timing, lanterns and rewards
     Themes/
       MoonlightFestival/
         init.luau         names, colours, the night's look, sounds
@@ -48,19 +52,24 @@ src/
         Arena.luau        the arena's dressing, the bonker, special moves' looks
         Courtyard.luau    the arrival courtyard and the Moonlight Wheel
         Activity.luau     Ghost Catcher's booth and wisps
+        Festival.luau     festival decorations, name sign, board and trophy shelf
+        Parade.luau       the parade's floats, marchers and lanterns
     Kit.luau              helpers for building models from parts
     Progression.luau      what can be bought, when (pure)
     Earnings.luau         production chain, visitors, attractions (pure)
     Wardrobe.luau         who owns which cosmetic, what goes where (pure)
     Combat.luau           who an arena hit reaches, and how it throws
     Activity.luau         Ghost Catcher's wisps, catches and pay (pure)
+    Festival.luau         festival names, unlocks and choices (pure)
+    Parade.luau           when parades run, lanterns, catches and pay (pure)
     Format.luau           number formatting for labels
   server/                 ServerScriptService.Server
     init.server.luau      starts services in order
     Services/             DataService, EconomyService, PlotService,
                           ArenaService, WorldService, ProductionService,
                           AttractionService, UpgradeService,
-                          ActivityService, PurchaseService,
+                          ActivityService, FestivalService,
+                          ParadeService, PurchaseService,
                           CosmeticService
     Lib/                  Migrations, SessionLock, ReceiptLedger,
                           RateLimiter (pure)
@@ -68,6 +77,8 @@ src/
     Hud.luau              cash counter, income, visitors, music button
     Guide.luau            the next goal, guide beam, notes, path previews
     Activity.luau         Ghost Catcher's wisps, timer and results
+    FestivalBoard.luau    the festival panel: name, colours, decorations
+    Parade.luau           the parade, its lanterns, the courtyard sign
     PlotActivity.luau     goods and visitors moving on every plot
     Motion.luau           floating, spinning, the ghost train, flicker
     BuildEffects.luau     the build-up when something is bought
@@ -86,7 +97,7 @@ docs/arena.md             the arena's rules, weapons and the paid edge
 docs/rights-register.md   every external asset and dependency
 ```
 
-The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item), `CosmeticSwung` (the server telling clients a weapon swung), `ArenaAction` (a fighter's special move) and `ArenaEffect` (the server telling clients what to draw in the arena). A client only names what it wants; the server checks it. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
+The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item), `CosmeticSwung` (the server telling clients a weapon swung), `ArenaAction` (a fighter's special move), `ArenaEffect` (the server telling clients what to draw in the arena), `Activity` (Ghost Catcher rounds), `Festival` (renaming and decorating a festival, and the server opening the panel), `Parade` (the server telling clients about the parade, and a client that joins mid-parade asking for it) and `Notice` (notes for the guide). A client only names what it wants; the server checks it. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
 
 ## Getting started
 
@@ -112,11 +123,11 @@ StyLua must be built with its `luau` feature: `cargo install stylua --features l
 CI runs the same four on every pull request. What they cover, and what they don't:
 
 - **Formatting and lint** read every Luau file under `src`, `tests` and `tools` (lint: `src` only).
-- **Tests** run the pure modules (`Progression`, `Earnings`, `Wardrobe`, `Combat`, `Activity`, the save schema, the receipt ledger and rate limiter) and the config, including every route through the upgrade tree against the pacing rule. They also build the theme's models and scenery with Lune's Roblox library, which catches bad property names and types, and check that models fit their slots and stay clear of pads, gates and walkways.
+- **Tests** run the pure modules (`Progression`, `Earnings`, `Wardrobe`, `Combat`, `Activity`, `Festival`, `Parade`, the save schema, the receipt ledger and rate limiter) and the config, including every route through the upgrade tree against the pacing rule. They also build the theme's models and scenery with Lune's Roblox library, which catches bad property names and types, and check that models fit their slots and stay clear of pads, gates and walkways.
 - **The build** checks that Rojo can assemble the place.
 - **Not covered:** the server services and client scripts never run in CI, because they need a live Roblox engine (DataStores, MarketplaceService, terrain, touches, physics, the camera and UI). Nothing measures fun, readability, frame rate, memory or mobile layout. Those are checked by playing in Studio and on real devices; see [docs/playtest.md](docs/playtest.md).
 
-A fully built plot, on its heaviest paths and with its Ghost Catcher booth, is about 1,500 parts and 49 lights, and the land around the plots about 3,800 parts; a test keeps a plot under 1,500 parts and 60 lights. `Lighting.Technology` is set to Future in `default.project.json`, as scripts can't change it.
+A fully built plot, on its heaviest paths, with its Ghost Catcher booth and its heaviest festival decorations, is about 1,450 parts and 51 lights, and the land around the plots about 3,800 parts; a test keeps a plot under 1,500 parts and 60 lights. `Lighting.Technology` is set to Future in `default.project.json`, as scripts can't change it.
 
 ## Common changes
 

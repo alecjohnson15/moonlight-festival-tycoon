@@ -22,6 +22,9 @@ local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
 local ActivityLook = Loader.require("src/shared/Themes/MoonlightFestival/Activity")
 local FestivalLook = Loader.require("src/shared/Themes/MoonlightFestival/Festival")
 local FestivalConfig = require("../src/shared/Config/Festival")
+local ParadeLook = Loader.require("src/shared/Themes/MoonlightFestival/Parade")
+local ParadeConfig = require("../src/shared/Config/Parade")
+local ParadeRules = require("../src/shared/Parade")
 local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
@@ -570,19 +573,19 @@ describe("theme scenery", function()
 	end)
 end)
 
-describe("theme crowd", function()
-	-- What each client draws many of, so each must be small and cheap.
-	local function checkLight(model: any, what: string, maxParts: number)
-		local parts = partsIn(model)
-		assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
-		for _, part in parts do
-			assert(part.Anchored, `{what}: {part.Name} is not anchored`)
-			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
-			assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
-		end
-		assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
+-- What each client draws many of, so each must be small and cheap.
+local function checkLight(model: any, what: string, maxParts: number)
+	local parts = partsIn(model)
+	assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
+	for _, part in parts do
+		assert(part.Anchored, `{what}: {part.Name} is not anchored`)
+		assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
+		assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
 	end
+	assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
+end
 
+describe("theme crowd", function()
 	it("dresses every kind of visitor in a small costume that faces forward", function()
 		local random = Kit.random(7)
 		for kind = 1, Crowd.KindCount do
@@ -615,6 +618,122 @@ describe("theme crowd", function()
 				local lo, hi = boxIn(part, CFrame.new())
 				for axis = 1, 3 do
 					assert(lo[axis] >= -1 and hi[axis] <= 1, `{item} is too big`)
+				end
+			end
+		end
+	end)
+end)
+
+describe("theme parade", function()
+	-- How far the floats reach from their middle across the ground, and how
+	-- tall they stand.
+	local floatReach, floatHeight = 0, 0
+
+	it("builds small floats, marchers and lanterns nobody can bump into", function()
+		for index = 1, ParadeLook.FloatCount do
+			local model = ParadeLook.float(index)
+			local what = `float {index}`
+			checkLight(model, what, 40)
+			expect(lightCount(model)).toBe(0)
+			for _, part in partsIn(model) do
+				local lo, hi = boxIn(part, CFrame.new())
+				assert(lo[2] >= -TOLERANCE, `{what} goes below the ground`)
+				for _, x in { lo[1], hi[1] } do
+					for _, z in { lo[3], hi[3] } do
+						floatReach = math.max(floatReach, math.sqrt(x * x + z * z))
+					end
+				end
+				floatHeight = math.max(floatHeight, hi[2])
+			end
+		end
+		print(
+			`  floats reach {math.floor(floatReach * 10 + 0.5) / 10} studs and stand {math.floor(floatHeight * 10 + 0.5) / 10} tall`
+		)
+		assert(floatReach <= 4.5, `a float reaches {floatReach} studs from its middle`)
+		assert(floatHeight <= 9, `a float stands {floatHeight} studs tall`)
+
+		local marcher = ParadeLook.marcher()
+		checkLight(marcher, "a marcher", 16)
+		expect(lightCount(marcher)).toBe(0)
+
+		-- One light each, since a few are out at a time.
+		local lantern = ParadeLook.lantern()
+		local parts = partsIn(lantern)
+		assert(#parts <= 6, `a lantern has {#parts} parts`)
+		expect(lightCount(lantern)).toBe(1)
+		assert(lantern.PrimaryPart, "a lantern has no body")
+		for _, part in parts do
+			assert(
+				not part.CanCollide and not part.CanTouch and not part.CanQuery,
+				`a lantern's {part.Name} can be hit`
+			)
+			local lo, hi = boxIn(part, CFrame.new())
+			for axis = 1, 3 do
+				assert(lo[axis] >= -2 and hi[axis] <= 2, "a lantern is too big")
+			end
+		end
+	end)
+
+	it("leaves the parade a clear loop round the wheel, on the courtyard floor", function()
+		local map = Map.build()
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = { map.Spawn } }, folder)
+		local courtyard = folder:FindFirstChild("Courtyard", true)
+		assert(courtyard and courtyard:HasTag("ParadeRoute"), "the courtyard has no parade route")
+		local centre = courtyard:GetAttribute("RouteCentre")
+		local route =
+			{ RadiusX = courtyard:GetAttribute("RouteRadiusX"), RadiusZ = courtyard:GetAttribute("RouteRadiusZ") }
+		assert(centre and route.RadiusX and route.RadiusZ, "the parade route is missing a size")
+		local floor = courtyard:FindFirstChild("CourtyardFloor")
+		local floorLo, floorHi = boxIn(floor, centre)
+
+		-- Where the floats go, and the lanterns either side of them.
+		local points = {}
+		for step = 0, 359 do
+			local angle = math.rad(step)
+			for _, offset in { -ParadeConfig.Spread, 0, ParadeConfig.Spread } do
+				local x, _, z = ParadeRules.point(route, angle, offset, 0)
+				table.insert(points, { x, z, offset == 0 })
+				local reach = if offset == 0 then floatReach else 1
+				assert(
+					x - reach >= floorLo[1]
+						and x + reach <= floorHi[1]
+						and z - reach >= floorLo[3]
+						and z + reach <= floorHi[3],
+					`the parade leaves the courtyard floor at ({x}, {z})`
+				)
+			end
+		end
+
+		-- How far a point is from a box, across the ground.
+		local function away(lo: { number }, hi: { number }, x: number, z: number): number
+			local dx = math.max(lo[1] - x, 0, x - hi[1])
+			local dz = math.max(lo[3] - z, 0, z - hi[3])
+			return math.sqrt(dx * dx + dz * dz)
+		end
+
+		local lanternLo, lanternHi = ParadeConfig.Height - 1.2, ParadeConfig.Height + 1.6
+		for _, part in partsIn(courtyard) do
+			if part ~= floor and part.Transparency < 1 then
+				local lo, hi = boxIn(part, centre)
+				-- Floats pass nothing they'd go through, and lanterns hang
+				-- clear of anything at their height so they can be reached.
+				local underFloats = lo[2] < floatHeight and hi[2] > 0.2
+				local byLanterns = lo[2] < lanternHi and hi[2] > lanternLo
+				for _, point in points do
+					local distance = away(lo, hi, point[1], point[2])
+					if point[3] and underFloats then
+						assert(
+							distance >= floatReach,
+							`a {part.ClassName} at ({lo[1]}, {lo[3]}) is in the parade's way at ({point[1]}, {point[2]})`
+						)
+					end
+					if byLanterns then
+						assert(
+							distance >= 1,
+							`a {part.ClassName} at ({lo[1]}, {lo[3]}) is in the way of lanterns at ({point[1]}, {point[2]})`
+						)
+					end
 				end
 			end
 		end

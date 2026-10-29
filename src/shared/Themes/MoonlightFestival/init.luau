@@ -88,6 +88,22 @@ return {
 		TrophyKOs = "%d KOs",
 		TrophyParades = "%d parades",
 
+		-- The Moonlight Parade round the wheel in the courtyard.
+		ParadeName = "Moonlight Parade",
+		ParadeSoon = "The Moonlight Parade starts in %ds at the Wheel!",
+		ParadeGoal = "Moonlight Parade at the Wheel! Catch lanterns together",
+		ParadeNow = "Catch the lanterns!",
+		ParadeMeter = "%d / %d lanterns",
+		ParadeFilled = "The whole festival lit up the night!",
+		ParadeFilledHint = "Everyone who caught a lantern gets a bonus",
+		ParadeOver = "The parade is over. Next one in %d minutes",
+		ParadeCaught = "You caught %d lanterns",
+		ParadeSign = "Next Moonlight Parade in %s",
+		ParadeSignNow = "Moonlight Parade now!",
+		ParadeEarned = "+%s coins",
+		BestBoardTitle = "Best Ghost Catchers tonight",
+		BestBoardLine = "%s: %d",
+
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
 		PathChoice = "Pick one: locks the other paths",
@@ -481,6 +497,12 @@ return {
 		RoundStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
 		Catch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
 		RoundEnd = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		-- The Moonlight Parade: a fanfare as it starts, a lantern caught, the
+		-- cheer when the meter fills, and the march that plays near it.
+		ParadeStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		ParadeCatch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
+		ParadeCheer = { Id = "", Volume = 0.7, Fallback = "rbxasset://sounds/button.wav" },
+		ParadeMarch = { Id = "", Volume = 0.45 },
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

@@ -6,13 +6,17 @@
 -- bobbing over it. Free gates shine with a tall beacon until the player has
 -- a haunt.
 --
+-- When the Moonlight Parade is about to start, and while it's on, the goal
+-- is the parade, unless the player is in the middle of a Ghost Catcher
+-- round or a path choice.
+--
 -- It also shows the notes the server sends through the Notice remote: a pad
 -- that needs more coins, how much more a second each purchase earns, rising
--- off what it built, and something new unlocked for the player's festival. And it shows the preview of a path pad stepped on
--- once: what the path does, what it adds per second, what it locks, and a
--- see-through model of what it builds. Everything here is drawn on this
--- client only, from attributes the server publishes; the server decides
--- everything.
+-- off what it built, and something new unlocked for the player's festival.
+-- And it shows the preview of a path pad stepped on once: what the path
+-- does, what it adds per second, what it locks, and a see-through model of
+-- what it builds. Everything here is drawn on this client only, from
+-- attributes the server publishes; the server decides everything.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +26,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
+local ParadeConfig = require(Shared.Config.Parade)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
 local Kit = require(Shared.Kit)
@@ -52,6 +57,8 @@ local NOTE_SECONDS = 3.5
 local GAIN_SECONDS = 2.2
 local GOAL_STEP = 0.2
 local BEACON_HEIGHT = 70
+-- This close to the parade's loop, the player is there and needs no beam.
+local PARADE_NEAR = 10
 
 export type Goal = {
 	Text: string,
@@ -295,6 +302,39 @@ local function activityBooth(plot: BasePart): Instance?
 	return if Workspace:GetServerTimeNow() >= (booth:GetAttribute("ReadyAt") or 0) then booth else nil
 end
 
+-- The Moonlight Parade, while it's on or about to start, unless the player
+-- is in the middle of a Ghost Catcher round.
+local function paradeGoal(plot: BasePart): Goal?
+	local centre = Workspace:GetAttribute("ParadeCentre")
+	local folder = plot:FindFirstChild("Activity")
+	local booth = folder and folder:FindFirstChild("Booth")
+	if typeof(centre) ~= "CFrame" or (booth and booth:GetAttribute("Playing")) then
+		return nil
+	end
+	local live = Workspace:GetAttribute("ParadeLive") == true
+	local startsIn = (Workspace:GetAttribute("ParadeAt") or math.huge) - Workspace:GetServerTimeNow()
+	if not live and (startsIn < 0 or startsIn > ParadeConfig.WarnSeconds) then
+		return nil
+	end
+	-- No beam once they're at the loop.
+	local reach = math.max(Workspace:GetAttribute("ParadeRadiusX") or 0, Workspace:GetAttribute("ParadeRadiusZ") or 0)
+	local root = rootPart()
+	local there = root ~= nil and (root.Position - centre.Position).Magnitude < reach + PARADE_NEAR
+	local target = if there then nil else centre.Position
+	if not live then
+		return { Text = Strings.ParadeSoon:format(math.ceil(startsIn)), Target = target, Urgent = true }
+	end
+	local meter = Workspace:GetAttribute("ParadeMeter") or 0
+	local goal = math.max(1, Workspace:GetAttribute("ParadeGoal") or 1)
+	return {
+		Text = Strings.ParadeGoal,
+		Progress = math.clamp(meter / goal, 0, 1),
+		ProgressText = Strings.ParadeMeter:format(meter, goal),
+		Target = target,
+		Urgent = true,
+	}
+end
+
 -- Works out the next goal from what the server has published.
 local function findGoal(): Goal?
 	local plot = myPlot()
@@ -303,12 +343,15 @@ local function findGoal(): Goal?
 		return { Text = Strings.GoalClaim, Target = gate and gate.Position, Urgent = true }
 	end
 	local pads = openPads(plot)
-	if #pads == 0 then
-		return { Text = Strings.GoalDone }
-	end
 	local armed = armedPad(pads)
 	if armed then
 		return { Text = Strings.GoalConfirm:format(padName(armed)), Target = armed.Position, Urgent = true }
+	end
+	local parade = paradeGoal(plot)
+	if parade then
+		return parade
+	elseif #pads == 0 then
+		return { Text = Strings.GoalDone }
 	end
 
 	local coins = player:GetAttribute("Coins") or 0

@@ -2,13 +2,16 @@
 -- straight ahead when they spawn on the plaza. Its landmark is the Moonlight
 -- Wheel, the one thing in the festival lit in pale moonlight gold, so it
 -- stands out from the red, green and purple washes everywhere else and can
--- be seen from every plot. Courtyard.spawn dresses a spawn on the plaza: a
--- moon on its floor and glowing arrows to the plots either side.
+-- be seen from every plot. It is also where everyone gathers for the
+-- Moonlight Parade, which circles the wheel. Courtyard.spawn dresses a spawn
+-- on the plaza: a moon on its floor and glowing arrows to the plots either
+-- side.
 --
 -- The wheel turns on each client (client/Motion, the Wheel tag): its rim
 -- spins round the hub and its gondolas hang level as they go round.
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
+local Activity = require(script.Parent.Activity)
 local Pieces = require(script.Parent.Pieces)
 local Theme = require(script.Parent)
 
@@ -24,6 +27,10 @@ Courtyard.HubHeight = 25
 Courtyard.Gondolas = 8
 -- How far the wheel stands back from the courtyard's front edge.
 Courtyard.WheelSetback = 36
+-- The Moonlight Parade's loop round the wheel (Config/Parade), as an oval
+-- this wide and deep from the wheel's middle.
+Courtyard.RouteRadiusX = 20
+Courtyard.RouteRadiusZ = 26
 local LAP_SECONDS = 70
 local RING_GAP = 1.6
 local LEG_SPREAD = 13
@@ -154,12 +161,12 @@ function Courtyard.build(parent: Instance, centre: CFrame, size: Vector2): BaseP
 
 	-- Pale light thrown up at the wheel from the courtyard floor.
 	for side = -1, 1, 2 do
-		local from = at(side * 12, wheelZ + 14).Position + V(0, 0.4, 0)
+		local from = at(side * 10, wheelZ + 9).Position + V(0, 0.4, 0)
 		Kit.wash(model, from, hub.Position, P.Moonlight, 45, 2.5)
 	end
 
-	-- Lamps down both sides, every other one lit, and log benches facing the
-	-- wheel for a place to sit.
+	-- Lamps down both sides, every other one lit, and log benches inside the
+	-- parade's loop, facing the wheel, for a place to sit.
 	local inset = size.X / 2 - 2.5
 	for side = -1, 1, 2 do
 		for i = 0, 5 do
@@ -173,13 +180,37 @@ function Courtyard.build(parent: Instance, centre: CFrame, size: Vector2): BaseP
 				if lit then 16 else nil
 			)
 		end
-		local bench = at(side * 10, wheelZ + 20, 0)
+		local bench = at(side * 6, wheelZ + 12, 0)
 		Kit.solid(Kit.log(model, bench * CFrame.new(0, 0.6, 0), 6, 1.2, P.Trunk, M.Wood))
 		Pieces.pumpkin(model, bench * CFrame.new(side * 4, 0, 0.5), 1.4)
 	end
 
 	-- Mist pooling behind the wheel, where the courtyard is quieter.
 	Pieces.mist(model, at(0, (wheelZ - 6 - front) / 2) * CFrame.new(0, 1, 0), Vector2.new(size.X - 6, 30), 6)
+
+	-- The parade goes round the wheel. The server reads its loop from here,
+	-- and clients write when the next one starts on the sign by the way in,
+	-- next to the board of the server's best Ghost Catchers.
+	model:SetAttribute("RouteCentre", at(0, wheelZ))
+	model:SetAttribute("RouteRadiusX", Courtyard.RouteRadiusX)
+	model:SetAttribute("RouteRadiusZ", Courtyard.RouteRadiusZ)
+	model:AddTag("ParadeRoute")
+	for side = -1, 1, 2 do
+		local base = at(side * 18, front - 4)
+		for post = -1, 1, 2 do
+			Kit.solid(Kit.post(model, base * CFrame.new(post * 2.9, 2.6, 0), 5.2, 0.3, P.DarkWood, M.Wood))
+		end
+		local board = Pieces.sign(
+			model,
+			base * CFrame.new(0, if side > 0 then 4 else 3.4, 0),
+			Vector2.new(6, if side > 0 then 1.6 else 2.8),
+			"",
+			if side > 0 then P.Moonlight else Activity.Color
+		)
+		board.Name = if side > 0 then "ParadeSign" else "BestBoard"
+		local text = board:FindFirstChildWhichIsA("SurfaceGui"):FindFirstChildWhichIsA("TextLabel")
+		text.TextWrapped = true
+	end
 	return floor
 end
 
