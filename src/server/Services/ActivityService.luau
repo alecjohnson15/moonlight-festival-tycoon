@@ -41,6 +41,7 @@ type Round = {
 local ActivityService = {}
 
 local rounds: { [Player]: Round } = {}
+local endedCallbacks: { (Player, number) -> () } = {}
 local booths: { [Player]: Folder } = {}
 local random = Random.new()
 
@@ -113,6 +114,9 @@ local function finish(player: Player, round: Round)
 		Best = best,
 		Perfect = perfect,
 	})
+	for _, callback in endedCallbacks do
+		task.spawn(callback, player, round.Count)
+	end
 end
 
 -- Checks every round in play for catches, and ends the ones that are over.
@@ -206,6 +210,11 @@ local function forget(player: Player)
 		folder:Destroy()
 		booths[player] = nil
 	end
+end
+
+-- Runs callback(player, caught) when one of their rounds ends.
+function ActivityService.onRoundEnded(callback: (Player, number) -> ())
+	table.insert(endedCallbacks, callback)
 end
 
 function ActivityService.init()

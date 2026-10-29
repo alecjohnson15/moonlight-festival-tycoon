@@ -16,6 +16,17 @@ export type Save = {
 	Arena: { KOs: number },
 	-- Ghost Catcher: the most wisps caught in one round, and rounds played.
 	Activity: { Best: number, Rounds: number },
+	-- The player's own festival (Config/Festival): a word from each name
+	-- list, the palette and the decoration chosen for each spot, by the
+	-- spot's number as a string. Empty until they first claim a plot.
+	Festival: { Name: { number }, Palette: string, Decor: { [string]: string } },
+	-- Moonlight Parades: how many they caught lanterns in, how many of
+	-- those filled the meter, and lanterns caught in all.
+	Parade: { Joined: number, Filled: number, Lanterns: number },
+	-- Analytics: the last onboarding funnel step logged (server/Lib/Funnel)
+	-- and how many sessions the player has had.
+	Onboarding: number,
+	Sessions: number,
 }
 
 type Step = (data: any) -> ()
@@ -39,6 +50,10 @@ local function template(): Save
 		Stats = { ServeCount = 0 },
 		Arena = { KOs = 0 },
 		Activity = { Best = 0, Rounds = 0 },
+		Festival = { Name = {}, Palette = "", Decor = {} },
+		Parade = { Joined = 0, Filled = 0, Lanterns = 0 },
+		Onboarding = 0,
+		Sessions = 0,
 	}
 end
 

@@ -1,10 +1,13 @@
 -- Dresses the world around the builds. Scenery.plot dresses one plot: a
 -- fence with lantern posts in the plot's own colour, string lights, an arch
--- over the gate, a cobbled walkway, mist and clutter in the corners, all clear
--- of the slots and buttons in Config/Layout. Scenery.world does the plaza and
+-- over the gate, a cobbled walkway, mist and a little clutter, all clear of
+-- the slots, buttons and decoration spots in Config/Layout. Scenery.world does the plaza and
 -- the haunted land around the plots: lamps, a bonfire, a graveyard with a
--- crypt, a pond, a windmill, dead woods and circling bats. It returns the
--- terrain to fill as a list, for the server to paint.
+-- crypt, a pond, a windmill, dead woods, a quiet lantern-lit trail into the
+-- woods to a reaper that turns to watch you, and circling bats. It also
+-- marks sound zones, invisible boxes tagged SoundZone whose Ambience
+-- attribute names the theme sound that plays inside (client/SoundZones). It
+-- returns the terrain to fill as a list, for the server to paint.
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
 local Layout = require(script.Parent.Parent.Parent.Config.Layout)
@@ -57,7 +60,6 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	end
 
 	local model = Kit.model(parent, plot.Name)
-	local random = Kit.random(index * 101)
 	local wash = P.PlotWashes[(index - 1) % #P.PlotWashes + 1]
 	local bulbs = { wash, P.Candle }
 	local edge = Layout.PlotSize / 2 - 1
@@ -76,12 +78,13 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		M.Cobblestone
 	)
 
-	-- The fence, open at the gate.
-	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3)
-	Pieces.fence(model, point(edge, 0, edge), point(edge, 0, -edge), 3)
-	Pieces.fence(model, point(-edge, 0, -edge), point(edge, 0, -edge), 3)
-	Pieces.fence(model, point(-edge, 0, edge), point(-opening, 0, edge), 3)
-	Pieces.fence(model, point(opening, 0, edge), point(edge, 0, edge), 3)
+	-- The fence, open at the gate. Posts are spaced out a little, as every
+	-- plot has one.
+	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(edge, 0, edge), point(edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(-edge, 0, -edge), point(edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(-edge, 0, edge), point(-opening, 0, edge), 3, 6)
+	Pieces.fence(model, point(opening, 0, edge), point(edge, 0, edge), 3, 6)
 
 	-- Lantern posts around the edge, lit in this plot's colour, with string
 	-- lights between them.
@@ -96,14 +99,16 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		{ inset, 0 },
 		{ inset, inset },
 	}
+	-- Every other one is lit, as every plot has them.
 	local tops = {}
-	for _, spot in ring do
+	for order, spot in ring do
 		local x, z = spot[1], spot[2]
-		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, 18))
+		local range = if order % 2 == 1 then 22 else nil
+		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, range))
 	end
 	-- Spaced out a little, as every plot has them.
 	for i = 1, #tops - 1 do
-		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 3)
+		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 4)
 	end
 
 	-- The arch over the gate: stone pillars topped with jack-o'-lanterns, a
@@ -130,34 +135,15 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	for side = -1, 1, 2 do
 		Kit.glow(model, skull * CFrame.new(side * 0.28, 0.08, 0.56), V(0.3, 0.3, 0.1), W.Red, true)
 	end
-	Pieces.stringLights(model, tops[#tops], arc[#arc] + Vector3.new(0, 0.4, 0), 1.5, bulbs)
-	Pieces.stringLights(model, arc[1] + Vector3.new(0, 0.4, 0), tops[1], 1.5, bulbs)
+	Pieces.stringLights(model, tops[#tops], arc[#arc] + Vector3.new(0, 0.4, 0), 1.5, bulbs, 3.5)
+	Pieces.stringLights(model, arc[1] + Vector3.new(0, 0.4, 0), tops[1], 1.5, bulbs, 3.5)
 
-	-- Clutter in the corners and along the sides, clear of everything built.
-	local function corner(x: number, z: number, scary: boolean)
-		local yaw = inward(x, z)
-		if scary then
-			Pieces.gravestone(model, at(x, 0, z, yaw), random.number(1.2, 1.8))
-			Pieces.gravestone(model, at(x + 2.5, 0, z + 1, yaw + 0.3), random.number(1, 1.4))
-			Pieces.skeleton(model, at(x - 2.2, 0, z - 1.5, yaw), 1.8)
-		else
-			Pieces.hayBale(model, at(x, 0, z, yaw))
-			Pieces.jackOLantern(model, at(x + 1, 1.5, z, yaw), 1.3, false)
-			Pieces.corn(model, at(x - 2.5, 0, z - 1.5), 4, random)
-		end
-		Pieces.pumpkin(model, at(x + 1.5, 0, z - 2.5, random.number(0, 3)), random.number(1, 1.6))
-	end
-	corner(-41, 41, false)
-	corner(41, 41, true)
-	corner(-41, -41, true)
-	corner(41, -41, false)
+	-- Clutter along the sides, clear of everything built. The corners and
+	-- the middle of each side are the owner's decoration spots
+	-- (Layout.Decor), which the server dresses.
 	Pieces.barrel(model, at(-43, 0, 14), 2)
 	Pieces.barrel(model, at(-42, 0, 16.5), 1.7)
-	Pieces.corn(model, at(43, 0, 12), 4.5, random)
 	Pieces.gravestone(model, at(42, 0, 8, -math.pi / 2), 1.4)
-	for _, x in { -10, 8 } do
-		Pieces.pumpkin(model, at(x, 0, -43, random.number(0, 3)), random.number(1, 1.5))
-	end
 	Pieces.cobweb(
 		model,
 		point(-pillarX + 1, pillarHeight, gate.Z + 1.1),
@@ -406,7 +392,7 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 		Theme.Strings.ArenaSign,
 		W.Orange
 	)
-	Pieces.sign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), Theme.Name, P.Candle)
+	Pieces.titleSign(parent, at(middleX, gateZ) * CFrame.new(0, 10.5, 0.15), Vector2.new(12, 2.2), P.Candle)
 	Kit.block(
 		parent,
 		at(middleX, frontZ + 6) * CFrame.new(0, 0.05, 0),
@@ -525,6 +511,59 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	claim(millX, millZ, 12, 12)
 	windmill(parent, at(millX, millZ, math.pi))
 
+	-- A quiet trail from the bonfire, past the front of the graveyard and
+	-- into the woods, lit by lanterns, to a clearing where a reaper statue
+	-- turns its head to watch whoever comes (client/Motion, the Watcher tag).
+	local trail = {
+		V(middleX - 6, 0, frontZ + 9),
+		V(middleX - 40, 0, frontZ + 7),
+		V(middleX - 106, 0, frontZ + 7),
+		V(middleX - 122, 0, frontZ + 32),
+		V(middleX - 118, 0, frontZ + 62),
+		V(middleX - 92, 0, frontZ + 74),
+	}
+	local posts = 0
+	for i = 1, #trail - 1 do
+		local a, b = trail[i], trail[i + 1]
+		local along = b - a
+		local trailPath = Kit.block(
+			parent,
+			CFrame.lookAt((a + b) / 2, (a + b) / 2 + along) * CFrame.new(0, 0.05, 0),
+			V(4, 0.1, along.Magnitude + 4),
+			Kit.color(Theme.Look.Path),
+			M.Cobblestone
+		)
+		trailPath.Name = "Trail"
+		claim((a.X + b.X) / 2, (a.Z + b.Z) / 2, math.abs(along.X) / 2 + 5, math.abs(along.Z) / 2 + 5)
+		-- Lanterns along it on alternate sides, every other one lit.
+		local count = math.max(1, math.floor(along.Magnitude / 13))
+		for j = 0, count - 1 do
+			posts += 1
+			local spot = a + along * ((j + 0.5) / count)
+			local across = V(-along.Z, 0, along.X).Unit * (if posts % 2 == 0 then 3.2 else -3.2)
+			local lit = posts % 4 == 1 or posts % 4 == 2
+			Pieces.lanternPost(parent, CFrame.lookAt(spot + across, spot), 5.5, P.Candle, if lit then 16 else nil)
+		end
+	end
+	-- Its sign stands where the trail leaves the way to the bonfire, facing
+	-- whoever comes out of the gateway.
+	local signAt = trail[1] + V(-5, 0, 3.5)
+	local entrance = CFrame.lookAt(signAt, signAt + (signAt - V(middleX - 2, 0, frontZ + 5)))
+	Kit.solid(Kit.post(parent, entrance * CFrame.new(0, 2.1, 0), 4.2, 0.3, P.DarkWood, M.Wood))
+	Pieces.sign(parent, entrance * CFrame.new(0, 3.8, 0.2), Vector2.new(5, 1.1), Theme.Strings.TrailSign, P.Candle)
+	local clearing = trail[#trail]
+	claim(clearing.X, clearing.Z, 14, 14)
+	local watcher = Kit.model(parent, "TrailReaper")
+	local head = Kit.model(watcher, "Head")
+	-- A reaper's face is towards +Z of its base, so its base looks away from
+	-- the trail for the face to look down it.
+	local statue = clearing + V(6, 0, 4)
+	Pieces.reaper(watcher, CFrame.lookAt(statue, statue + (statue - trail[#trail - 1])), 7.5, head)
+	head:SetAttribute("WatchRadius", 26)
+	head:AddTag("Watcher")
+	Kit.solid(Kit.log(watcher, CFrame.new(clearing + V(-2.5, 0.6, 6)), 5, 1.2, P.Trunk, M.Wood))
+	Pieces.mist(parent, CFrame.new(clearing + V(0, 1, 0)), Vector2.new(22, 22), 3)
+
 	-- Bats circling high over the plaza.
 	local swarm = Kit.model(parent, "Bats")
 	local swarmCentre = at(middleX, frontZ - 10) * CFrame.new(0, 40, 0)
@@ -589,6 +628,38 @@ function Scenery.world(site: Site, parent: Instance): { Fill }
 	-- Mist rolling through the woods behind the plots and beyond the plaza.
 	Pieces.mist(parent, CFrame.new(middleX, 1.5, minZ - 60), Vector2.new(right - left, 90), 18)
 	Pieces.mist(parent, CFrame.new(middleX, 1.5, frontZ + 60), Vector2.new(right - left, 90), 14)
+
+	-- Sound zones: the festival's crowd over the plots, plaza and courtyard,
+	-- a choir in the graveyard and drums round the arena. The woods and
+	-- the trail are outside them all, so they keep the plain ambience. Where
+	-- zones overlap, the higher Priority plays.
+	local function zone(name: string, centre: Vector3, size: Vector3, ambience: string, priority: number)
+		local box = Kit.block(parent, CFrame.new(centre), size, P.Mist)
+		box.Name = name
+		box.Transparency = 1
+		box.CanQuery = false
+		box:SetAttribute("Ambience", ambience)
+		box:SetAttribute("Priority", priority)
+		box:AddTag("SoundZone")
+	end
+	zone(
+		"FestivalSounds",
+		V(middleX, 30, (minZ + frontZ) / 2),
+		V(maxX - minX + 20, 80, frontZ - minZ + 10),
+		"AmbienceCrowd",
+		1
+	)
+	zone("GraveyardSounds", V(yardX, 20, yardZ), V(yardWidth + 10, 50, yardDepth + 10), "AmbienceChoir", 2)
+	if site.Arena then
+		local position, radius = site.Arena.CFrame.Position, site.Arena.Size.Z / 2
+		zone(
+			"ArenaSounds",
+			V(position.X, 30, position.Z - 6),
+			V(radius * 2 + 20, 80, radius * 2 + 42),
+			"AmbienceDrums",
+			2
+		)
+	end
 
 	-- No terrain under the plots or the plaza: their floors are the ground
 	-- there. Terrain sits only half a stud below a floor, so the grass (and its

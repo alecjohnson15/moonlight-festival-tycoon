@@ -173,7 +173,9 @@ end
 
 -- Boosts and vendors have no slot of their own. If the theme draws one, it
 -- is added to the building it improves, so it goes when that building does,
--- in that building's slot or the yard beside it.
+-- in that building's slot or the yard beside it. A path tier's model is the
+-- whole path so far, so it takes the place of the tier it names in its
+-- Replaces attribute.
 local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: boolean?)
 	local builder = Theme.Props[upgrade.Id]
 	local station = folder:FindFirstChild(upgrade.Building)
@@ -185,6 +187,11 @@ local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: b
 	local model = builder(slotOrigin(plot, slot), size, slot.Yard and slotOrigin(plot, slot.Yard))
 	model.Name = upgrade.Id
 	finish(model, withEffect)
+	local replaces = model:GetAttribute("Replaces")
+	local old = replaces and station:FindFirstChild(replaces)
+	if old then
+		old:Destroy()
+	end
 	model.Parent = station
 end
 

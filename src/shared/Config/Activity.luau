@@ -9,9 +9,9 @@
 return {
 	RoundSeconds = 25,
 	-- The rest from the end of one round to the start of the next. With the
-	-- rewards below it keeps rounds back to back under 7.5% extra income (see
-	-- docs/progression.md).
-	CooldownSeconds = 65,
+	-- rewards below it keeps rounds back to back, and every Moonlight Parade
+	-- caught in full, under 7.5% extra income (see docs/progression.md).
+	CooldownSeconds = 72,
 	-- A short wait after the pad is stepped on, so the first wisp doesn't
 	-- appear before the player's screen is ready for it.
 	LeadSeconds = 1,

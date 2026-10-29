@@ -107,6 +107,25 @@ return {
 	-- is { width, height, depth }, as for Slots.
 	Activity = { X = -1, Z = -40, Size = { 12, 8, 6 }, Pad = { X = -1, Z = -33 } },
 
+	-- The owner's own festival (Config/Festival). Decor holds the spots
+	-- round the edge of the plot for decorations, each DecorSize studs
+	-- square and up to DecorHeight tall, facing into the plot; Board is
+	-- where the owner picks the festival's name, colours and decorations,
+	-- and Shelf is where their trophies go, either side of Ghost Catcher's
+	-- booth and facing the gate. Sizes are { width, height, depth }.
+	Decor = {
+		{ X = -40, Z = 40 },
+		{ X = 40, Z = 40 },
+		{ X = -40, Z = -41.5 },
+		{ X = 40, Z = -41.5 },
+		{ X = -40, Z = 4 },
+		{ X = 40, Z = -12 },
+	},
+	DecorSize = 7,
+	DecorHeight = 10,
+	Board = { X = -11, Z = -41, Size = { 4, 6, 2 } },
+	Shelf = { X = 10, Z = -41, Size = { 6, 6, 2.5 } },
+
 	-- Where each station and attraction is built. Size is { width, height,
 	-- depth }: the theme's model fits inside it, and it is the size of the
 	-- greybox block drawn when the theme has no model for that upgrade. A
@@ -118,15 +137,35 @@ return {
 			Size = { 12, 8, 8 },
 			Yard = { X = -36, Z = 26, Size = { 8, 8, 8 } },
 		},
-		kitchen = { X = -26, Z = -2, Size = { 14, 10, 12 } },
+		kitchen = {
+			X = -26,
+			Z = -2,
+			Size = { 14, 10, 12 },
+			Yard = { X = -38, Z = -5, Size = { 8, 10, 10 } },
+		},
 		grower = {
 			X = -26,
 			Z = -28,
 			Size = { 18, 3, 18 },
 			Yard = { X = -39, Z = -28, Size = { 8, 3, 18 } },
 		},
-		attraction_1 = { X = 24, Z = 26, Size = { 18, 6, 18 } },
-		attraction_2 = { X = 24, Z = -2, Size = { 14, 14, 14 } },
-		attraction_3 = { X = 24, Z = -30, Size = { 20, 10, 16 } },
+		attraction_1 = {
+			X = 24,
+			Z = 26,
+			Size = { 18, 6, 18 },
+			Yard = { X = 38, Z = 25, Size = { 8, 10, 12 } },
+		},
+		attraction_2 = {
+			X = 24,
+			Z = -2,
+			Size = { 14, 14, 14 },
+			Yard = { X = 37, Z = -2, Size = { 8, 10, 12 } },
+		},
+		attraction_3 = {
+			X = 24,
+			Z = -30,
+			Size = { 20, 10, 16 },
+			Yard = { X = 39, Z = -30, Size = { 8, 10, 12 } },
+		},
 	},
 }

@@ -82,10 +82,8 @@ end
 -- of the post, for hanging string lights from.
 function Pieces.lanternPost(parent: Instance, base: CFrame, height: number, color: Color3?, range: number?): Vector3
 	Kit.solid(Kit.post(parent, base * CFrame.new(0, height / 2, 0), height, 0.45, P.DarkWood, M.Wood))
-	Kit.block(parent, base * CFrame.new(0, height + 0.15, 0), Vector3.new(0.8, 0.3, 0.8), P.Metal, M.Metal)
 	Kit.block(parent, base * CFrame.new(0, height - 0.6, 0.8), Vector3.new(0.18, 0.18, 1.6), P.Metal, M.Metal)
-	Kit.block(parent, base * CFrame.new(0, height - 0.8, 1.45), Vector3.new(0.08, 0.4, 0.08), P.Metal, M.Metal)
-	Pieces.lantern(parent, base * CFrame.new(0, height - 1.6, 1.45), 0.9, color, range)
+	Pieces.lantern(parent, base * CFrame.new(0, height - 1.25, 1.45), 0.9, color, range)
 	return (base * CFrame.new(0, height, 0)).Position
 end
 
@@ -107,21 +105,26 @@ function Pieces.stringLights(
 	end
 end
 
--- A row of little flags hanging between two points.
-function Pieces.bunting(parent: Instance, a: Vector3, b: Vector3, sag: number, colors: { Color3 })
+-- A row of little flags hanging between two points. Returns the flags.
+function Pieces.bunting(parent: Instance, a: Vector3, b: Vector3, sag: number, colors: { Color3 }): { BasePart }
 	local count = math.max(2, math.floor((b - a).Magnitude / 1.1))
 	local along = CFrame.lookAt(a, b)
+	local flags = {}
 	for i = 1, count - 1 do
 		local t = i / count
 		local point = a:Lerp(b, t) - Vector3.new(0, 4 * sag * t * (1 - t) + 0.3, 0)
-		Kit.block(
-			parent,
-			CFrame.lookAt(point, point + along.RightVector) * CFrame.Angles(0, 0, math.pi / 4),
-			Vector3.new(0.55, 0.55, 0.05),
-			colors[(i - 1) % #colors + 1],
-			M.Fabric
+		table.insert(
+			flags,
+			Kit.block(
+				parent,
+				CFrame.lookAt(point, point + along.RightVector) * CFrame.Angles(0, 0, math.pi / 4),
+				Vector3.new(0.55, 0.55, 0.05),
+				colors[(i - 1) % #colors + 1],
+				M.Fabric
+			)
 		)
 	end
+	return flags
 end
 
 -- A pointed pennant flying from its pole along cframe's front (-Z), with
@@ -214,8 +217,9 @@ function Pieces.bareTree(parent: Instance, base: CFrame, height: number, random:
 end
 
 -- A fence of posts and two rails from a to b, both on the ground.
-function Pieces.fence(parent: Instance, a: Vector3, b: Vector3, height: number)
-	local count = math.max(1, math.floor((b - a).Magnitude / 4 + 0.5))
+-- A fence of posts about every spacing studs (4 if not given), with two rails.
+function Pieces.fence(parent: Instance, a: Vector3, b: Vector3, height: number, spacing: number?)
+	local count = math.max(1, math.floor((b - a).Magnitude / (spacing or 4) + 0.5))
 	-- Every post faces along the fence. (Facing each post at b would leave the
 	-- last one, which stands on b, with no direction to face.)
 	local along = CFrame.lookAt(a, b).Rotation
@@ -428,9 +432,10 @@ function Pieces.bat(parent: Instance, centre: CFrame, size: number)
 	end
 end
 
--- A tall hooded figure in a ragged cloak, leaning on a scythe. A statue, so it
--- never moves; its eyes glow.
-function Pieces.reaper(parent: Instance, base: CFrame, height: number)
+-- A tall hooded figure in a ragged cloak, leaning on a scythe; its eyes
+-- glow. A statue, so it never moves, unless head is given: then its hood
+-- and eyes are built into head, pivoted on the hood, so it can turn.
+function Pieces.reaper(parent: Instance, base: CFrame, height: number, head: Model?)
 	local cloak = P.Bat:Lerp(P.Roof, 0.25)
 	Kit.solid(
 		Kit.block(
@@ -453,20 +458,25 @@ function Pieces.reaper(parent: Instance, base: CFrame, height: number)
 		)
 	end
 	local hood = robe * CFrame.new(0, height * 0.66, 0)
-	Kit.ball(parent, hood, Vector3.new(height * 0.17, height * 0.2, height * 0.18), cloak, M.Fabric)
+	local face = head or parent
+	Kit.ball(face, hood, Vector3.new(height * 0.17, height * 0.2, height * 0.18), cloak, M.Fabric)
 	Kit.ball(
-		parent,
+		face,
 		hood * CFrame.new(0, -height * 0.01, height * 0.06),
 		Vector3.new(height * 0.12, height * 0.14, height * 0.08),
 		P.Eye
 	)
 	for side = -1, 1, 2 do
 		Kit.glow(
-			parent,
+			face,
 			hood * CFrame.new(side * height * 0.025, 0, height * 0.1),
 			Vector3.new(0.18, 0.12, 0.05),
 			P.Washes.Red
 		)
+	end
+	if head then
+		-- Turned so the head's pivot looks the way its face does.
+		head.WorldPivot = hood * CFrame.Angles(0, math.pi, 0)
 	end
 	-- The scythe: a long handle and a curved blade made of short pieces.
 	local handle = robe * CFrame.new(height * 0.2, height * 0.38, height * 0.08)
@@ -550,6 +560,26 @@ function Pieces.sign(parent: Instance, cframe: CFrame, size: Vector2, text: stri
 		TextColor3 = color or P.Candle,
 		TextStrokeTransparency = 0.6,
 		Text = text,
+	})
+	return board
+end
+
+-- A sign board with the game's title: its name big across the top and the
+-- tagline smaller under it, so the whole title stays readable on one board.
+function Pieces.titleSign(parent: Instance, cframe: CFrame, size: Vector2, color: Color3?)
+	local board = Pieces.sign(parent, cframe, size, Theme.Name, color)
+	local gui = board:FindFirstChildOfClass("SurfaceGui") :: SurfaceGui
+	local name = gui:FindFirstChildOfClass("TextLabel") :: TextLabel
+	name.Size = UDim2.fromScale(1, 0.62)
+	Kit.new("TextLabel", gui, {
+		Position = UDim2.fromScale(0.08, 0.6),
+		Size = UDim2.fromScale(0.84, 0.34),
+		BackgroundTransparency = 1,
+		Font = Enum.Font.FredokaOne,
+		TextScaled = true,
+		TextColor3 = P.Plaster,
+		TextStrokeTransparency = 0.6,
+		Text = Theme.Tagline,
 	})
 	return board
 end

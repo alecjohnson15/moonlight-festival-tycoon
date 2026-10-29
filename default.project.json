@@ -28,6 +28,12 @@
         },
         "Activity": {
           "$className": "RemoteEvent"
+        },
+        "Festival": {
+          "$className": "RemoteEvent"
+        },
+        "Parade": {
+          "$className": "RemoteEvent"
         }
       }
     },

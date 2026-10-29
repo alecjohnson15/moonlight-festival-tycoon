@@ -175,6 +175,14 @@ function Kit.solid<T>(part: T): T
 	return part
 end
 
+-- Marks a part to be painted in one of its plot owner's festival colours
+-- (Config/Festival palettes): 1 or 2, the palette's first or second colour.
+-- The server paints it; until then it keeps the colour it was made with.
+function Kit.paint<T>(part: T, index: number): T
+	(part :: any):SetAttribute("Paint", index)
+	return part
+end
+
 -- A light on a part. Flickering lights are tagged for the client to animate.
 function Kit.light(part: BasePart, color: Color3, range: number, brightness: number, flicker: boolean?): PointLight
 	local light = Instance.new("PointLight")
@@ -241,6 +249,45 @@ function Kit.float(
 	model:SetAttribute("SpinSeconds", spinSeconds or 0)
 	model:SetAttribute("SpinAxis", spinAxis or Vector3.new(0, 1, 0))
 	model:AddTag("Float")
+end
+
+-- Marks a model to glide offset studs (in the pivot's space) away from its
+-- pivot and back, once every seconds, facing the way it's going, like a
+-- ghost on patrol. See client/Motion.
+function Kit.patrol(model: Model, pivot: CFrame, offset: Vector3, seconds: number)
+	model.WorldPivot = pivot
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	model:SetAttribute("PatrolOffset", offset)
+	model:SetAttribute("PatrolSeconds", seconds)
+	model:AddTag("Patrol")
+end
+
+-- Marks a model, built hidden, to pop up by height and drop back once every
+-- seconds, like a jump scare. See client/Motion.
+function Kit.pop(model: Model, pivot: CFrame, height: number, seconds: number)
+	model.WorldPivot = pivot
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	model:SetAttribute("PopHeight", height)
+	model:SetAttribute("PopSeconds", seconds)
+	model:AddTag("Pop")
+end
+
+-- Marks a spot where visitors stop on their way round the plot (see
+-- client/PlotActivity): they walk to it, turn the way cframe faces and wait
+-- pause seconds. options can give a Pose while they wait ("Sit", "Jump" or
+-- "Cheer"), something to Carry away (a name from Crowd.carry) and the Chance
+-- that a visitor comes at all (0.6 if not given). The stop hangs off part.
+function Kit.stop(part: BasePart, cframe: CFrame, pause: number, options: { [string]: any }?): Attachment
+	local stop = Instance.new("Attachment")
+	stop.Name = "VisitorStop"
+	stop.CFrame = part.CFrame:ToObjectSpace(cframe)
+	stop:SetAttribute("Pause", pause)
+	for name, value in options or {} do
+		stop:SetAttribute(name, value)
+	end
+	stop:AddTag("VisitorStop")
+	stop.Parent = part
+	return stop
 end
 
 -- A repeatable random sequence, so scenery comes out the same every time.

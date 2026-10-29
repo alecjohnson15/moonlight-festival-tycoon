@@ -1,18 +1,22 @@
--- The guide: what to do next, always on screen. A line at the bottom of the
--- screen names the next goal, with a bar while saving up for it (and, for a
--- long wait, a nudge towards Ghost Catcher). Until a
+-- The guide: what to do next, always on screen. A small card in the corner
+-- of the screen (client/Corner) names the next goal, with a bar while saving
+-- up for it (and, for a long wait, a nudge towards Ghost Catcher). Until a
 -- player knows their way round, and whenever they could buy something but
 -- haven't for a while, a beam runs from them to the goal with an arrow
 -- bobbing over it. Free gates shine with a tall beacon until the player has
 -- a haunt.
 --
+-- When the Moonlight Parade is about to start, and while it's on, the goal
+-- is the parade, unless the player is in the middle of a Ghost Catcher
+-- round or a path choice.
+--
 -- It also shows the notes the server sends through the Notice remote: a pad
--- that needs more coins, and how much more a second each purchase earns,
--- rising off what it built. And it shows the preview of a path pad stepped on
--- once: what the path does, what it adds per second, what it locks, and a
--- see-through model of what it builds. Everything here is drawn on this
--- client only, from attributes the server publishes; the server decides
--- everything.
+-- that needs more coins, how much more a second each purchase earns, rising
+-- off what it built, and something new unlocked for the player's festival.
+-- And it shows the preview of a path pad stepped on once: what the path
+-- does, what it adds per second, what it locks, and a see-through model of
+-- what it builds. Everything here is drawn on this client only, from
+-- attributes the server publishes; the server decides everything.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,19 +26,21 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Layout = require(Shared.Config.Layout)
+local ParadeConfig = require(Shared.Config.Parade)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
 local Kit = require(Shared.Kit)
+local Corner = require(script.Parent.Corner)
 local Sounds = require(script.Parent.Sounds)
 
 local Notice = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Notice") :: RemoteEvent
 
 local GOLD = Color3.fromRGB(255, 205, 90)
-local PANEL = Color3.fromRGB(26, 18, 40)
 local TEXT = Color3.fromRGB(255, 244, 214)
 local WARN = Color3.fromRGB(255, 170, 120)
 local BAR = Color3.fromRGB(110, 220, 120)
 local BEAM = Color3.fromRGB(255, 222, 130)
+local CHOSEN = Color3.fromRGB(120, 230, 150)
 local FONT = Enum.Font.FredokaOne
 local BODY = Enum.Font.GothamBold
 local Strings = Theme.Strings
@@ -51,6 +57,8 @@ local NOTE_SECONDS = 3.5
 local GAIN_SECONDS = 2.2
 local GOAL_STEP = 0.2
 local BEACON_HEIGHT = 70
+-- This close to the parade's loop, the player is there and needs no beam.
+local PARADE_NEAR = 10
 
 export type Goal = {
 	Text: string,
@@ -75,18 +83,6 @@ local function make(className: string, props: { [string]: any }, parent: Instanc
 	return instance
 end
 
-local function round(parent: Instance, radius: UDim?)
-	make("UICorner", { CornerRadius = radius or UDim.new(0, 12) }, parent)
-end
-
-local function outline(parent: Instance, color: Color3, thickness: number): UIStroke
-	return make(
-		"UIStroke",
-		{ Color = color, Thickness = thickness, ApplyStrokeMode = Enum.ApplyStrokeMode.Border },
-		parent
-	)
-end
-
 local function text(parent: Instance, props: { [string]: any }): TextLabel
 	local label = make("TextLabel", {
 		BackgroundTransparency = 1,
@@ -101,79 +97,25 @@ local function text(parent: Instance, props: { [string]: any }): TextLabel
 	return label
 end
 
-local gui = make("ScreenGui", { Name = "Guide", ResetOnSpawn = false })
-local screenScale = make("UIScale", {}, gui)
+-- The goal, in the corner (client/Corner), with a bar while saving up.
+local goalPanel = Corner.card(Corner.Order.Goal, GOLD)
+local goalText = Corner.title(goalPanel, { TextSize = 15 })
+local goalBar, goalFill, goalBarText = Corner.bar(goalPanel, BAR)
 
--- The goal line.
-local goalPanel = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -16),
-	Size = UDim2.fromOffset(470, 46),
-	BackgroundColor3 = PANEL,
-	BackgroundTransparency = 0.1,
-}, gui)
-round(goalPanel)
-outline(goalPanel, GOLD, 2)
-local goalText = text(goalPanel, {
-	Position = UDim2.fromOffset(14, 6),
-	Size = UDim2.new(1, -28, 0, 34),
-	Font = FONT,
-})
-local goalBar = make("Frame", {
-	Position = UDim2.fromOffset(14, 44),
-	Size = UDim2.new(1, -28, 0, 16),
-	BackgroundColor3 = Color3.fromRGB(50, 38, 70),
-	Visible = false,
-}, goalPanel)
-round(goalBar, UDim.new(1, 0))
-local goalFill = make("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = BAR }, goalBar)
-round(goalFill, UDim.new(1, 0))
-local goalBarText = text(goalBar, { Size = UDim2.fromScale(1, 1), ZIndex = 2, TextStrokeTransparency = 0.4 })
-
--- Notes, and the path preview card, just above the goal line.
-local note = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -86),
-	Size = UDim2.fromOffset(430, 62),
-	BackgroundColor3 = PANEL,
-	BackgroundTransparency = 0.05,
-	Visible = false,
-}, gui)
-round(note)
-local noteStroke = outline(note, GOLD, 2.5)
-local noteTitle = text(note, { Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -24, 0, 28), Font = FONT })
-local noteText = text(note, { Position = UDim2.fromOffset(12, 36), Size = UDim2.new(1, -24, 0, 18) })
-local noteScale = make("UIScale", {}, note)
+-- Notes, and the path preview card, stacked just past the goal.
+local note, noteStroke = Corner.card(Corner.Order.Note, GOLD)
+local noteTitle = Corner.title(note)
+local noteText = Corner.line(note, { Font = Enum.Font.Gotham })
 local noteUntil = 0
 
-local card = make("Frame", {
-	AnchorPoint = Vector2.new(0.5, 1),
-	Position = UDim2.new(0.5, 0, 1, -86),
-	Size = UDim2.fromOffset(430, 150),
-	BackgroundColor3 = PANEL,
-	BackgroundTransparency = 0.05,
-	Visible = false,
-}, gui)
-round(card)
-local cardStroke = outline(card, GOLD, 3)
-local cardTitle = text(card, { Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 32), Font = FONT })
-local cardBlurb = text(card, { Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 20) })
-local cardGain = text(card, { Position = UDim2.fromOffset(14, 64), Size = UDim2.new(1, -28, 0, 20), TextColor3 = BAR })
-local cardLocks =
-	text(card, { Position = UDim2.fromOffset(14, 86), Size = UDim2.new(1, -28, 0, 20), TextColor3 = WARN })
-text(card, {
-	Position = UDim2.fromOffset(14, 110),
-	Size = UDim2.new(1, -28, 0, 22),
-	Font = FONT,
-	TextColor3 = GOLD,
-	Text = Strings.PathConfirm,
-})
-local cardTimer = make("Frame", {
-	Position = UDim2.new(0, 14, 1, -10),
-	Size = UDim2.new(1, -28, 0, 4),
-	BackgroundColor3 = GOLD,
-	BorderSizePixel = 0,
-}, card)
+local card, cardStroke = Corner.card(Corner.Order.Path, GOLD)
+local cardTitle = Corner.title(card)
+local cardBlurb = Corner.line(card, { Font = Enum.Font.Gotham })
+local cardVisitors = Corner.line(card, { TextColor3 = BEAM })
+local cardGain = Corner.line(card, { TextColor3 = BAR })
+local cardLocks = Corner.line(card, { TextColor3 = WARN })
+Corner.title(card, { TextSize = 14, TextColor3 = GOLD, Text = Strings.PathConfirm })
+local _, cardTimer = Corner.bar(card, GOLD, 3)
 
 -- The beam and the arrow over the goal. The beam runs from an attachment on
 -- the character to one in the terrain at the goal.
@@ -294,6 +236,39 @@ local function activityBooth(plot: BasePart): Instance?
 	return if Workspace:GetServerTimeNow() >= (booth:GetAttribute("ReadyAt") or 0) then booth else nil
 end
 
+-- The Moonlight Parade, while it's on or about to start, unless the player
+-- is in the middle of a Ghost Catcher round.
+local function paradeGoal(plot: BasePart): Goal?
+	local centre = Workspace:GetAttribute("ParadeCentre")
+	local folder = plot:FindFirstChild("Activity")
+	local booth = folder and folder:FindFirstChild("Booth")
+	if typeof(centre) ~= "CFrame" or (booth and booth:GetAttribute("Playing")) then
+		return nil
+	end
+	local live = Workspace:GetAttribute("ParadeLive") == true
+	local startsIn = (Workspace:GetAttribute("ParadeAt") or math.huge) - Workspace:GetServerTimeNow()
+	if not live and (startsIn < 0 or startsIn > ParadeConfig.WarnSeconds) then
+		return nil
+	end
+	-- No beam once they're at the loop.
+	local reach = math.max(Workspace:GetAttribute("ParadeRadiusX") or 0, Workspace:GetAttribute("ParadeRadiusZ") or 0)
+	local root = rootPart()
+	local there = root ~= nil and (root.Position - centre.Position).Magnitude < reach + PARADE_NEAR
+	local target = if there then nil else centre.Position
+	if not live then
+		return { Text = Strings.ParadeSoon:format(math.ceil(startsIn)), Target = target, Urgent = true }
+	end
+	local meter = Workspace:GetAttribute("ParadeMeter") or 0
+	local goal = math.max(1, Workspace:GetAttribute("ParadeGoal") or 1)
+	return {
+		Text = Strings.ParadeGoal,
+		Progress = math.clamp(meter / goal, 0, 1),
+		ProgressText = Strings.ParadeMeter:format(meter, goal),
+		Target = target,
+		Urgent = true,
+	}
+end
+
 -- Works out the next goal from what the server has published.
 local function findGoal(): Goal?
 	local plot = myPlot()
@@ -302,12 +277,15 @@ local function findGoal(): Goal?
 		return { Text = Strings.GoalClaim, Target = gate and gate.Position, Urgent = true }
 	end
 	local pads = openPads(plot)
-	if #pads == 0 then
-		return { Text = Strings.GoalDone }
-	end
 	local armed = armedPad(pads)
 	if armed then
 		return { Text = Strings.GoalConfirm:format(padName(armed)), Target = armed.Position, Urgent = true }
+	end
+	local parade = paradeGoal(plot)
+	if parade then
+		return parade
+	elseif #pads == 0 then
+		return { Text = Strings.GoalDone }
 	end
 
 	local coins = player:GetAttribute("Coins") or 0
@@ -369,7 +347,6 @@ local function showGoal(goal: Goal?)
 	goalText.Text = goal.Text
 	local hasBar = goal.Progress ~= nil
 	goalBar.Visible = hasBar
-	goalPanel.Size = UDim2.fromOffset(470, if hasBar then 68 else 46)
 	if hasBar then
 		goalFill.Size = UDim2.fromScale(goal.Progress :: number, 1)
 		goalBarText.Text = goal.ProgressText or ""
@@ -396,7 +373,7 @@ local function showGain(station: string, gain: number)
 		AlwaysOnTop = true,
 		LightInfluence = 0,
 		-- In PlayerGui itself: a billboard inside a ScreenGui isn't drawn.
-	}, gui.Parent)
+	}, player:FindFirstChildOfClass("PlayerGui"))
 	local label = text(billboard, {
 		Size = UDim2.fromScale(1, 1),
 		Font = FONT,
@@ -419,19 +396,20 @@ local function showNote(title: string, body: string, color: Color3?)
 	noteTitle.Text = title
 	noteTitle.TextColor3 = color or GOLD
 	noteStroke.Color = color or GOLD
-	noteText.Text = body
-	note.Visible = not card.Visible
+	Corner.set(noteText, body)
 	noteUntil = os.clock() + NOTE_SECONDS
-	noteScale.Scale = 0.7
-	TweenService:Create(noteScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 })
-		:Play()
+	if card.Visible then
+		note.Visible = false
+	else
+		Corner.pop(note)
+	end
 end
 
--- A see-through model of what a path pad builds, on the building it
--- improves, while its pad is armed.
+-- A see-through model of what a path builds once it's fully upgraded, on
+-- the building it improves, while its first pad is armed.
 local function hologram(plot: BasePart, pad: BasePart, color: Color3): Model?
 	local building = pad:GetAttribute("Building")
-	local builder = Theme.Props[pad.Name]
+	local builder = Theme.Props[(string.gsub(pad.Name, "%d+$", "4"))] or Theme.Props[pad.Name]
 	local slot = building and Layout.Slots[building]
 	if not builder or not slot then
 		return nil
@@ -458,12 +436,42 @@ local function hologram(plot: BasePart, pad: BasePart, color: Color3): Model?
 			descendant.CanCollide = false
 			descendant.CanTouch = false
 			descendant.CanQuery = false
-		elseif descendant:IsA("Light") or descendant:IsA("ParticleEmitter") or descendant:IsA("SurfaceGui") then
+		elseif
+			descendant:IsA("Light")
+			or descendant:IsA("ParticleEmitter")
+			or descendant:IsA("Fire")
+			or descendant:IsA("SurfaceGui")
+		then
 			descendant:Destroy()
 		end
 	end
 	model.Name = "PathPreview"
 	model.Parent = Workspace
+	-- Says it's the finished look, over the top of it.
+	local box, extent = model:GetBoundingBox()
+	local anchor = make("Part", {
+		Name = "LabelAnchor",
+		Anchored = true,
+		CanCollide = false,
+		CanTouch = false,
+		CanQuery = false,
+		Transparency = 1,
+		Size = Vector3.new(0.2, 0.2, 0.2),
+		CFrame = CFrame.new(box.Position + Vector3.new(0, extent.Y / 2 + 1.5, 0)),
+	}, model)
+	local billboard = make("BillboardGui", {
+		Size = UDim2.fromOffset(200, 30),
+		AlwaysOnTop = true,
+		LightInfluence = 0,
+		Adornee = anchor,
+	}, anchor)
+	text(billboard, {
+		Size = UDim2.fromScale(1, 1),
+		Font = FONT,
+		TextColor3 = color,
+		TextStrokeTransparency = 0.3,
+		Text = Strings.PathFullLook,
+	})
 	return model
 end
 
@@ -506,15 +514,15 @@ local function updatePreview()
 	cardTitle.Text = themed.DisplayName
 	cardTitle.TextColor3 = color
 	cardStroke.Color = color
-	cardBlurb.Text = themed.Blurb
-	cardGain.Text = if gain
-			and gain:IsA("TextLabel")
-			and gain.Text ~= ""
-		then Strings.PathGain:format(gain.Text)
-		else ""
-	cardLocks.Text = if #others > 0 then Strings.PathLocks:format(table.concat(others, ", ")) else ""
+	Corner.set(cardBlurb, themed.Blurb)
+	Corner.set(cardVisitors, themed.Visitors or "")
+	Corner.set(
+		cardGain,
+		if gain and gain:IsA("TextLabel") and gain.Text ~= "" then Strings.PathGain:format(gain.Text) else ""
+	)
+	Corner.set(cardLocks, if #others > 0 then Strings.PathLocks:format(table.concat(others, ", ")) else "")
 	local left = Layout.ConfirmSeconds - (Workspace:GetServerTimeNow() - (pad:GetAttribute("ArmedAt") or 0))
-	cardTimer.Size = UDim2.new(math.clamp(left / Layout.ConfirmSeconds, 0, 1), -28, 0, 4)
+	cardTimer.Size = UDim2.fromScale(math.clamp(left / Layout.ConfirmSeconds, 0, 1), 1)
 	card.Visible = true
 	note.Visible = false
 end
@@ -596,16 +604,9 @@ local function onRenderStep(dt: number)
 		beam.Enabled = false
 		arrow.Parent = nil
 	end
-	-- Keep the panels a readable size on small screens.
-	local camera = Workspace.CurrentCamera
-	if camera then
-		local width = camera.ViewportSize.X
-		screenScale.Scale = math.clamp(width / 1100, 0.7, 1)
-	end
 end
 
 function Guide.mount()
-	gui.Parent = player:WaitForChild("PlayerGui")
 	if player.Character then
 		task.spawn(onCharacter, player.Character)
 	end
@@ -629,6 +630,12 @@ function Guide.mount()
 			Sounds.play("Deny")
 		elseif message.Kind == "Built" and type(message.Station) == "string" and (message.Gain or 0) > 0 then
 			task.spawn(showGain, message.Station, message.Gain)
+		elseif message.Kind == "Festival" and type(message.Names) == "table" then
+			showNote(
+				Strings.FestivalUnlocked:format(table.concat(message.Names, ", ")),
+				Strings.FestivalUnlockedHint,
+				CHOSEN
+			)
 		end
 	end)
 	RunService.RenderStepped:Connect(onRenderStep)

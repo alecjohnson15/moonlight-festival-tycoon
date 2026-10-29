@@ -12,7 +12,12 @@
 -- ReplicatedStorage.Assets to use instead of the built one.
 
 return {
-	Name = "Moonlight Festival",
+	-- The game's title is Name and Tagline joined by a colon, "Halloween
+	-- Tycoon: Your Dream Festival". The title signs show the name big with
+	-- the tagline under it. The experience's name on the Roblox website is set
+	-- there, to match.
+	Name = "Halloween Tycoon",
+	Tagline = "Your Dream Festival",
 
 	Strings = {
 		PlotOwner = "%s's Haunt",
@@ -35,8 +40,8 @@ return {
 		RideNext = "Next ride in %s",
 		Payout = "+%s",
 
-		-- The guide: the goal line at the bottom of the screen, the beam that
-		-- points the way, and the notes that pop up over it.
+		-- The guide: the goal card in the corner of the screen, the beam that
+		-- points the way, and the notes that pop up beside it.
 		GoalClaim = "Walk into a glowing gate to claim your own haunt",
 		GoalBuy = "Step on the glowing pad to build: %s",
 		GoalSave = "Next: %s",
@@ -52,6 +57,7 @@ return {
 		PathLocks = "Locks for good: %s",
 		PathGain = "%s now",
 		PathConfirm = "Step off, then on again, to pick it",
+		PathFullLook = "Shown fully upgraded",
 		ActivityName = "Ghost Catcher",
 		ActivityReady = "Step on the pad to play!",
 		ActivityWait = "Next round in %ds",
@@ -61,6 +67,51 @@ return {
 		ActivityEarned = "+%s coins",
 		ActivityPerfect = "Perfect round!",
 		ActivityBest = "Best: %d",
+
+		-- The player's own festival: its name, colours and decorations,
+		-- picked at the board by Ghost Catcher's booth, and the trophy shelf.
+		FestivalName = "The %s %s %s",
+		FestivalButton = "Festival",
+		FestivalTitle = "Your Festival",
+		FestivalBoard = "Festival Board",
+		FestivalPrompt = "Decorate",
+		FestivalTabName = "Name",
+		FestivalTabColours = "Colours",
+		FestivalTabDecor = "Decorations",
+		FestivalShuffle = "Shuffle",
+		FestivalChosen = "Chosen",
+		FestivalPick = "Pick",
+		FestivalLocked = "Locked",
+		FestivalUnlockOwns = "Build the %s",
+		FestivalUnlockPath = "Finish a path of the %s",
+		FestivalUnlockActivity = "Catch %d wisps in one Ghost Catcher round",
+		FestivalUnlockParades = "Join %d Moonlight Parades",
+		FestivalUnlockParade = "Join a Moonlight Parade",
+		FestivalUnlocked = "New for your festival: %s!",
+		FestivalUnlockedHint = "Open the Festival board to use it",
+		FestivalCount = "%d of %d unlocked",
+		TrophyBest = "Best %d",
+		TrophyKOs = "%d KOs",
+		TrophyParades = "%d parades",
+
+		-- The signs in the Scream Maze.
+		ScareSign = "TURN BACK",
+
+		-- The Moonlight Parade round the wheel in the courtyard.
+		ParadeName = "Moonlight Parade",
+		ParadeSoon = "The Moonlight Parade starts in %ds at the Wheel!",
+		ParadeGoal = "Moonlight Parade at the Wheel! Catch lanterns together",
+		ParadeNow = "Catch the lanterns!",
+		ParadeMeter = "%d / %d lanterns",
+		ParadeFilled = "The whole festival lit up the night!",
+		ParadeFilledHint = "Everyone who caught a lantern gets a bonus",
+		ParadeOver = "The parade is over. Next one in %d minutes",
+		ParadeCaught = "You caught %d lanterns",
+		ParadeSign = "Next Moonlight Parade in %s",
+		ParadeSignNow = "Moonlight Parade now!",
+		ParadeEarned = "+%s coins",
+		BestBoardTitle = "Best Ghost Catchers tonight",
+		BestBoardLine = "%s: %d",
 
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
@@ -98,6 +149,8 @@ return {
 		-- The PvP arena. ArenaKOs is the leaderboard column counting each
 		-- player's knockouts.
 		ArenaSign = "BONK ARENA",
+		-- The sign at the start of the quiet trail into the woods.
+		TrailSign = "Moonlit Trail",
 		ArenaRules = "Walk in to fight. Walk out to be safe.",
 		ArenaKOs = "KOs",
 		ArenaBonker = "Pumpkin Bonker",
@@ -207,35 +260,182 @@ return {
 	},
 
 	-- Each building's paths (see Config/Balance), by building and path id.
-	-- Blurb is the short pitch on the pad that picks the path.
+	-- Blurb is the short pitch on the pad that picks the path, and Visitors
+	-- says what visitors do once it's built. The models are in the pack's
+	-- Paths module.
 	Paths = {
 		starter_stall = {
-			output = { DisplayName = "Sweet Shop", Color = "#FF6FB5", Blurb = "Heaps more witch apples" },
-			vendor = { DisplayName = "Ghoul Grub Bar", Color = "#5CFF4A", Blurb = "Every visitor buys a snack" },
-			markup = { DisplayName = "Night Market", Color = "#F2C94C", Blurb = "Everything sells for more" },
+			output = {
+				DisplayName = "Sweet Shop",
+				Color = "#FF6FB5",
+				Blurb = "Heaps more witch apples",
+				Visitors = "Visitors leave with candy floss",
+			},
+			vendor = {
+				DisplayName = "Ghoul Grub Bar",
+				Color = "#5CFF4A",
+				Blurb = "Every visitor buys a snack",
+				Visitors = "Visitors queue, then sit and eat grub",
+			},
+			markup = {
+				DisplayName = "Night Market",
+				Color = "#F2C94C",
+				Blurb = "Everything sells for more",
+				Visitors = "Visitors browse the market tables",
+			},
 		},
 		grower = {
-			output = { DisplayName = "Bumper Crop", Color = "#E67E22", Blurb = "Way more pumpkins" },
-			vendor = { DisplayName = "Pick-Your-Own", Color = "#4FA37A", Blurb = "Visitors pay to pick pumpkins" },
+			output = {
+				DisplayName = "Bumper Crop",
+				Color = "#E67E22",
+				Blurb = "Way more pumpkins",
+				Visitors = "Bigger pumpkins fill the patch",
+			},
+			vendor = {
+				DisplayName = "Pick-Your-Own",
+				Color = "#4FA37A",
+				Blurb = "Visitors pay to pick pumpkins",
+				Visitors = "Visitors pick pumpkins and leave with baskets",
+			},
 		},
 		kitchen = {
-			value = { DisplayName = "Enchanted Pies", Color = "#B98BFF", Blurb = "Every pie is worth more" },
-			vendor = { DisplayName = "Creepy Café", Color = "#FF9F43", Blurb = "Every visitor buys pie" },
+			value = {
+				DisplayName = "Enchanted Pies",
+				Color = "#B98BFF",
+				Blurb = "Every pie is worth more",
+				Visitors = "Pies glow purple as they leave the kitchen",
+			},
+			vendor = {
+				DisplayName = "Creepy Café",
+				Color = "#FF9F43",
+				Blurb = "Every visitor buys pie",
+				Visitors = "Visitors sit at tables outside and eat pie",
+			},
 		},
 		attraction_1 = {
-			capacity = { DisplayName = "Endless Maze", Color = "#3FBF6A", Blurb = "Bigger, with room for crowds" },
-			ticket = { DisplayName = "Scream Maze", Color = "#FF2A2A", Blurb = "Scarier, so tickets cost more" },
+			capacity = {
+				DisplayName = "Endless Maze",
+				Color = "#3FBF6A",
+				Blurb = "Bigger, with room for crowds",
+				Visitors = "The maze grows new rows for crowds to wander",
+			},
+			ticket = {
+				DisplayName = "Scream Maze",
+				Color = "#FF2A2A",
+				Blurb = "Scarier, so tickets cost more",
+				Visitors = "Scares pop up and make visitors jump",
+			},
 		},
 		attraction_2 = {
-			draw = { DisplayName = "Moon Beacon", Color = "#CFE0FF", Blurb = "Draws crowds to everything" },
-			ticket = { DisplayName = "Fortune Teller", Color = "#8A3DFF", Blurb = "Every visitor pays for a fortune" },
+			draw = {
+				DisplayName = "Moon Beacon",
+				Color = "#CFE0FF",
+				Blurb = "Draws crowds to everything",
+				Visitors = "A beam of moonlight you can see from the spawn",
+			},
+			ticket = {
+				DisplayName = "Fortune Teller",
+				Color = "#8A3DFF",
+				Blurb = "Every visitor pays for a fortune",
+				Visitors = "Visitors queue for a crystal ball reading",
+			},
 		},
 		attraction_3 = {
-			seats = { DisplayName = "Midnight Express", Color = "#2FE0C0", Blurb = "Longer trains, more riders" },
-			ticket = { DisplayName = "Terror Train", Color = "#FF7A1A", Blurb = "Scarier rides cost more" },
-			draw = { DisplayName = "Ghost Parade", Color = "#EEF3FF", Blurb = "Pulls in visitors for everything" },
+			seats = {
+				DisplayName = "Midnight Express",
+				Color = "#2FE0C0",
+				Blurb = "Longer trains, more riders",
+				Visitors = "The ghost train pulls more cars",
+			},
+			ticket = {
+				DisplayName = "Terror Train",
+				Color = "#FF7A1A",
+				Blurb = "Scarier rides cost more",
+				Visitors = "A loop of track and flames by the ride",
+			},
+			draw = {
+				DisplayName = "Ghost Parade",
+				Color = "#EEF3FF",
+				Blurb = "Pulls in visitors for everything",
+				Visitors = "Ghosts march out across the plot",
+			},
 		},
 	},
+
+	-- A festival's name is one word from each list, in Strings.FestivalName
+	-- (see Config/Festival). Players pick from these, so there's no free text
+	-- to filter.
+	FestivalNames = {
+		{
+			"Howling",
+			"Moonlit",
+			"Spooky",
+			"Glowing",
+			"Creaky",
+			"Misty",
+			"Wobbly",
+			"Grinning",
+			"Midnight",
+			"Whispering",
+			"Starry",
+			"Crooked",
+		},
+		{
+			"Lantern",
+			"Pumpkin",
+			"Ghost",
+			"Bat",
+			"Cauldron",
+			"Owl",
+			"Toffee",
+			"Broomstick",
+			"Skeleton",
+			"Candle",
+			"Cobweb",
+			"Raven",
+		},
+		{
+			"Fair",
+			"Festival",
+			"Carnival",
+			"Jamboree",
+			"Parade",
+			"Bazaar",
+			"Circus",
+			"Gala",
+			"Funfair",
+			"Market",
+			"Hullabaloo",
+			"Spooktacular",
+		},
+	},
+
+	-- The festival palettes in Config/Festival: the two colours the stall's
+	-- awning, its add-ons and the Ghost Catcher booth are striped in.
+	Palettes = {
+		classic = { DisplayName = "Witching Purple", Colors = { "#6D35A0", "#F4E7CF" } },
+		harvest = { DisplayName = "Harvest Orange", Colors = { "#E8741E", "#F2D7A6" } },
+		toxic = { DisplayName = "Toxic Slime", Colors = { "#3FD14A", "#1E1A2B" } },
+		blood_moon = { DisplayName = "Blood Moon", Colors = { "#B3202A", "#F4E7CF" } },
+		midnight = { DisplayName = "Midnight Blue", Colors = { "#22306B", "#CFE0FF" } },
+		phantom = { DisplayName = "Phantom Teal", Colors = { "#2FE0C0", "#4B2E63" } },
+	},
+
+	-- The decorations in Config/Festival, and the spots they go in
+	-- (Layout.Decor, in order). Their models are in the pack's Festival module.
+	Decor = {
+		hay_corner = { DisplayName = "Harvest Corner" },
+		graveyard_corner = { DisplayName = "Tiny Graveyard" },
+		pumpkin_pile = { DisplayName = "Pumpkin Pile" },
+		witch_cauldron = { DisplayName = "Bubbling Cauldron" },
+		lantern_arch = { DisplayName = "Lantern Arch" },
+		moon_fountain = { DisplayName = "Moon Fountain" },
+		bat_topiary = { DisplayName = "Bat Topiary" },
+		ghost_statue = { DisplayName = "Ghost Statue" },
+		parade_float = { DisplayName = "Parade Float" },
+		skeleton_band = { DisplayName = "Skeleton Drummer" },
+	},
+	DecorSpots = { "Front left", "Front right", "Back left", "Back right", "Left side", "Right side" },
 
 	-- Colours the built models and scenery are painted with.
 	Palette = {
@@ -364,22 +564,80 @@ return {
 	-- plays its Fallback, one of the plain sounds that come with Roblox
 	-- ("rbxasset://sounds/..."), so buying and claiming are never silent.
 	Sounds = {
-		Music = { Id = "", Volume = 0.3 },
-		Music2 = { Id = "", Volume = 0.3 },
-		Ambience = { Id = "", Volume = 0.35 },
-		Claim = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		Purchase = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
-		Build = { Id = "", Volume = 0.5 },
-		Payout = { Id = "", Volume = 0.5 },
+		Music = { Id = "rbxassetid://132380445548830", Volume = 0.3 },
+		Music2 = { Id = "rbxassetid://119481806316324", Volume = 0.3 },
+		Ambience = { Id = "rbxassetid://99004754443542", Volume = 0.35 },
+		Claim = {
+			Id = "rbxassetid://91575562990285",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		Purchase = { Id = "rbxassetid://135655320041946", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		Build = { Id = "rbxassetid://76034978730655", Volume = 0.5 },
+		Payout = { Id = "rbxassetid://136531051662074", Volume = 0.5 },
 		-- A pad that can't be afforded yet.
-		Deny = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
+		Deny = { Id = "rbxassetid://108298839886466", Volume = 0.5, Fallback = "rbxasset://sounds/clickfast.wav" },
 		-- A held weapon landing: a heavy thump for hammers, a whoosh for the rest.
-		Thump = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/action_jump_land.mp3" },
-		Whoosh = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Thump = {
+			Id = "rbxassetid://70744692772741",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/action_jump_land.mp3",
+		},
+		Whoosh = { Id = "rbxassetid://74666016923414", Volume = 0.5, Fallback = "rbxasset://sounds/swoosh.wav" },
 		-- Ghost Catcher: a round starting, a wisp caught and a round over.
-		RoundStart = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
-		Catch = { Id = "", Volume = 0.5, Fallback = "rbxasset://sounds/electronicpingshort.wav" },
-		RoundEnd = { Id = "", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		RoundStart = { Id = "rbxassetid://82987461392073", Volume = 0.6, Fallback = "rbxasset://sounds/swoosh.wav" },
+		Catch = {
+			Id = "rbxassetid://104608476202610",
+			Volume = 0.5,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		RoundEnd = { Id = "rbxassetid://88132914429723", Volume = 0.6, Fallback = "rbxasset://sounds/button.wav" },
+		-- The Moonlight Parade: a fanfare as it starts, a lantern caught, the
+		-- cheer when the meter fills, and the march that plays near it.
+		ParadeStart = {
+			Id = "rbxassetid://73895753707691",
+			Volume = 0.6,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		ParadeCatch = {
+			Id = "rbxassetid://94976434176225",
+			Volume = 0.5,
+			Fallback = "rbxasset://sounds/electronicpingshort.wav",
+		},
+		ParadeCheer = { Id = "rbxassetid://137908757491442", Volume = 0.7, Fallback = "rbxasset://sounds/button.wav" },
+		ParadeMarch = { Id = "rbxassetid://109236917990604", Volume = 0.45 },
+		-- A sting for each building as it, or anything for it, is bought (see
+		-- Reveals). Until one is uploaded, Build plays instead.
+		RevealStall = { Id = "rbxassetid://86314738320307", Volume = 0.55 },
+		RevealPatch = { Id = "rbxassetid://115544433604971", Volume = 0.55 },
+		RevealKitchen = { Id = "rbxassetid://88090534670415", Volume = 0.55 },
+		RevealMaze = { Id = "rbxassetid://140117123247588", Volume = 0.55 },
+		RevealPumpkin = { Id = "rbxassetid://109293718642450", Volume = 0.55 },
+		RevealTrain = { Id = "rbxassetid://132093068071405", Volume = 0.55 },
+		-- Ambience by place (Scenery's sound zones): the festival crowd on the
+		-- plaza, plots and courtyard, a low choir in the graveyard and drums at
+		-- the arena. The woods, and anywhere a zone's sound isn't uploaded yet,
+		-- keep Ambience.
+		AmbienceCrowd = { Id = "rbxassetid://139093006556675", Volume = 0.3 },
+		AmbienceChoir = { Id = "rbxassetid://129402171526439", Volume = 0.35 },
+		AmbienceDrums = { Id = "rbxassetid://112011251321382", Volume = 0.35 },
+		-- The ghost train chuffing and wailing, heard near its lead car, once
+		-- uploaded.
+		TrainWail = { Id = "rbxassetid://100736724857511", Volume = 0.6 },
+		-- The trail's reaper whispering as it turns to watch you. Every sound
+		-- here is made by tools/make_sounds.py, make_festival_sounds.py or
+		-- make_arena_sounds.py, as assets/audio/<snake_case name>.ogg.
+		ReaperWhisper = { Id = "rbxassetid://118288191651789", Volume = 0.7, Fallback = "rbxasset://sounds/swoosh.wav" },
+	},
+
+	-- Which reveal sting plays for each building (Sounds).
+	Reveals = {
+		starter_stall = "RevealStall",
+		grower = "RevealPatch",
+		kitchen = "RevealKitchen",
+		attraction_1 = "RevealMaze",
+		attraction_2 = "RevealPumpkin",
+		attraction_3 = "RevealTrain",
 	},
 
 	-- Names for the wardrobe: its slots, its lines (one tab each) and every

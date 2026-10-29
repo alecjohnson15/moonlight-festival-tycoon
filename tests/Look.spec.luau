@@ -9,6 +9,7 @@ local Map = require("./Map")
 local Balance = require("../src/shared/Config/Balance")
 local Layout = require("../src/shared/Config/Layout")
 local Progression = require("../src/shared/Progression")
+local Festival = require("../src/shared/Festival")
 local Theme = require("../src/shared/Themes/MoonlightFestival")
 
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
@@ -19,6 +20,12 @@ local Props = Loader.require("src/shared/Themes/MoonlightFestival/Props")
 local Scenery = Loader.require("src/shared/Themes/MoonlightFestival/Scenery")
 local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
 local ActivityLook = Loader.require("src/shared/Themes/MoonlightFestival/Activity")
+local FestivalLook = Loader.require("src/shared/Themes/MoonlightFestival/Festival")
+local FestivalConfig = require("../src/shared/Config/Festival")
+local ParadeLook = Loader.require("src/shared/Themes/MoonlightFestival/Parade")
+local ParadeConfig = require("../src/shared/Config/Parade")
+local ArenaConfig = require("../src/shared/Config/Arena")
+local ParadeRules = require("../src/shared/Parade")
 local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
@@ -103,6 +110,18 @@ local function lightCount(root: any): number
 	return count
 end
 
+-- What each client draws many of, so each must be small and cheap.
+local function checkLight(model: any, what: string, maxParts: number)
+	local parts = partsIn(model)
+	assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
+	for _, part in parts do
+		assert(part.Anchored, `{what}: {part.Name} is not anchored`)
+		assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
+		assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
+	end
+	assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
+end
+
 -- Why a part isn't inside a slot's footprint, on or above the floor and not
 -- far above the slot, or nil if it is.
 local function outside(part: any, origin: any, size: any): string?
@@ -165,7 +184,8 @@ describe("theme props", function()
 	it("adds every upgrade to the building it improves, inside its slot or yard", function()
 		-- Parts and lights for each building's shared upgrades, and for each of
 		-- its paths. A plot only ever has one path per building built, so the
-		-- budget counts the heaviest.
+		-- budget counts the heaviest. A path tier's model replaces the tier
+		-- before, so only the last tier of a path counts.
 		local shared: { [string]: { number } } = {}
 		local paths: { [string]: { [string]: { number } } } = {}
 		local function tally(totals: { [string]: { number } }, key: string, model: any)
@@ -174,6 +194,7 @@ describe("theme props", function()
 			counts[2] += lightCount(model)
 			totals[key] = counts
 		end
+		local tiers: { [string]: any } = {}
 
 		for _, upgrade in Balance.Upgrades do
 			local id, building = upgrade.Id, upgrade.Building
@@ -195,8 +216,28 @@ describe("theme props", function()
 					assertPlaced(part, origin, problem, id)
 				end
 				if upgrade.Path then
-					paths[building] = paths[building] or {}
-					tally(paths[building], upgrade.Path, model)
+					local prefix, tier = string.match(id, "^(.*)_(%d+)$")
+					local replaces = model:GetAttribute("Replaces")
+					if tonumber(tier) == 1 then
+						expect(replaces).toBe(nil)
+					else
+						-- The whole path so far, with more added.
+						local before = `{prefix}_{tonumber(tier) - 1}`
+						expect(replaces).toBe(before)
+						local had = #tiers[before]:GetDescendants()
+						assert(#model:GetDescendants() > had, `{id} adds nothing to {before}`)
+						-- What it keeps stays put while the rest builds up.
+						local kept = 0
+						for _, part in partsIn(model) do
+							kept += if part:GetAttribute("Kept") then 1 else 0
+						end
+						assert(kept > 0 and kept <= #partsIn(tiers[before]), `{id} keeps {kept} parts of {before}`)
+					end
+					tiers[id] = model
+					if not Progression.find(Balance.Upgrades, `{prefix}_{tonumber(tier) + 1}`) then
+						paths[building] = paths[building] or {}
+						tally(paths[building], upgrade.Path, model)
+					end
 				else
 					tally(shared, building, model)
 				end
@@ -235,6 +276,139 @@ describe("theme props", function()
 		assertFinite(wisp, "a wisp")
 		for _, part in partsIn(wisp) do
 			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `a wisp's {part.Name} can be hit`)
+		end
+	end)
+
+	it("builds every festival decoration small enough to fit its spot", function()
+		-- Every plot has a decoration in each spot, so the budget counts the
+		-- heaviest in all of them.
+		local size = Layout.DecorSize
+		local heaviest, brightest = 0, 0
+		for _, choice in FestivalConfig.Decor do
+			assert(FestivalLook.Decor[choice.Id], `the theme has no model for decoration {choice.Id}`)
+			for spot, place in Layout.Decor do
+				local yaw = math.atan2(-place.X, -place.Z)
+				local base = PLOT_CFRAME * CFrame.new(place.X, 0.5, place.Z) * CFrame.Angles(0, yaw, 0)
+				local model = FestivalLook.decor(choice.Id, base, spot)
+				expect(model.Name).toBe(choice.Id)
+				assertFinite(model, choice.Id)
+				for _, part in partsIn(model) do
+					assertPlaced(
+						part,
+						base,
+						outside(part, base, Vector3.new(size, Layout.DecorHeight - 4, size)),
+						choice.Id
+					)
+				end
+				local parts, lights = #partsIn(model), lightCount(model)
+				assert(parts <= FestivalLook.MaxDecorParts, `{choice.Id} has {parts} parts`)
+				assert(lights <= FestivalLook.MaxDecorLights, `{choice.Id} has {lights} lights`)
+				heaviest, brightest = math.max(heaviest, parts), math.max(brightest, lights)
+			end
+		end
+		for id in FestivalLook.Decor do
+			assert(Festival.find(FestivalConfig.Decor, id), `the theme has a model for unknown decoration {id}`)
+		end
+		plotParts += heaviest * #Layout.Decor
+		plotLights += brightest * #Layout.Decor
+	end)
+
+	it("builds the festival board, the trophy shelf and the name sign in their places", function()
+		local board = FestivalLook.board(slotOrigin(Layout.Board), slotSize(Layout.Board))
+		assert(board.PrimaryPart, "the board has no Anchor for its prompt")
+		assertInside(board, slotOrigin(Layout.Board), slotSize(Layout.Board), "the festival board")
+
+		-- The fullest the shelf gets: a cup for every building's path and a
+		-- plaque for every count.
+		local cups = {}
+		for _ in Layout.Slots do
+			table.insert(cups, roblox.Color3.new(1, 0.8, 0.2))
+		end
+		local shelf = FestivalLook.shelf(slotOrigin(Layout.Shelf), slotSize(Layout.Shelf), {
+			Paths = cups,
+			Best = 12,
+			KOs = 40,
+			Parades = 9,
+		})
+		assertInside(shelf, slotOrigin(Layout.Shelf), slotSize(Layout.Shelf), "the trophy shelf")
+
+		local floor = PLOT_CFRAME * CFrame.new(0, 0.5, 0)
+		local holder = Instance.new("Folder")
+		local sign = FestivalLook.nameSign(holder, floor, "The Whispering Broomstick Spooktacular")
+		local lo, hi = boxIn(sign, floor)
+		local gate = Layout.Gate
+		assert(lo[2] > gate.Size[2], "the name sign hangs in the gateway")
+		assert(
+			math.abs(lo[1]) < gate.Size[1] and math.abs(hi[1]) < gate.Size[1],
+			"the name sign is wider than the arch"
+		)
+
+		for _, model in { board, shelf, holder } do
+			plotParts += #partsIn(model)
+			plotLights += lightCount(model)
+		end
+	end)
+
+	it("gives every path stops visitors can use, and moving parts the client can drive", function()
+		local poses = { Sit = true, Jump = true, Cheer = true }
+		local carries = {}
+		for _, name in Crowd.Carries do
+			carries[name] = true
+		end
+		local half = Layout.PlotSize / 2
+		local stationTrain =
+			Props.attraction_3(slotOrigin(Layout.Slots.attraction_3), slotSize(Layout.Slots.attraction_3))
+				:FindFirstChild("Train")
+		for _, upgrade in Balance.Upgrades do
+			if upgrade.Path then
+				local slot = Layout.Slots[upgrade.Building]
+				local model = Props[upgrade.Id](slotOrigin(slot), slotSize(slot), slot.Yard and slotOrigin(slot.Yard))
+				for _, descendant in model:GetDescendants() do
+					local where = `{upgrade.Id}: {descendant.Name}`
+					if descendant:HasTag("VisitorStop") then
+						assert(
+							descendant:IsA("Attachment") and descendant.Parent:IsA("BasePart"),
+							`{where} isn't on a part`
+						)
+						assert((descendant:GetAttribute("Pause") or 0) > 0, `{where} has no pause`)
+						local pose, carry = descendant:GetAttribute("Pose"), descendant:GetAttribute("Carry")
+						assert(pose == nil or poses[pose], `{where} has an unknown pose {pose}`)
+						assert(carry == nil or carries[carry], `{where} gives an unknown {carry}`)
+						local chance = descendant:GetAttribute("Chance") or 0.6
+						assert(chance > 0 and chance <= 1, `{where} has a chance of {chance}`)
+						-- On the plot, on the floor or on something low.
+						local at = PLOT_CFRAME:PointToObjectSpace(descendant.Parent.CFrame * descendant.CFrame.Position)
+						assert(math.abs(at.X) < half and math.abs(at.Z) < half, `{where} is off the plot`)
+						assert(at.Y >= 0.4 and at.Y <= 2, `{where} is {at.Y} studs up`)
+					elseif descendant:HasTag("Patrol") then
+						assert(
+							descendant:GetAttribute("PatrolOffset") and descendant:GetAttribute("PatrolSeconds"),
+							`{where} can't patrol`
+						)
+					elseif descendant:HasTag("Pop") then
+						assert(
+							descendant:GetAttribute("PopHeight") and descendant:GetAttribute("PopSeconds"),
+							`{where} can't pop`
+						)
+					elseif descendant:HasTag("Train") then
+						-- Extra cars run on the station's own track, after its cars.
+						for _, name in { "TrackCentre", "RadiusX", "RadiusZ", "LapSeconds", "Gap" } do
+							local mine, station = descendant:GetAttribute(name), stationTrain:GetAttribute(name)
+							local same = if typeof(mine) == "CFrame"
+								then (mine.Position - station.Position).Magnitude < 0.01
+								else mine == station
+							assert(same, `{where}'s {name} doesn't match the ghost train's`)
+						end
+						for _, car in descendant:GetChildren() do
+							assert((car:GetAttribute("Order") or 0) > 3, `{where} has a car out of order`)
+						end
+					end
+				end
+			end
+		end
+		for _, name in Crowd.Carries do
+			local model = Crowd.carry(name)
+			checkLight(model, `carried {name}`, 3)
 		end
 	end)
 
@@ -300,6 +474,24 @@ describe("theme scenery", function()
 		local booth = Layout.Activity
 		local bw, bh, bd = booth.Size[1] / 2, booth.Size[2], booth.Size[3] / 2
 		table.insert(keepOut, { "activity booth", { booth.X - bw, 0, booth.Z - bd, booth.X + bw, bh, booth.Z + bd } })
+		for name, place in { ["festival board"] = Layout.Board, ["trophy shelf"] = Layout.Shelf } do
+			local w, h, d = place.Size[1] / 2, place.Size[2], place.Size[3] / 2
+			table.insert(keepOut, { name, { place.X - w, 0, place.Z - d, place.X + w, h, place.Z + d } })
+		end
+		local decorHalf = Layout.DecorSize / 2
+		for spot, place in Layout.Decor do
+			table.insert(keepOut, {
+				`decoration spot {spot}`,
+				{
+					place.X - decorHalf,
+					0,
+					place.Z - decorHalf,
+					place.X + decorHalf,
+					Layout.DecorHeight,
+					place.Z + decorHalf,
+				},
+			})
+		end
 		local start = booth.Pad
 		-- It stands on the walkway, so only what's over the walkway counts.
 		table.insert(
@@ -448,6 +640,17 @@ describe("theme scenery", function()
 		end
 		expect(seats).toBe(8)
 
+		-- The game's title is on the wheel: its name, and the tagline under it.
+		local name, tagline
+		for _, label in wheel:GetDescendants() do
+			if label:IsA("TextLabel") and label.Text == Theme.Name then
+				name = label
+			elseif label:IsA("TextLabel") and label.Text == Theme.Tagline then
+				tagline = label
+			end
+		end
+		assert(name and tagline and name.Parent == tagline.Parent, "the wheel has no title sign")
+
 		-- The wheel stands in the gap between the middle two plots.
 		local half = Layout.PlotSize / 2
 		local left, right = Layout.plotX(Layout.PlotCount / 2) + half, Layout.plotX(Layout.PlotCount / 2 + 1) - half
@@ -477,21 +680,152 @@ describe("theme scenery", function()
 			end
 		end
 	end)
+
+	it("lays a lit trail into the woods to a reaper that watches, and marks where each sound plays", function()
+		local map = Map.build()
+		local plaza = map.Plaza
+		local back = plaza.CFrame.Position.Z + plaza.Size.Z / 2
+		-- The arena's stage, where ArenaService puts it.
+		local stage = Instance.new("Part")
+		stage.Size = Vector3.new(ArenaConfig.Height + 1, ArenaConfig.Radius * 2, ArenaConfig.Radius * 2)
+		stage.CFrame = CFrame.new(plaza.CFrame.Position.X, (ArenaConfig.Height - 1) / 2, back + ArenaConfig.Distance)
+			* CFrame.Angles(0, 0, math.pi / 2)
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = plaza, Spawns = { map.Spawn }, Arena = stage }, folder)
+		local parts = partsIn(folder)
+
+		-- The trail: pieces laid end to end from beside the gateway, where its
+		-- sign is.
+		local trail = {}
+		for _, part in parts do
+			if part.Name == "Trail" then
+				table.insert(trail, part)
+			end
+		end
+		assert(#trail >= 3, "the trail has too few pieces")
+		local ends = {}
+		for _, piece in trail do
+			local reach = piece.Size.Z / 2 - 2
+			table.insert(ends, piece.CFrame * Vector3.new(0, 0, -reach))
+			table.insert(ends, piece.CFrame * Vector3.new(0, 0, reach))
+		end
+		local loose = {}
+		for i, point in ends do
+			local met = false
+			for j, other in ends do
+				met = met or (math.ceil(i / 2) ~= math.ceil(j / 2) and (point - other).Magnitude < 0.5)
+			end
+			if not met then
+				table.insert(loose, point)
+			end
+		end
+		expect(#loose).toBe(2)
+		local gate = Vector3.new(plaza.CFrame.Position.X, loose[1].Y, back + 9)
+		local first, last = loose[1], loose[2]
+		if (last - gate).Magnitude < (first - gate).Magnitude then
+			first, last = last, first
+		end
+		assert((first - gate).Magnitude < 12, "the trail doesn't start by the gateway")
+		local signed = false
+		for _, label in folder:GetDescendants() do
+			signed = signed or (label:IsA("TextLabel") and label.Text == Theme.Strings.TrailSign)
+		end
+		assert(signed, "the trail has no sign")
+
+		-- Nothing solid on it, and lanterns all the way along.
+		local length, lights = 0, 0
+		for _, piece in trail do
+			length += piece.Size.Z - 4
+			local half = piece.Size / 2
+			for _, part in parts do
+				if part.CanCollide then
+					local lo, hi = boxIn(part, piece.CFrame)
+					local blocked = lo[1] < half.X and hi[1] > -half.X and lo[3] < half.Z - 2 and hi[3] > 2 - half.Z
+					assert(not (blocked and lo[2] < 6), `a {part.ClassName} at {part.CFrame.Position} blocks the trail`)
+				end
+			end
+		end
+		for _, light in folder:GetDescendants() do
+			if light:IsA("PointLight") then
+				for _, piece in trail do
+					local offset = piece.CFrame:PointToObjectSpace(light.Parent.CFrame.Position)
+					if math.abs(offset.X) < 5 and math.abs(offset.Z) < piece.Size.Z / 2 then
+						lights += 1
+						break
+					end
+				end
+			end
+		end
+		assert(lights >= length / 30, `the trail has {lights} lights along {length} studs`)
+
+		-- The reaper at its end turns its head, which looks back down the trail.
+		local reaper = folder:FindFirstChild("TrailReaper", true)
+		assert(reaper, "the trail has no reaper")
+		local head = reaper:FindFirstChild("Head")
+		local radius = head and head:GetAttribute("WatchRadius")
+		assert(head and head:HasTag("Watcher") and radius, "the trail's reaper can't watch")
+		local pivot = head.WorldPivot
+		local flat = Vector3.new(pivot.Position.X, last.Y, pivot.Position.Z)
+		assert((flat - last).Magnitude < radius / 2, "the reaper isn't at the end of the trail")
+		local ahead = -math.huge
+		for _, part in partsIn(head) do
+			local depth = pivot:PointToObjectSpace(part.CFrame.Position).Z
+			assert(depth < 0.01, "the reaper's head has something behind its face")
+			ahead = math.max(ahead, -depth)
+		end
+		assert(ahead > 0.3, "the reaper's face isn't on the front of its head")
+		local lastPiece = trail[1]
+		for _, piece in trail do
+			if (piece.CFrame.Position - last).Magnitude < (lastPiece.CFrame.Position - last).Magnitude then
+				lastPiece = piece
+			end
+		end
+		local toward = (lastPiece.CFrame.Position - flat).Unit
+		assert(pivot.LookVector:Dot(toward) > 0.8, "the reaper doesn't look down the trail")
+
+		-- Sound zones, picked the way client/SoundZones does.
+		local zones = {}
+		for _, part in parts do
+			if part:HasTag("SoundZone") then
+				local ambience = part:GetAttribute("Ambience")
+				assert(Theme.Sounds[ambience], `{part.Name} plays {ambience}, which the theme doesn't have`)
+				assert(type(part:GetAttribute("Priority")) == "number", `{part.Name} has no priority`)
+				assert(
+					part.Transparency == 1 and not part.CanCollide and not part.CanTouch and not part.CanQuery,
+					`{part.Name} can be seen or hit`
+				)
+				table.insert(zones, part)
+			end
+		end
+		local function ambienceAt(position: any): string
+			local best, bestPriority, bestVolume = "Ambience", -math.huge, math.huge
+			for _, zone in zones do
+				local offset, half = zone.CFrame:PointToObjectSpace(position), zone.Size / 2
+				if math.abs(offset.X) <= half.X and math.abs(offset.Y) <= half.Y and math.abs(offset.Z) <= half.Z then
+					local priority, volume = zone:GetAttribute("Priority"), zone.Size.X * zone.Size.Y * zone.Size.Z
+					if priority > bestPriority or (priority == bestPriority and volume < bestVolume) then
+						best, bestPriority, bestVolume = zone:GetAttribute("Ambience"), priority, volume
+					end
+				end
+			end
+			return best
+		end
+		local up = Vector3.new(0, 3, 0)
+		expect(ambienceAt(map.Spawn.CFrame.Position + up)).toBe("AmbienceCrowd")
+		for _, plot in map.Plots do
+			expect(ambienceAt(plot.CFrame.Position + up)).toBe("AmbienceCrowd")
+		end
+		local graveyard = folder:FindFirstChild("GraveyardSounds", true)
+		assert(graveyard, "the graveyard has no sound zone")
+		expect(ambienceAt(graveyard.CFrame.Position)).toBe("AmbienceChoir")
+		expect(ambienceAt(Vector3.new(stage.CFrame.Position.X, 4, stage.CFrame.Position.Z))).toBe("AmbienceDrums")
+		-- The bonfire, the woods and the trail's end keep the plain night.
+		expect(ambienceAt(Vector3.new(plaza.CFrame.Position.X, 3, back + 22))).toBe("Ambience")
+		expect(ambienceAt(pivot.Position)).toBe("Ambience")
+	end)
 end)
 
 describe("theme crowd", function()
-	-- What each client draws many of, so each must be small and cheap.
-	local function checkLight(model: any, what: string, maxParts: number)
-		local parts = partsIn(model)
-		assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
-		for _, part in parts do
-			assert(part.Anchored, `{what}: {part.Name} is not anchored`)
-			assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
-			assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
-		end
-		assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
-	end
-
 	it("dresses every kind of visitor in a small costume that faces forward", function()
 		local random = Kit.random(7)
 		for kind = 1, Crowd.KindCount do
@@ -524,6 +858,122 @@ describe("theme crowd", function()
 				local lo, hi = boxIn(part, CFrame.new())
 				for axis = 1, 3 do
 					assert(lo[axis] >= -1 and hi[axis] <= 1, `{item} is too big`)
+				end
+			end
+		end
+	end)
+end)
+
+describe("theme parade", function()
+	-- How far the floats reach from their middle across the ground, and how
+	-- tall they stand.
+	local floatReach, floatHeight = 0, 0
+
+	it("builds small floats, marchers and lanterns nobody can bump into", function()
+		for index = 1, ParadeLook.FloatCount do
+			local model = ParadeLook.float(index)
+			local what = `float {index}`
+			checkLight(model, what, 40)
+			expect(lightCount(model)).toBe(0)
+			for _, part in partsIn(model) do
+				local lo, hi = boxIn(part, CFrame.new())
+				assert(lo[2] >= -TOLERANCE, `{what} goes below the ground`)
+				for _, x in { lo[1], hi[1] } do
+					for _, z in { lo[3], hi[3] } do
+						floatReach = math.max(floatReach, math.sqrt(x * x + z * z))
+					end
+				end
+				floatHeight = math.max(floatHeight, hi[2])
+			end
+		end
+		print(
+			`  floats reach {math.floor(floatReach * 10 + 0.5) / 10} studs and stand {math.floor(floatHeight * 10 + 0.5) / 10} tall`
+		)
+		assert(floatReach <= 4.5, `a float reaches {floatReach} studs from its middle`)
+		assert(floatHeight <= 9, `a float stands {floatHeight} studs tall`)
+
+		local marcher = ParadeLook.marcher()
+		checkLight(marcher, "a marcher", 16)
+		expect(lightCount(marcher)).toBe(0)
+
+		-- One light each, since a few are out at a time.
+		local lantern = ParadeLook.lantern()
+		local parts = partsIn(lantern)
+		assert(#parts <= 6, `a lantern has {#parts} parts`)
+		expect(lightCount(lantern)).toBe(1)
+		assert(lantern.PrimaryPart, "a lantern has no body")
+		for _, part in parts do
+			assert(
+				not part.CanCollide and not part.CanTouch and not part.CanQuery,
+				`a lantern's {part.Name} can be hit`
+			)
+			local lo, hi = boxIn(part, CFrame.new())
+			for axis = 1, 3 do
+				assert(lo[axis] >= -2 and hi[axis] <= 2, "a lantern is too big")
+			end
+		end
+	end)
+
+	it("leaves the parade a clear loop round the wheel, on the courtyard floor", function()
+		local map = Map.build()
+		local folder = Instance.new("Folder")
+		Scenery.world({ Plots = map.Plots, Plaza = map.Plaza, Spawns = { map.Spawn } }, folder)
+		local courtyard = folder:FindFirstChild("Courtyard", true)
+		assert(courtyard and courtyard:HasTag("ParadeRoute"), "the courtyard has no parade route")
+		local centre = courtyard:GetAttribute("RouteCentre")
+		local route =
+			{ RadiusX = courtyard:GetAttribute("RouteRadiusX"), RadiusZ = courtyard:GetAttribute("RouteRadiusZ") }
+		assert(centre and route.RadiusX and route.RadiusZ, "the parade route is missing a size")
+		local floor = courtyard:FindFirstChild("CourtyardFloor")
+		local floorLo, floorHi = boxIn(floor, centre)
+
+		-- Where the floats go, and the lanterns either side of them.
+		local points = {}
+		for step = 0, 359 do
+			local angle = math.rad(step)
+			for _, offset in { -ParadeConfig.Spread, 0, ParadeConfig.Spread } do
+				local x, _, z = ParadeRules.point(route, angle, offset, 0)
+				table.insert(points, { x, z, offset == 0 })
+				local reach = if offset == 0 then floatReach else 1
+				assert(
+					x - reach >= floorLo[1]
+						and x + reach <= floorHi[1]
+						and z - reach >= floorLo[3]
+						and z + reach <= floorHi[3],
+					`the parade leaves the courtyard floor at ({x}, {z})`
+				)
+			end
+		end
+
+		-- How far a point is from a box, across the ground.
+		local function away(lo: { number }, hi: { number }, x: number, z: number): number
+			local dx = math.max(lo[1] - x, 0, x - hi[1])
+			local dz = math.max(lo[3] - z, 0, z - hi[3])
+			return math.sqrt(dx * dx + dz * dz)
+		end
+
+		local lanternLo, lanternHi = ParadeConfig.Height - 1.2, ParadeConfig.Height + 1.6
+		for _, part in partsIn(courtyard) do
+			if part ~= floor and part.Transparency < 1 then
+				local lo, hi = boxIn(part, centre)
+				-- Floats pass nothing they'd go through, and lanterns hang
+				-- clear of anything at their height so they can be reached.
+				local underFloats = lo[2] < floatHeight and hi[2] > 0.2
+				local byLanterns = lo[2] < lanternHi and hi[2] > lanternLo
+				for _, point in points do
+					local distance = away(lo, hi, point[1], point[2])
+					if point[3] and underFloats then
+						assert(
+							distance >= floatReach,
+							`a {part.ClassName} at ({lo[1]}, {lo[3]}) is in the parade's way at ({point[1]}, {point[2]})`
+						)
+					end
+					if byLanterns then
+						assert(
+							distance >= 1,
+							`a {part.ClassName} at ({lo[1]}, {lo[3]}) is in the way of lanterns at ({point[1]}, {point[2]})`
+						)
+					end
 				end
 			end
 		end

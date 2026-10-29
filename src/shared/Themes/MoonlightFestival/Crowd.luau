@@ -1,6 +1,6 @@
 -- The crowd on a plot: visitors in Halloween costume who walk between the
--- stall and the attractions, and the goods carried along the production
--- chain. Each client draws its own (see client/PlotActivity), so they are only
+-- stall and the attractions, what they carry away from the paths' stops,
+-- and the goods carried along the production chain. Each client draws its own (see client/PlotActivity), so they are only
 -- for show and kept light: anchored, never collide or touch, cast no shadow
 -- and are skipped by raycasts.
 --
@@ -227,6 +227,63 @@ function Crowd.good(item: string): Model
 		local themed = Theme.Items[item]
 		Kit.ball(model, CFrame.new(), V(1.2, 1.2, 1.2), if themed then Kit.color(themed.Color) else Color3.new(1, 1, 1))
 	end
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.CanQuery = false
+		end
+	end
+	model.WorldPivot = CFrame.new()
+	return model
+end
+
+-- What visitors carry away from a stop (Kit.stop's Carry), by name, built
+-- round the origin small enough to hold.
+local CARRIES: { [string]: (Model) -> () } = {
+	-- A cone of pink candy floss.
+	candy_floss = function(model)
+		Kit.post(model, at(0, -0.35, 0), 0.7, 0.15, P.Plaster)
+		Kit.ball(model, at(0, 0.2, 0), V(0.9, 0.75, 0.9), Kit.color(Theme.Paths.starter_stall.output.Color))
+	end,
+	toffee_apple = function(model)
+		Kit.ball(model, at(0, 0, 0), V(0.6, 0.6, 0.6), Kit.color(Theme.Items.handmade.Color))
+		Kit.post(model, at(0, 0.45, 0), 0.4, 0.08, P.Plaster, M.Wood)
+	end,
+	-- A bowl of glowing green grub.
+	grub = function(model)
+		Kit.ball(model, at(0, 0, 0), V(0.8, 0.35, 0.8), P.Bone)
+		Kit.glow(model, at(0, 0.12, 0), V(0.65, 0.18, 0.65), Kit.color(Theme.Paths.starter_stall.vendor.Color), true)
+	end,
+	-- A little bag of market goodies.
+	goodies = function(model)
+		Kit.block(model, at(0, 0, 0), V(0.6, 0.7, 0.4), W.Purple, M.Fabric)
+		Kit.glow(model, at(0, 0.1, -0.21), V(0.25, 0.25, 0.04), Kit.color(Theme.Paths.starter_stall.markup.Color))
+	end,
+	-- A basket with a pumpkin in it.
+	basket = function(model)
+		Kit.post(model, at(0, -0.15, 0), 0.5, 0.9, P.Hay, M.Fabric)
+		Kit.ball(model, at(0, 0.2, 0), V(0.6, 0.45, 0.6), P.Pumpkin)
+	end,
+	pie = function(model)
+		Kit.post(model, at(0, 0, 0), 0.25, 0.9, Kit.color(Theme.Items.cooked.Color))
+		Kit.ball(model, at(0, 0.12, 0), V(0.25, 0.12, 0.25), P.Plaster)
+	end,
+}
+
+-- The names of everything visitors can carry, for the tests.
+Crowd.Carries = {}
+for name in CARRIES do
+	table.insert(Crowd.Carries, name)
+end
+table.sort(Crowd.Carries)
+
+-- Something for a visitor to carry, by name, or nil for an unknown one.
+function Crowd.carry(name: string): Model?
+	local build = CARRIES[name]
+	if not build then
+		return nil
+	end
+	local model = Kit.model(nil, "Carried")
+	build(model)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.CanQuery = false

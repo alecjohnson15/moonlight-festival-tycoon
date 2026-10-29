@@ -7,9 +7,11 @@
 -- which labels sit on. An upgrade to a building adds to it, inside that
 -- building's slot or the open yard beside it (Config/Layout), and has no
 -- anchor; its builder gets the yard's CFrame on the floor at its middle as a
--- third argument. Every upgrade adds something you can see: the first ones
--- each have their own model, and the rest put up flags and lights in their
--- path's colour (see the end of this file).
+-- third argument. Every upgrade adds something you can see: the shared ones
+-- each have their own model or string lanterns (see the end of this file),
+-- and every path tier is drawn in the pack's Paths module, each tier adding
+-- to the one before. Parts marked with Kit.paint take the owner's festival
+-- colours (Config/Festival).
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
 local Pieces = require(script.Parent.Pieces)
@@ -62,7 +64,7 @@ function Props.starter_stall(origin: CFrame, size: Vector3): Model
 	-- The counter, with a fabric band along its front.
 	Kit.solid(Kit.block(model, at(0, 1.5, 2.6), V(7.2, 3, 1.4), P.Wood, M.WoodPlanks))
 	Kit.block(model, at(0, 3.1, 2.65), V(7.8, 0.25, 1.9), P.DarkWood, M.Wood)
-	Kit.block(model, at(0, 2.2, 3.33), V(7.3, 0.5, 0.06), stripes[1], M.Fabric)
+	Kit.paint(Kit.block(model, at(0, 2.2, 3.33), V(7.3, 0.5, 0.06), stripes[1], M.Fabric), 1)
 
 	-- The awning slopes down from the back wall to the front, in stripes.
 	local run, drop = 7.5, 1
@@ -72,9 +74,13 @@ function Props.starter_stall(origin: CFrame, size: Vector3): Model
 	local width = 9 / count
 	for i = 1, count do
 		local x = -4.5 + (i - 0.5) * width
-		local color = stripes[(i - 1) % 2 + 1]
-		Kit.block(model, at(x, 6.5, 0.05) * CFrame.Angles(slope, 0, 0), V(width, 0.25, length), color, M.Fabric)
-		Kit.ball(model, at(x, 5.85, 3.65), V(width * 0.95, 0.9, 0.3), color, M.Fabric)
+		local stripe = (i - 1) % 2 + 1
+		local color = stripes[stripe]
+		Kit.paint(
+			Kit.block(model, at(x, 6.5, 0.05) * CFrame.Angles(slope, 0, 0), V(width, 0.25, length), color, M.Fabric),
+			stripe
+		)
+		Kit.paint(Kit.ball(model, at(x, 5.85, 3.65), V(width * 0.95, 0.9, 0.3), color, M.Fabric), stripe)
 	end
 
 	-- Witch apples on sticks, and a skull keeping an eye on them.
@@ -141,7 +147,11 @@ function Props.stall_counter(origin: CFrame): Model
 	for level = 0, 2 do
 		Kit.post(model, at(5.1, 2.55 + level * 0.32, 1.5), 0.3, 1.2, pie)
 	end
-	Pieces.bunting(model, point(at, -4.1, 5.7, 3.5), point(at, 4.1, 5.7, 3.5), 0.5, P.Bunting)
+	-- Bunting in the festival's colours.
+	local flags = Pieces.bunting(model, point(at, -4.1, 5.7, 3.5), point(at, 4.1, 5.7, 3.5), 0.5, P.AwningStripes)
+	for index, flag in flags do
+		Kit.paint(flag, (index - 1) % 2 + 1)
+	end
 	return model
 end
 
@@ -179,131 +189,6 @@ function Props.stall_boost_2(origin: CFrame): Model
 	for side = -1, 1, 2 do
 		Kit.ball(model, at(side * 4, 7.9, -3.45), V(0.6, 0.55, 0.6), P.Bone)
 	end
-	return model
-end
-
--- A sign on two posts, naming an upgrade in its path's colour.
-local function signPosts(
-	model: Model,
-	at: At,
-	x: number,
-	z: number,
-	width: number,
-	height: number,
-	id: string,
-	color: Color3
-)
-	for side = -1, 1, 2 do
-		Kit.solid(Kit.post(model, at(x + side * (width / 2 - 0.3), height / 2, z), height, 0.25, P.DarkWood, M.Wood))
-	end
-	Pieces.sign(model, at(x, height - 0.5, z + 0.2), Vector2.new(width, 1), Theme.Upgrades[id].DisplayName, color)
-end
-
--- The toffee apple cauldron: pink toffee bubbling over a fire beside the
--- stall, and a table of apples dipped in it.
-function Props.stall_output_1(_origin: CFrame, _size: Vector3, yard: CFrame): Model
-	local model, at = addOn(yard)
-	local pink = Kit.color(Theme.Paths.starter_stall.output.Color)
-	local spot = at(0, 0, 1.2)
-	for i = 0, 4 do
-		local angle = i / 5 * math.pi * 2
-		Kit.ball(
-			model,
-			spot * CFrame.new(math.cos(angle) * 1.6, 0.2, math.sin(angle) * 1.6),
-			V(0.7, 0.4, 0.6),
-			P.DarkStone,
-			M.Slate
-		)
-	end
-	for _, yaw in { 0.5, -0.7 } do
-		Kit.log(model, spot * CFrame.new(0, 0.3, 0) * CFrame.Angles(0, yaw, 0), 2.4, 0.35, P.Trunk, M.Wood)
-	end
-	local fire = Kit.block(model, spot * CFrame.new(0, 0.5, 0), V(1, 0.4, 1), P.Trunk)
-	fire.Transparency = 1
-	Kit.new("Fire", fire, { Size = 2.5, Heat = 3, Color = W.Orange, SecondaryColor = P.Candle })
-	Kit.solid(Kit.ball(model, spot * CFrame.new(0, 1.9, 0), V(3.2, 2.3, 3.2), P.Bat, M.Metal))
-	local toffee =
-		Kit.glow(model, spot * CFrame.new(0, 2.95, 0) * CFrame.Angles(0, 0, math.pi / 2), V(0.1, 2.7, 2.7), pink)
-	toffee.Shape = Enum.PartType.Cylinder
-	Kit.light(toffee, pink, 14, 1.4, true)
-	Kit.new("ParticleEmitter", toffee, {
-		Rate = 5,
-		Lifetime = NumberRange.new(1, 1.8),
-		Speed = NumberRange.new(1, 1.6),
-		SpreadAngle = Vector2.new(15, 15),
-		Size = NumberSequence.new(0.5, 1.2),
-		Transparency = NumberSequence.new(0.5, 1),
-		Color = ColorSequence.new(pink:Lerp(P.Mist, 0.5)),
-		EmissionDirection = Enum.NormalId.Right,
-	})
-	Kit.post(model, spot * CFrame.new(0.6, 3.5, 0.2) * CFrame.Angles(0, 0, -0.4), 2.4, 0.15, P.Wood, M.Wood)
-
-	-- The table of toffee apples, each on a stick.
-	Kit.solid(Kit.block(model, at(0, 1, -2.7), V(6, 0.2, 1.6), P.Wood, M.WoodPlanks))
-	for side = -1, 1, 2 do
-		Kit.solid(Kit.block(model, at(side * 2.7, 0.45, -2.7), V(0.3, 0.9, 1.3), P.DarkWood, M.Wood))
-	end
-	for i = 0, 4 do
-		local x = -2.2 + i * 1.1
-		Kit.ball(model, at(x, 1.42, -2.7), V(0.62, 0.62, 0.62), pink:Lerp(P.Candle, 0.35), M.Glass)
-		Kit.post(model, at(x, 1.95, -2.7), 0.6, 0.07, P.Wood, M.Wood)
-	end
-	signPosts(model, at, 0, -3.6, 5.4, 4, "stall_output_1", pink)
-	return model
-end
-
--- The ghoul grub bar: a hatch beside the stall serving bowls of glowing
--- green grub, with stools out front.
-function Props.stall_vendor_1(_origin: CFrame, _size: Vector3, yard: CFrame): Model
-	local model, at = addOn(yard)
-	local green = Kit.color(Theme.Paths.starter_stall.vendor.Color)
-	Kit.solid(Kit.block(model, at(0, 1.2, 0.6), V(6.4, 2.4, 1.6), P.Wood, M.WoodPlanks))
-	Kit.block(model, at(0, 2.5, 0.6), V(6.8, 0.2, 2), P.DarkWood, M.Wood)
-	Kit.glow(model, at(0, 1.7, 1.42), V(6.5, 0.3, 0.06), green)
-	for i = 0, 3 do
-		local x = -2.2 + i * 1.45
-		Kit.ball(model, at(x, 2.78, 0.6), V(1, 0.45, 1), P.Bone)
-		Kit.glow(model, at(x, 2.95, 0.6), V(0.8, 0.25, 0.8), green, true)
-	end
-	-- A back wall with a hatch roof, and a lantern of the same green.
-	Kit.solid(Kit.block(model, at(0, 2.6, -1.4), V(6.4, 5.2, 0.3), P.DarkWood, M.WoodPlanks))
-	Kit.block(model, at(0, 5.3, -0.4) * CFrame.Angles(-0.35, 0, 0), V(7, 0.25, 2.6), P.Roof, M.Wood)
-	Pieces.sign(model, at(0, 4, -1.15), Vector2.new(5.4, 1.1), Theme.Upgrades.stall_vendor_1.DisplayName, green)
-	Pieces.lantern(model, at(2.7, 4.5, 0.4), 0.7, green, 14)
-	Kit.glow(model, at(-2.4, 3.3, -1.2), V(0.9, 0.9, 0.2), green, true)
-	for i = -1, 1 do
-		Kit.solid(Kit.post(model, at(i * 2, 0.6, 3), 1.2, 0.9, P.Trunk, M.Wood))
-	end
-	return model
-end
-
--- The night market banners: tall poles beside the stall flying gold and
--- purple banners with moons on, and a crate of goods for sale.
-function Props.stall_markup_1(_origin: CFrame, _size: Vector3, yard: CFrame): Model
-	local model, at = addOn(yard)
-	local gold = Kit.color(Theme.Paths.starter_stall.markup.Color)
-	local colors = { gold, W.Purple, gold }
-	local tops = {}
-	for i = 1, 3 do
-		local x = -3.3 + (i - 1) * 2.65
-		local height = if i == 2 then 7.5 else 6.5
-		Kit.solid(Kit.post(model, at(x, height / 2, -1), height, 0.3, P.DarkWood, M.Wood))
-		Kit.block(model, at(x + 0.9, height - 0.3, -1), V(1.9, 0.15, 0.15), P.DarkWood, M.Wood)
-		Kit.block(model, at(x + 0.9, height - 2.2, -1), V(1.5, 3.6, 0.06), colors[i], M.Fabric)
-		Kit.glow(model, at(x + 0.9, height - 1.8, -0.95), V(0.7, 0.7, 0.05), P.Moonlight, true)
-		Kit.glow(model, at(x, height + 0.25, -1), V(0.45, 0.45, 0.45), gold, true)
-		table.insert(tops, point(at, x, height, -1))
-	end
-	for i = 1, #tops - 1 do
-		Pieces.stringLights(model, tops[i], tops[i + 1], 0.6, { gold, P.Candle })
-	end
-	Kit.solid(Kit.block(model, at(-1.6, 0.6, 2.4), V(2.2, 1.2, 1.4), P.Wood, M.WoodPlanks))
-	local apple = Kit.color(Theme.Items.handmade.Color)
-	for i = 0, 2 do
-		Kit.ball(model, at(-2.3 + i * 0.7, 1.45, 2.4), V(0.55, 0.55, 0.55), apple)
-	end
-	Pieces.lantern(model, at(1.6, 1.4, 2.6), 0.8, gold, 14)
-	Kit.solid(Kit.post(model, at(1.6, 0.45, 2.6), 0.9, 0.5, P.DarkStone, M.Slate))
 	return model
 end
 
@@ -408,71 +293,8 @@ function Props.grower_boost_2(_origin: CFrame, _size: Vector3, yard: CFrame): Mo
 	Kit.ball(model, crow * CFrame.new(0, 0.3, 0.25), V(0.35, 0.35, 0.35), P.Bat)
 	Kit.wedge(model, crow * CFrame.new(0, 0.28, 0.5) * CFrame.Angles(0, math.pi, 0), V(0.1, 0.12, 0.25), P.Candle)
 	Kit.glow(model, crow * CFrame.new(0.1, 0.36, 0.38), V(0.06, 0.06, 0.04), W.Red)
-	Kit.solid(Kit.post(model, at(-1.8, 1.5, 0), 3, 0.25, P.DarkWood, M.Wood))
-	Pieces.lantern(model, at(-1.8, 3.4, 0), 0.7, W.Red, 12)
-	return model
-end
-
--- Glowing compost: a slatted bin of compost glowing green beside the patch,
--- a pitchfork in it, and a giant pumpkin grown on it.
-function Props.grower_output_1(_origin: CFrame, _size: Vector3, yard: CFrame): Model
-	local model, at = addOn(yard)
-	local orange = Kit.color(Theme.Paths.grower.output.Color)
-	for slat = 0, 2 do
-		local y = 0.35 + slat * 0.7
-		Kit.solid(Kit.block(model, at(0, y, -1.6), V(4.4, 0.5, 0.2), P.Wood, M.WoodPlanks))
-		for side = -1, 1, 2 do
-			Kit.solid(Kit.block(model, at(side * 2.1, y, 0), V(0.2, 0.5, 3.4), P.Wood, M.WoodPlanks))
-		end
-	end
-	Kit.ball(model, at(0, 0.8, 0), V(3.6, 1.6, 3), P.Soil, M.Ground)
-	local heap = Kit.glow(model, at(0, 1.35, 0), V(2.6, 0.9, 2.2), W.Toxic, true)
-	Kit.light(heap, W.Toxic, 12, 1.2, true)
-	Kit.new("ParticleEmitter", heap, {
-		Rate = 4,
-		Lifetime = NumberRange.new(1.5, 2.5),
-		Speed = NumberRange.new(0.4, 0.8),
-		SpreadAngle = Vector2.new(30, 30),
-		Size = NumberSequence.new(0.3, 0.05),
-		Transparency = NumberSequence.new(0.3, 1),
-		Color = ColorSequence.new(W.Toxic),
-		LightEmission = 1,
-		EmissionDirection = Enum.NormalId.Top,
-	})
-	Kit.post(model, at(0.8, 2.3, 0.3) * CFrame.Angles(0.2, 0, -0.25), 3, 0.12, P.Wood, M.Wood)
-	Pieces.pumpkin(model, at(0, 0, 3.8, 0.4), 2.6)
-	signPosts(model, at, 0, -2.6, 4.6, 3.6, "grower_output_1", orange)
-	return model
-end
-
--- The pick-your-own patch: a stand of baskets beside the patch, a sign, and
--- a wheelbarrow full of pumpkins.
-function Props.grower_vendor_1(_origin: CFrame, _size: Vector3, yard: CFrame): Model
-	local model, at = addOn(yard)
-	local green = Kit.color(Theme.Paths.grower.vendor.Color)
-	Kit.solid(Kit.block(model, at(0, 1.1, -0.6), V(4.2, 0.2, 1.8), P.Wood, M.WoodPlanks))
-	for _, x in { -1.9, 1.9 } do
-		Kit.block(model, at(x, 0.5, -0.6), V(0.25, 1, 1.5), P.DarkWood, M.Wood)
-	end
-	for i = -1, 1 do
-		Kit.post(model, at(i * 1.35, 1.55, -0.6), 0.7, 1.1, P.Hay, M.Fabric)
-		Kit.ball(model, at(i * 1.35, 2.1, -0.6), V(0.8, 0.6, 0.8), P.Pumpkin)
-	end
-	signPosts(model, at, 0, -2, 4.6, 3.8, "grower_vendor_1", green)
-	Pieces.lantern(model, at(2.6, 2.2, -1.9), 0.7, green, 12)
-	Kit.solid(Kit.post(model, at(2.6, 0.75, -1.9), 1.5, 0.25, P.DarkWood, M.Wood))
-
-	-- The wheelbarrow, its handles towards the front.
-	local barrow = at(0, 0, 3.4)
-	Kit.solid(Kit.block(model, barrow * CFrame.new(0, 1.1, 0), V(2, 0.9, 2.4), P.Wood, M.WoodPlanks))
-	Kit.log(model, barrow * CFrame.new(0, 0.5, -1.2), 0.3, 1, P.Metal, M.Metal)
-	for side = -1, 1, 2 do
-		Kit.block(model, barrow * CFrame.new(side * 0.8, 0.9, 1.9), V(0.15, 0.15, 1.6), P.DarkWood, M.Wood)
-		Kit.block(model, barrow * CFrame.new(side * 0.8, 0.35, 0.8), V(0.15, 0.7, 0.15), P.DarkWood, M.Wood)
-	end
-	for i = 0, 2 do
-		Pieces.pumpkin(model, barrow * CFrame.new(-0.5 + i * 0.5, 1.5, (i % 2) * 0.6 - 0.3), 0.8)
-	end
+	Kit.solid(Kit.post(model, at(-3.2, 1.5, 0), 3, 0.25, P.DarkWood, M.Wood))
+	Pieces.lantern(model, at(-3.2, 3.4, 0), 0.7, W.Red, 12)
 	return model
 end
 
@@ -842,10 +664,9 @@ local function trainCar(parent: Instance, cframe: CFrame, index: number)
 	Kit.block(car, cframe * CFrame.new(0, 0.35, 0), V(1.9, 0.4, 2.6), P.Metal, M.Metal)
 	Kit.block(car, cframe * CFrame.new(0, 1.05, 0), V(1.8, 1, 2.3), P.Roof)
 	Kit.block(car, cframe * CFrame.new(0, 1.9, 1), V(1.8, 0.9, 0.3), P.Roof)
-	for _, x in { -0.95, 0.95 } do
-		for _, z in { -0.8, 0.8 } do
-			Kit.log(car, cframe * CFrame.new(x, 0.3, z), 0.25, 0.6, P.Bat, M.Metal)
-		end
+	-- Two axles, a wheel showing at each end.
+	for _, z in { -0.8, 0.8 } do
+		Kit.log(car, cframe * CFrame.new(0, 0.3, z), 2.15, 0.6, P.Bat, M.Metal)
 	end
 	if index == 1 then
 		local skull = cframe * CFrame.new(0, 1.3, -1.3)
@@ -867,7 +688,7 @@ function Props.attraction_3(origin: CFrame, size: Vector3): Model
 
 	-- The track is an oval around this centre; the train runs round it.
 	local trackCentre = at(0, 0, -1)
-	local radiusX, radiusZ, segments = 7.8, 5, 24
+	local radiusX, radiusZ, segments = 7.8, 5, 16
 	local function onTrack(angle: number, lift: number): Vector3
 		return (trackCentre * CFrame.new(math.cos(angle) * radiusX, lift, math.sin(angle) * radiusZ)).Position
 	end
@@ -958,28 +779,10 @@ function Props.attraction_3(origin: CFrame, size: Vector3): Model
 	return model
 end
 
--- Everything else a building gets: the shared upgrades with no model of
--- their own string lanterns in their colour across its front (the first)
--- or back (the second), and each tier of a path puts up a pennant in the
--- path's colour at one of its corners, so a path's progress shows as flags
--- going up round the building.
+-- The shared upgrades with no model of their own string lanterns in their
+-- colour across the building's front (the first) or back (the second).
+-- Every path's tiers are drawn in the pack's Paths module.
 local Balance = require(script.Parent.Parent.Parent.Config.Balance)
-local CORNERS = { { -1, 1 }, { 1, 1 }, { 1, -1 }, { -1, -1 } }
-
-local function pathFlag(color: Color3, tier: number)
-	return function(origin: CFrame, size: Vector3): Model
-		local model, at = addOn(origin)
-		local corner = CORNERS[(tier - 1) % #CORNERS + 1]
-		local x, z = corner[1] * (size.X / 2 - 0.3), corner[2] * (size.Z / 2 - 0.3)
-		local height = size.Y + 3
-		Kit.post(model, at(x, height / 2, z), height, 0.25, P.DarkWood, M.Wood)
-		Kit.glow(model, at(x, height + 0.25, z), V(0.5, 0.5, 0.5), color, true)
-		-- Flying in over the building, not out over the paths.
-		local yaw = if corner[1] < 0 then -math.pi / 2 else math.pi / 2
-		Pieces.pennant(model, at(x, height - 1, z, yaw), 2.4, 1.4, color)
-		return model
-	end
-end
 
 local function sharedLights(color: Color3, index: number)
 	return function(origin: CFrame, size: Vector3): Model
@@ -1003,17 +806,15 @@ for _, upgrade in Balance.Upgrades do
 	local building = upgrade.Building
 	if building and not upgrade.Path then
 		sharedSoFar[building] = (sharedSoFar[building] or 0) + 1
-	end
-	if building and not (Props :: any)[upgrade.Id] then
-		if upgrade.Path then
-			local tier = tonumber(string.match(upgrade.Id, "_(%d+)$")) or 1
-			local color = Kit.color(Theme.Paths[building][upgrade.Path].Color);
-			(Props :: any)[upgrade.Id] = pathFlag(color, tier)
-		else
+		if not (Props :: any)[upgrade.Id] then
 			local color = Kit.color(Theme.Upgrades[upgrade.Id].Color);
 			(Props :: any)[upgrade.Id] = sharedLights(color, sharedSoFar[building])
 		end
 	end
+end
+
+for id, builder in require(script.Parent.Paths) do
+	(Props :: any)[id] = builder
 end
 
 return Props
