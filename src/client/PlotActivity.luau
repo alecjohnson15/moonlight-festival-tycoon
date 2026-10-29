@@ -1,10 +1,14 @@
 -- Makes every plot look busy: goods travel along the production chain and
 -- visitors in costume walk to the stall and the attractions, at rates the
--- server publishes as attributes. On the player's own plot, buy buttons glow and
+-- server publishes as attributes. On the way, a visitor may stop at one of
+-- the places a path has marked (Kit.stop): they turn to face it, sit, jump
+-- or cheer while they wait, and leave carrying what it gave them. A path can
+-- also make a building's goods glow as they leave it (GoodsGlow). On the player's own plot, buy buttons glow and
 -- pulse when the player can pay for them and turn red when they can't, and
 -- rides show a countdown and each round's takings. All of it is cosmetic and
 -- exists only on this client; the server decides and pays for everything.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -39,6 +43,13 @@ local HOP_HEIGHT = 0.3
 local HOVER_HEIGHT = 0.6
 -- Movers further than this from the camera keep moving but aren't redrawn.
 local DRAW_DISTANCE = 250
+-- A visitor stop's chance of being used, when it doesn't say.
+local STOP_CHANCE = 0.6
+-- Where a visitor holds what they carry, from their feet.
+local HAND = CFrame.new(0.75, 1.5, -0.45)
+
+-- What a visitor does on reaching one of their points.
+type Arrival = { Pose: string?, Carry: string?, Facing: Vector3 }
 
 type Mover = {
 	Instance: Model,
@@ -53,6 +64,11 @@ type Mover = {
 	Speed: number,
 	Gait: string?,
 	Phase: number,
+	-- By point index, what to do there.
+	Arrivals: { [number]: Arrival }?,
+	Pose: string?,
+	PoseAt: number,
+	Carrying: boolean?,
 }
 
 local PlotActivity = {}
@@ -72,6 +88,8 @@ local visitorCount: { [BasePart]: number } = {}
 -- Fractional goods or visitors owed to each station or plot, between frames.
 local owed: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
 local rideStatus: { [Instance]: BillboardGui } = {}
+-- Each plot's visitor stops, found again whenever stops come or go.
+local stopsByPlot: { [BasePart]: { Attachment } } = {}
 local lastPayoutAt: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
 
 -- A point above the plot's surface, from plot-local X and Z.
@@ -113,9 +131,18 @@ local function addMover(mover: Mover)
 	end
 end
 
-local function spawnGood(plot: BasePart, item: string, points: { Vector3 })
+local function spawnGood(plot: BasePart, item: string, points: { Vector3 }, glow: Color3?)
+	local model = Theme.Crowd.good(item)
+	if glow then
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Material = Enum.Material.Neon
+				part.Color = part.Color:Lerp(glow, 0.6)
+			end
+		end
+	end
 	addMover({
-		Instance = Theme.Crowd.good(item),
+		Instance = model,
 		Plot = plot,
 		IsVisitor = false,
 		Points = points,
@@ -126,7 +153,55 @@ local function spawnGood(plot: BasePart, item: string, points: { Vector3 })
 		Wait = 0,
 		Speed = GOODS_SPEED,
 		Phase = 0,
+		PoseAt = 0,
 	})
+end
+
+local function stopsOn(plot: BasePart): { Attachment }
+	local cached = stopsByPlot[plot]
+	if cached then
+		return cached
+	end
+	local list = {}
+	for _, stop in CollectionService:GetTagged("VisitorStop") do
+		if stop:IsA("Attachment") and stop:IsDescendantOf(plot) then
+			table.insert(list, stop)
+		end
+	end
+	stopsByPlot[plot] = list
+	return list
+end
+
+-- Sends a visitor to a stop and back out: round the front of the building
+-- it belongs to, so they don't walk through it.
+local function addStop(
+	plot: BasePart,
+	stop: Attachment,
+	mover: { Points: { Vector3 }, Pauses: { number }, Arrivals: { [number]: Arrival } }
+)
+	local built = plot:FindFirstChild("Built")
+	local station: Instance? = stop
+	while station and station.Parent ~= built do
+		station = station.Parent
+	end
+	local slot = station and Layout.Slots[station.Name]
+	if not slot then
+		return
+	end
+	local at = stop.WorldCFrame
+	local spot = plot.CFrame:PointToObjectSpace(at.Position)
+	local approach = onPlot(plot, spot.X, slot.Z + slot.Size[3] / 2 + 2, 0)
+	table.insert(mover.Points, approach)
+	table.insert(mover.Pauses, 0)
+	table.insert(mover.Points, at.Position)
+	table.insert(mover.Pauses, stop:GetAttribute("Pause") or STALL_PAUSE)
+	mover.Arrivals[#mover.Points] = {
+		Pose = stop:GetAttribute("Pose"),
+		Carry = stop:GetAttribute("Carry"),
+		Facing = at.LookVector,
+	}
+	table.insert(mover.Points, approach)
+	table.insert(mover.Pauses, 0)
 end
 
 local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { string })
@@ -136,9 +211,17 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 	local lift = 0
 	local points = { onPlot(plot, random:NextNumber(-14, 14), half - 1, lift) }
 	local pauses = { 0 }
+	local arrivals = {}
 	if stallId then
 		table.insert(points, frontOf(plot, stallId, lift))
 		table.insert(pauses, STALL_PAUSE)
+	end
+	local stops = stopsOn(plot)
+	if #stops > 0 then
+		local stop = stops[random:NextInteger(1, #stops)]
+		if stop.Parent and random:NextNumber() < (stop:GetAttribute("Chance") or STOP_CHANCE) then
+			addStop(plot, stop, { Points = points, Pauses = pauses, Arrivals = arrivals })
+		end
 	end
 	if #attractionIds > 0 then
 		table.insert(points, frontOf(plot, attractionIds[random:NextInteger(1, #attractionIds)], lift))
@@ -160,6 +243,8 @@ local function spawnVisitor(plot: BasePart, stallId: string?, attractionIds: { s
 		Speed = WALK_SPEED,
 		Gait = model:GetAttribute("Gait"),
 		Phase = random:NextNumber(0, 10),
+		Arrivals = arrivals,
+		PoseAt = 0,
 	})
 end
 
@@ -213,8 +298,12 @@ local function animatePlot(plot: BasePart, built: Instance, dt: number)
 	end
 	if kitchen then
 		local item = upgradesById[kitchen.Name].Makes
+		local glow = nil
+		for _, addOn in kitchen:GetChildren() do
+			glow = glow or addOn:GetAttribute("GoodsGlow")
+		end
 		for _ = 1, due(kitchen, kitchenTakes, dt, MAX_GOODS_PER_SECOND) do
-			spawnGood(plot, item, { frontOf(plot, kitchen.Name, lift), behind(plot, stall.Name, lift) })
+			spawnGood(plot, item, { frontOf(plot, kitchen.Name, lift), behind(plot, stall.Name, lift) }, glow)
 		end
 	end
 
@@ -226,18 +315,56 @@ local function animatePlot(plot: BasePart, built: Instance, dt: number)
 	end
 end
 
+-- How a visitor at a stop sits, jumps or cheers, from where they stand.
+local function posed(mover: Mover): CFrame
+	local t = os.clock() - mover.PoseAt
+	if mover.Pose == "Sit" then
+		return CFrame.new(0, -0.5, 0)
+	elseif mover.Pose == "Jump" then
+		-- One fright, straight up, with a shake.
+		local up = if t < 0.5 then math.sin(t / 0.5 * math.pi) * 1.4 else 0
+		return CFrame.new(0, up, 0) * CFrame.Angles(0, 0, if t < 0.8 then math.sin(t * 40) * 0.08 else 0)
+	elseif mover.Pose == "Cheer" then
+		return CFrame.new(0, math.abs(math.sin(t * 7)) * 0.4, 0)
+	end
+	return CFrame.identity
+end
+
 -- Where a mover is drawn: where it is, turned the way it's going, with a hop
--- in its step or a hover.
+-- in its step or a hover, and its pose at a stop.
 local function pose(mover: Mover, walking: boolean): CFrame
 	local t = os.clock() + mover.Phase
+	local at = mover.Facing
+	if mover.Pose and not walking then
+		at *= posed(mover)
+	end
 	if mover.Gait == "Float" then
 		local bob = math.sin(t * 2.2) * 0.25
-		return mover.Facing * CFrame.new(0, HOVER_HEIGHT + bob, 0) * CFrame.Angles(0, 0, math.sin(t * 1.3) * 0.06)
+		return at * CFrame.new(0, HOVER_HEIGHT + bob, 0) * CFrame.Angles(0, 0, math.sin(t * 1.3) * 0.06)
 	elseif mover.Gait == "Hop" and walking then
 		local step = math.sin(t * HOPS_PER_SECOND * math.pi)
-		return mover.Facing * CFrame.new(0, math.abs(step) * HOP_HEIGHT, 0) * CFrame.Angles(0, 0, step * 0.1)
+		return at * CFrame.new(0, math.abs(step) * HOP_HEIGHT, 0) * CFrame.Angles(0, 0, step * 0.1)
 	end
-	return mover.Facing
+	return at
+end
+
+-- Turns a visitor to face a stop they've reached, starts their pose and
+-- hands them what it gives.
+local function arrive(mover: Mover, arrival: Arrival)
+	local facing = Vector3.new(arrival.Facing.X, 0, arrival.Facing.Z)
+	if facing.Magnitude > 0.01 then
+		mover.Facing = CFrame.lookAt(mover.Position, mover.Position + facing)
+	end
+	mover.Pose = arrival.Pose
+	mover.PoseAt = os.clock()
+	if arrival.Carry and not mover.Carrying then
+		local item = Theme.Crowd.carry(arrival.Carry)
+		if item then
+			item:PivotTo(mover.Facing * HAND)
+			item.Parent = mover.Instance
+			mover.Carrying = true
+		end
+	end
 end
 
 local function moveAll(dt: number)
@@ -250,9 +377,11 @@ local function moveAll(dt: number)
 			local target = mover.Points[mover.Index]
 			local offset = target - mover.Position
 			local step = mover.Speed * dt
+			local arrival = nil
 			if step >= offset.Magnitude then
 				mover.Position = target
 				mover.Wait = mover.Pauses[mover.Index] or 0
+				arrival = mover.Arrivals and mover.Arrivals[mover.Index]
 				mover.Index += 1
 				if mover.Index > #mover.Points then
 					mover.Instance:Destroy()
@@ -269,9 +398,15 @@ local function moveAll(dt: number)
 			mover.Facing = if facing.Magnitude > 0.01
 				then CFrame.lookAt(mover.Position, mover.Position + facing)
 				else mover.Facing.Rotation + mover.Position
+			if arrival then
+				mover.Instance:PivotTo(mover.Facing)
+				arrive(mover, arrival)
+			end
 		else
 			mover.Wait -= dt
-			if mover.Gait ~= "Float" then
+			if mover.Wait <= 0 then
+				mover.Pose = nil
+			elseif mover.Gait ~= "Float" and not mover.Pose then
 				-- Standing still: nothing to redraw.
 				continue
 			end
@@ -420,6 +555,11 @@ end
 
 function PlotActivity.start()
 	playerGui = player:WaitForChild("PlayerGui") :: PlayerGui
+	local function forgetStops()
+		table.clear(stopsByPlot)
+	end
+	CollectionService:GetInstanceAddedSignal("VisitorStop"):Connect(forgetStops)
+	CollectionService:GetInstanceRemovedSignal("VisitorStop"):Connect(forgetStops)
 	folder = Instance.new("Folder")
 	folder.Name = "PlotActivity"
 	folder.Parent = Workspace

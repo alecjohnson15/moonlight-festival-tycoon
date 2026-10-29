@@ -52,6 +52,7 @@ return {
 		PathLocks = "Locks for good: %s",
 		PathGain = "%s now",
 		PathConfirm = "Step off, then on again, to pick it",
+		PathFullLook = "Shown fully upgraded",
 		ActivityName = "Ghost Catcher",
 		ActivityReady = "Step on the pad to play!",
 		ActivityWait = "Next round in %ds",
@@ -87,6 +88,9 @@ return {
 		TrophyBest = "Best %d",
 		TrophyKOs = "%d KOs",
 		TrophyParades = "%d parades",
+
+		-- The signs in the Scream Maze.
+		ScareSign = "TURN BACK",
 
 		-- The Moonlight Parade round the wheel in the courtyard.
 		ParadeName = "Moonlight Parade",
@@ -249,33 +253,105 @@ return {
 	},
 
 	-- Each building's paths (see Config/Balance), by building and path id.
-	-- Blurb is the short pitch on the pad that picks the path.
+	-- Blurb is the short pitch on the pad that picks the path, and Visitors
+	-- says what visitors do once it's built. The models are in the pack's
+	-- Paths module.
 	Paths = {
 		starter_stall = {
-			output = { DisplayName = "Sweet Shop", Color = "#FF6FB5", Blurb = "Heaps more witch apples" },
-			vendor = { DisplayName = "Ghoul Grub Bar", Color = "#5CFF4A", Blurb = "Every visitor buys a snack" },
-			markup = { DisplayName = "Night Market", Color = "#F2C94C", Blurb = "Everything sells for more" },
+			output = {
+				DisplayName = "Sweet Shop",
+				Color = "#FF6FB5",
+				Blurb = "Heaps more witch apples",
+				Visitors = "Visitors leave with candy floss",
+			},
+			vendor = {
+				DisplayName = "Ghoul Grub Bar",
+				Color = "#5CFF4A",
+				Blurb = "Every visitor buys a snack",
+				Visitors = "Visitors queue, then sit and eat grub",
+			},
+			markup = {
+				DisplayName = "Night Market",
+				Color = "#F2C94C",
+				Blurb = "Everything sells for more",
+				Visitors = "Visitors browse the market tables",
+			},
 		},
 		grower = {
-			output = { DisplayName = "Bumper Crop", Color = "#E67E22", Blurb = "Way more pumpkins" },
-			vendor = { DisplayName = "Pick-Your-Own", Color = "#4FA37A", Blurb = "Visitors pay to pick pumpkins" },
+			output = {
+				DisplayName = "Bumper Crop",
+				Color = "#E67E22",
+				Blurb = "Way more pumpkins",
+				Visitors = "Bigger pumpkins fill the patch",
+			},
+			vendor = {
+				DisplayName = "Pick-Your-Own",
+				Color = "#4FA37A",
+				Blurb = "Visitors pay to pick pumpkins",
+				Visitors = "Visitors pick pumpkins and leave with baskets",
+			},
 		},
 		kitchen = {
-			value = { DisplayName = "Enchanted Pies", Color = "#B98BFF", Blurb = "Every pie is worth more" },
-			vendor = { DisplayName = "Creepy Café", Color = "#FF9F43", Blurb = "Every visitor buys pie" },
+			value = {
+				DisplayName = "Enchanted Pies",
+				Color = "#B98BFF",
+				Blurb = "Every pie is worth more",
+				Visitors = "Pies glow purple as they leave the kitchen",
+			},
+			vendor = {
+				DisplayName = "Creepy Café",
+				Color = "#FF9F43",
+				Blurb = "Every visitor buys pie",
+				Visitors = "Visitors sit at tables outside and eat pie",
+			},
 		},
 		attraction_1 = {
-			capacity = { DisplayName = "Endless Maze", Color = "#3FBF6A", Blurb = "Bigger, with room for crowds" },
-			ticket = { DisplayName = "Scream Maze", Color = "#FF2A2A", Blurb = "Scarier, so tickets cost more" },
+			capacity = {
+				DisplayName = "Endless Maze",
+				Color = "#3FBF6A",
+				Blurb = "Bigger, with room for crowds",
+				Visitors = "The maze grows new rows for crowds to wander",
+			},
+			ticket = {
+				DisplayName = "Scream Maze",
+				Color = "#FF2A2A",
+				Blurb = "Scarier, so tickets cost more",
+				Visitors = "Scares pop up and make visitors jump",
+			},
 		},
 		attraction_2 = {
-			draw = { DisplayName = "Moon Beacon", Color = "#CFE0FF", Blurb = "Draws crowds to everything" },
-			ticket = { DisplayName = "Fortune Teller", Color = "#8A3DFF", Blurb = "Every visitor pays for a fortune" },
+			draw = {
+				DisplayName = "Moon Beacon",
+				Color = "#CFE0FF",
+				Blurb = "Draws crowds to everything",
+				Visitors = "A beam of moonlight you can see from the spawn",
+			},
+			ticket = {
+				DisplayName = "Fortune Teller",
+				Color = "#8A3DFF",
+				Blurb = "Every visitor pays for a fortune",
+				Visitors = "Visitors queue for a crystal ball reading",
+			},
 		},
 		attraction_3 = {
-			seats = { DisplayName = "Midnight Express", Color = "#2FE0C0", Blurb = "Longer trains, more riders" },
-			ticket = { DisplayName = "Terror Train", Color = "#FF7A1A", Blurb = "Scarier rides cost more" },
-			draw = { DisplayName = "Ghost Parade", Color = "#EEF3FF", Blurb = "Pulls in visitors for everything" },
+			seats = {
+				DisplayName = "Midnight Express",
+				Color = "#2FE0C0",
+				Blurb = "Longer trains, more riders",
+				Visitors = "The ghost train pulls more cars",
+			},
+			ticket = {
+				DisplayName = "Terror Train",
+				Color = "#FF7A1A",
+				Blurb = "Scarier rides cost more",
+				Visitors = "A loop of track and flames by the ride",
+			},
+			draw = {
+				DisplayName = "Ghost Parade",
+				Color = "#EEF3FF",
+				Blurb = "Pulls in visitors for everything",
+				Visitors = "Ghosts march out across the plot",
+			},
 		},
 	},
 

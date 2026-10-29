@@ -109,6 +109,18 @@ local function lightCount(root: any): number
 	return count
 end
 
+-- What each client draws many of, so each must be small and cheap.
+local function checkLight(model: any, what: string, maxParts: number)
+	local parts = partsIn(model)
+	assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
+	for _, part in parts do
+		assert(part.Anchored, `{what}: {part.Name} is not anchored`)
+		assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
+		assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
+	end
+	assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
+end
+
 -- Why a part isn't inside a slot's footprint, on or above the floor and not
 -- far above the slot, or nil if it is.
 local function outside(part: any, origin: any, size: any): string?
@@ -171,7 +183,8 @@ describe("theme props", function()
 	it("adds every upgrade to the building it improves, inside its slot or yard", function()
 		-- Parts and lights for each building's shared upgrades, and for each of
 		-- its paths. A plot only ever has one path per building built, so the
-		-- budget counts the heaviest.
+		-- budget counts the heaviest. A path tier's model replaces the tier
+		-- before, so only the last tier of a path counts.
 		local shared: { [string]: { number } } = {}
 		local paths: { [string]: { [string]: { number } } } = {}
 		local function tally(totals: { [string]: { number } }, key: string, model: any)
@@ -180,6 +193,7 @@ describe("theme props", function()
 			counts[2] += lightCount(model)
 			totals[key] = counts
 		end
+		local tiers: { [string]: any } = {}
 
 		for _, upgrade in Balance.Upgrades do
 			local id, building = upgrade.Id, upgrade.Building
@@ -201,8 +215,28 @@ describe("theme props", function()
 					assertPlaced(part, origin, problem, id)
 				end
 				if upgrade.Path then
-					paths[building] = paths[building] or {}
-					tally(paths[building], upgrade.Path, model)
+					local prefix, tier = string.match(id, "^(.*)_(%d+)$")
+					local replaces = model:GetAttribute("Replaces")
+					if tonumber(tier) == 1 then
+						expect(replaces).toBe(nil)
+					else
+						-- The whole path so far, with more added.
+						local before = `{prefix}_{tonumber(tier) - 1}`
+						expect(replaces).toBe(before)
+						local had = #tiers[before]:GetDescendants()
+						assert(#model:GetDescendants() > had, `{id} adds nothing to {before}`)
+						-- What it keeps stays put while the rest builds up.
+						local kept = 0
+						for _, part in partsIn(model) do
+							kept += if part:GetAttribute("Kept") then 1 else 0
+						end
+						assert(kept > 0 and kept <= #partsIn(tiers[before]), `{id} keeps {kept} parts of {before}`)
+					end
+					tiers[id] = model
+					if not Progression.find(Balance.Upgrades, `{prefix}_{tonumber(tier) + 1}`) then
+						paths[building] = paths[building] or {}
+						tally(paths[building], upgrade.Path, model)
+					end
 				else
 					tally(shared, building, model)
 				end
@@ -311,6 +345,69 @@ describe("theme props", function()
 		for _, model in { board, shelf, holder } do
 			plotParts += #partsIn(model)
 			plotLights += lightCount(model)
+		end
+	end)
+
+	it("gives every path stops visitors can use, and moving parts the client can drive", function()
+		local poses = { Sit = true, Jump = true, Cheer = true }
+		local carries = {}
+		for _, name in Crowd.Carries do
+			carries[name] = true
+		end
+		local half = Layout.PlotSize / 2
+		local stationTrain =
+			Props.attraction_3(slotOrigin(Layout.Slots.attraction_3), slotSize(Layout.Slots.attraction_3))
+				:FindFirstChild("Train")
+		for _, upgrade in Balance.Upgrades do
+			if upgrade.Path then
+				local slot = Layout.Slots[upgrade.Building]
+				local model = Props[upgrade.Id](slotOrigin(slot), slotSize(slot), slot.Yard and slotOrigin(slot.Yard))
+				for _, descendant in model:GetDescendants() do
+					local where = `{upgrade.Id}: {descendant.Name}`
+					if descendant:HasTag("VisitorStop") then
+						assert(
+							descendant:IsA("Attachment") and descendant.Parent:IsA("BasePart"),
+							`{where} isn't on a part`
+						)
+						assert((descendant:GetAttribute("Pause") or 0) > 0, `{where} has no pause`)
+						local pose, carry = descendant:GetAttribute("Pose"), descendant:GetAttribute("Carry")
+						assert(pose == nil or poses[pose], `{where} has an unknown pose {pose}`)
+						assert(carry == nil or carries[carry], `{where} gives an unknown {carry}`)
+						local chance = descendant:GetAttribute("Chance") or 0.6
+						assert(chance > 0 and chance <= 1, `{where} has a chance of {chance}`)
+						-- On the plot, on the floor or on something low.
+						local at = PLOT_CFRAME:PointToObjectSpace(descendant.Parent.CFrame * descendant.CFrame.Position)
+						assert(math.abs(at.X) < half and math.abs(at.Z) < half, `{where} is off the plot`)
+						assert(at.Y >= 0.4 and at.Y <= 2, `{where} is {at.Y} studs up`)
+					elseif descendant:HasTag("Patrol") then
+						assert(
+							descendant:GetAttribute("PatrolOffset") and descendant:GetAttribute("PatrolSeconds"),
+							`{where} can't patrol`
+						)
+					elseif descendant:HasTag("Pop") then
+						assert(
+							descendant:GetAttribute("PopHeight") and descendant:GetAttribute("PopSeconds"),
+							`{where} can't pop`
+						)
+					elseif descendant:HasTag("Train") then
+						-- Extra cars run on the station's own track, after its cars.
+						for _, name in { "TrackCentre", "RadiusX", "RadiusZ", "LapSeconds", "Gap" } do
+							local mine, station = descendant:GetAttribute(name), stationTrain:GetAttribute(name)
+							local same = if typeof(mine) == "CFrame"
+								then (mine.Position - station.Position).Magnitude < 0.01
+								else mine == station
+							assert(same, `{where}'s {name} doesn't match the ghost train's`)
+						end
+						for _, car in descendant:GetChildren() do
+							assert((car:GetAttribute("Order") or 0) > 3, `{where} has a car out of order`)
+						end
+					end
+				end
+			end
+		end
+		for _, name in Crowd.Carries do
+			local model = Crowd.carry(name)
+			checkLight(model, `carried {name}`, 3)
 		end
 	end)
 
@@ -572,18 +669,6 @@ describe("theme scenery", function()
 		end
 	end)
 end)
-
--- What each client draws many of, so each must be small and cheap.
-local function checkLight(model: any, what: string, maxParts: number)
-	local parts = partsIn(model)
-	assert(#parts > 0 and #parts <= maxParts, `{what} has {#parts} parts`)
-	for _, part in parts do
-		assert(part.Anchored, `{what}: {part.Name} is not anchored`)
-		assert(not part.CanCollide and not part.CanTouch and not part.CanQuery, `{what}: {part.Name} can be hit`)
-		assert(not part.CastShadow, `{what}: {part.Name} casts a shadow`)
-	end
-	assert(model.WorldPivot == CFrame.new(), `{what} isn't pivoted on its origin`)
-end
 
 describe("theme crowd", function()
 	it("dresses every kind of visitor in a small costume that faces forward", function()

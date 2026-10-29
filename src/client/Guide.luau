@@ -157,7 +157,7 @@ local noteUntil = 0
 local card = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -86),
-	Size = UDim2.fromOffset(430, 150),
+	Size = UDim2.fromOffset(430, 172),
 	BackgroundColor3 = PANEL,
 	BackgroundTransparency = 0.05,
 	Visible = false,
@@ -166,11 +166,13 @@ round(card)
 local cardStroke = outline(card, GOLD, 3)
 local cardTitle = text(card, { Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 32), Font = FONT })
 local cardBlurb = text(card, { Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 20) })
-local cardGain = text(card, { Position = UDim2.fromOffset(14, 64), Size = UDim2.new(1, -28, 0, 20), TextColor3 = BAR })
+local cardVisitors =
+	text(card, { Position = UDim2.fromOffset(14, 64), Size = UDim2.new(1, -28, 0, 20), TextColor3 = BEAM })
+local cardGain = text(card, { Position = UDim2.fromOffset(14, 86), Size = UDim2.new(1, -28, 0, 20), TextColor3 = BAR })
 local cardLocks =
-	text(card, { Position = UDim2.fromOffset(14, 86), Size = UDim2.new(1, -28, 0, 20), TextColor3 = WARN })
+	text(card, { Position = UDim2.fromOffset(14, 108), Size = UDim2.new(1, -28, 0, 20), TextColor3 = WARN })
 text(card, {
-	Position = UDim2.fromOffset(14, 110),
+	Position = UDim2.fromOffset(14, 132),
 	Size = UDim2.new(1, -28, 0, 22),
 	Font = FONT,
 	TextColor3 = GOLD,
@@ -471,11 +473,11 @@ local function showNote(title: string, body: string, color: Color3?)
 		:Play()
 end
 
--- A see-through model of what a path pad builds, on the building it
--- improves, while its pad is armed.
+-- A see-through model of what a path builds once it's fully upgraded, on
+-- the building it improves, while its first pad is armed.
 local function hologram(plot: BasePart, pad: BasePart, color: Color3): Model?
 	local building = pad:GetAttribute("Building")
-	local builder = Theme.Props[pad.Name]
+	local builder = Theme.Props[(string.gsub(pad.Name, "%d+$", "4"))] or Theme.Props[pad.Name]
 	local slot = building and Layout.Slots[building]
 	if not builder or not slot then
 		return nil
@@ -502,12 +504,42 @@ local function hologram(plot: BasePart, pad: BasePart, color: Color3): Model?
 			descendant.CanCollide = false
 			descendant.CanTouch = false
 			descendant.CanQuery = false
-		elseif descendant:IsA("Light") or descendant:IsA("ParticleEmitter") or descendant:IsA("SurfaceGui") then
+		elseif
+			descendant:IsA("Light")
+			or descendant:IsA("ParticleEmitter")
+			or descendant:IsA("Fire")
+			or descendant:IsA("SurfaceGui")
+		then
 			descendant:Destroy()
 		end
 	end
 	model.Name = "PathPreview"
 	model.Parent = Workspace
+	-- Says it's the finished look, over the top of it.
+	local box, extent = model:GetBoundingBox()
+	local anchor = make("Part", {
+		Name = "LabelAnchor",
+		Anchored = true,
+		CanCollide = false,
+		CanTouch = false,
+		CanQuery = false,
+		Transparency = 1,
+		Size = Vector3.new(0.2, 0.2, 0.2),
+		CFrame = CFrame.new(box.Position + Vector3.new(0, extent.Y / 2 + 1.5, 0)),
+	}, model)
+	local billboard = make("BillboardGui", {
+		Size = UDim2.fromOffset(200, 30),
+		AlwaysOnTop = true,
+		LightInfluence = 0,
+		Adornee = anchor,
+	}, anchor)
+	text(billboard, {
+		Size = UDim2.fromScale(1, 1),
+		Font = FONT,
+		TextColor3 = color,
+		TextStrokeTransparency = 0.3,
+		Text = Strings.PathFullLook,
+	})
 	return model
 end
 
@@ -551,6 +583,7 @@ local function updatePreview()
 	cardTitle.TextColor3 = color
 	cardStroke.Color = color
 	cardBlurb.Text = themed.Blurb
+	cardVisitors.Text = themed.Visitors or ""
 	cardGain.Text = if gain
 			and gain:IsA("TextLabel")
 			and gain.Text ~= ""

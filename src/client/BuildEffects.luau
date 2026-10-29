@@ -1,7 +1,9 @@
 -- Plays the build-up when something is bought: its parts rise out of the
 -- ground from the bottom up and fade in, with a burst of sparks and, on the
--- player's own plot, a sound. The server builds everything in place and marks
--- it with BuiltAt; this only animates it on this client.
+-- player's own plot, a sound. A path tier's model is the whole path so far,
+-- and the parts it keeps from the tier before (marked Kept) stay put, so
+-- only what's new rises. The server builds everything in place and marks it
+-- with BuiltAt; this only animates it on this client.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -54,7 +56,7 @@ local function play(built: Instance)
 		table.insert(parts, built)
 	end
 	for _, descendant in built:GetDescendants() do
-		if descendant:IsA("BasePart") and descendant.Transparency < 1 then
+		if descendant:IsA("BasePart") and descendant.Transparency < 1 and not descendant:GetAttribute("Kept") then
 			table.insert(parts, descendant)
 		end
 	end

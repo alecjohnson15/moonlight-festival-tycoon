@@ -29,7 +29,10 @@ describe("theme pack", function()
 		for building, byPath in paths do
 			for path in byPath do
 				local entry = Theme.Paths[building] and Theme.Paths[building][path]
-				assert(entry and entry.DisplayName and entry.Blurb, `theme has no entry for {building} path {path}`)
+				assert(
+					entry and entry.DisplayName and entry.Blurb and entry.Visitors,
+					`theme has no entry for {building} path {path}`
+				)
 				assert(string.match(entry.Color, "^#%x%x%x%x%x%x$"), `{building} path {path} colour must be #RRGGBB`)
 			end
 		end
