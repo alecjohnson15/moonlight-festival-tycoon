@@ -9,7 +9,8 @@
 -- anchor; its builder gets the yard's CFrame on the floor at its middle as a
 -- third argument. Every upgrade adds something you can see: the first ones
 -- each have their own model, and the rest put up flags and lights in their
--- path's colour (see the end of this file).
+-- path's colour (see the end of this file). Parts marked with Kit.paint
+-- take the owner's festival colours (Config/Festival).
 
 local Kit = require(script.Parent.Parent.Parent.Kit)
 local Pieces = require(script.Parent.Pieces)
@@ -62,7 +63,7 @@ function Props.starter_stall(origin: CFrame, size: Vector3): Model
 	-- The counter, with a fabric band along its front.
 	Kit.solid(Kit.block(model, at(0, 1.5, 2.6), V(7.2, 3, 1.4), P.Wood, M.WoodPlanks))
 	Kit.block(model, at(0, 3.1, 2.65), V(7.8, 0.25, 1.9), P.DarkWood, M.Wood)
-	Kit.block(model, at(0, 2.2, 3.33), V(7.3, 0.5, 0.06), stripes[1], M.Fabric)
+	Kit.paint(Kit.block(model, at(0, 2.2, 3.33), V(7.3, 0.5, 0.06), stripes[1], M.Fabric), 1)
 
 	-- The awning slopes down from the back wall to the front, in stripes.
 	local run, drop = 7.5, 1
@@ -72,9 +73,13 @@ function Props.starter_stall(origin: CFrame, size: Vector3): Model
 	local width = 9 / count
 	for i = 1, count do
 		local x = -4.5 + (i - 0.5) * width
-		local color = stripes[(i - 1) % 2 + 1]
-		Kit.block(model, at(x, 6.5, 0.05) * CFrame.Angles(slope, 0, 0), V(width, 0.25, length), color, M.Fabric)
-		Kit.ball(model, at(x, 5.85, 3.65), V(width * 0.95, 0.9, 0.3), color, M.Fabric)
+		local stripe = (i - 1) % 2 + 1
+		local color = stripes[stripe]
+		Kit.paint(
+			Kit.block(model, at(x, 6.5, 0.05) * CFrame.Angles(slope, 0, 0), V(width, 0.25, length), color, M.Fabric),
+			stripe
+		)
+		Kit.paint(Kit.ball(model, at(x, 5.85, 3.65), V(width * 0.95, 0.9, 0.3), color, M.Fabric), stripe)
 	end
 
 	-- Witch apples on sticks, and a skull keeping an eye on them.
@@ -141,7 +146,11 @@ function Props.stall_counter(origin: CFrame): Model
 	for level = 0, 2 do
 		Kit.post(model, at(5.1, 2.55 + level * 0.32, 1.5), 0.3, 1.2, pie)
 	end
-	Pieces.bunting(model, point(at, -4.1, 5.7, 3.5), point(at, 4.1, 5.7, 3.5), 0.5, P.Bunting)
+	-- Bunting in the festival's colours.
+	local flags = Pieces.bunting(model, point(at, -4.1, 5.7, 3.5), point(at, 4.1, 5.7, 3.5), 0.5, P.AwningStripes)
+	for index, flag in flags do
+		Kit.paint(flag, (index - 1) % 2 + 1)
+	end
 	return model
 end
 
@@ -842,10 +851,9 @@ local function trainCar(parent: Instance, cframe: CFrame, index: number)
 	Kit.block(car, cframe * CFrame.new(0, 0.35, 0), V(1.9, 0.4, 2.6), P.Metal, M.Metal)
 	Kit.block(car, cframe * CFrame.new(0, 1.05, 0), V(1.8, 1, 2.3), P.Roof)
 	Kit.block(car, cframe * CFrame.new(0, 1.9, 1), V(1.8, 0.9, 0.3), P.Roof)
-	for _, x in { -0.95, 0.95 } do
-		for _, z in { -0.8, 0.8 } do
-			Kit.log(car, cframe * CFrame.new(x, 0.3, z), 0.25, 0.6, P.Bat, M.Metal)
-		end
+	-- Two axles, a wheel showing at each end.
+	for _, z in { -0.8, 0.8 } do
+		Kit.log(car, cframe * CFrame.new(0, 0.3, z), 2.15, 0.6, P.Bat, M.Metal)
 	end
 	if index == 1 then
 		local skull = cframe * CFrame.new(0, 1.3, -1.3)
@@ -867,7 +875,7 @@ function Props.attraction_3(origin: CFrame, size: Vector3): Model
 
 	-- The track is an oval around this centre; the train runs round it.
 	local trackCentre = at(0, 0, -1)
-	local radiusX, radiusZ, segments = 7.8, 5, 24
+	local radiusX, radiusZ, segments = 7.8, 5, 16
 	local function onTrack(angle: number, lift: number): Vector3
 		return (trackCentre * CFrame.new(math.cos(angle) * radiusX, lift, math.sin(angle) * radiusZ)).Position
 	end

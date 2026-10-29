@@ -62,6 +62,32 @@ return {
 		ActivityPerfect = "Perfect round!",
 		ActivityBest = "Best: %d",
 
+		-- The player's own festival: its name, colours and decorations,
+		-- picked at the board by Ghost Catcher's booth, and the trophy shelf.
+		FestivalName = "The %s %s %s",
+		FestivalButton = "Festival",
+		FestivalTitle = "Your Festival",
+		FestivalBoard = "Festival Board",
+		FestivalPrompt = "Decorate",
+		FestivalTabName = "Name",
+		FestivalTabColours = "Colours",
+		FestivalTabDecor = "Decorations",
+		FestivalShuffle = "Shuffle",
+		FestivalChosen = "Chosen",
+		FestivalPick = "Pick",
+		FestivalLocked = "Locked",
+		FestivalUnlockOwns = "Build the %s",
+		FestivalUnlockPath = "Finish a path of the %s",
+		FestivalUnlockActivity = "Catch %d wisps in one Ghost Catcher round",
+		FestivalUnlockParades = "Join %d Moonlight Parades",
+		FestivalUnlockParade = "Join a Moonlight Parade",
+		FestivalUnlocked = "New for your festival: %s!",
+		FestivalUnlockedHint = "Open the Festival board to use it",
+		FestivalCount = "%d of %d unlocked",
+		TrophyBest = "Best %d",
+		TrophyKOs = "%d KOs",
+		TrophyParades = "%d parades",
+
 		-- Buy pads on a path. A building's first pads for each path say the
 		-- choice is for good; later pads show the path and the tier.
 		PathChoice = "Pick one: locks the other paths",
@@ -236,6 +262,81 @@ return {
 			draw = { DisplayName = "Ghost Parade", Color = "#EEF3FF", Blurb = "Pulls in visitors for everything" },
 		},
 	},
+
+	-- A festival's name is one word from each list, in Strings.FestivalName
+	-- (see Config/Festival). Players pick from these, so there's no free text
+	-- to filter.
+	FestivalNames = {
+		{
+			"Howling",
+			"Moonlit",
+			"Spooky",
+			"Glowing",
+			"Creaky",
+			"Misty",
+			"Wobbly",
+			"Grinning",
+			"Midnight",
+			"Whispering",
+			"Starry",
+			"Crooked",
+		},
+		{
+			"Lantern",
+			"Pumpkin",
+			"Ghost",
+			"Bat",
+			"Cauldron",
+			"Owl",
+			"Toffee",
+			"Broomstick",
+			"Skeleton",
+			"Candle",
+			"Cobweb",
+			"Raven",
+		},
+		{
+			"Fair",
+			"Festival",
+			"Carnival",
+			"Jamboree",
+			"Parade",
+			"Bazaar",
+			"Circus",
+			"Gala",
+			"Funfair",
+			"Market",
+			"Hullabaloo",
+			"Spooktacular",
+		},
+	},
+
+	-- The festival palettes in Config/Festival: the two colours the stall's
+	-- awning, its add-ons and the Ghost Catcher booth are striped in.
+	Palettes = {
+		classic = { DisplayName = "Witching Purple", Colors = { "#6D35A0", "#F4E7CF" } },
+		harvest = { DisplayName = "Harvest Orange", Colors = { "#E8741E", "#F2D7A6" } },
+		toxic = { DisplayName = "Toxic Slime", Colors = { "#3FD14A", "#1E1A2B" } },
+		blood_moon = { DisplayName = "Blood Moon", Colors = { "#B3202A", "#F4E7CF" } },
+		midnight = { DisplayName = "Midnight Blue", Colors = { "#22306B", "#CFE0FF" } },
+		phantom = { DisplayName = "Phantom Teal", Colors = { "#2FE0C0", "#4B2E63" } },
+	},
+
+	-- The decorations in Config/Festival, and the spots they go in
+	-- (Layout.Decor, in order). Their models are in the pack's Festival module.
+	Decor = {
+		hay_corner = { DisplayName = "Harvest Corner" },
+		graveyard_corner = { DisplayName = "Tiny Graveyard" },
+		pumpkin_pile = { DisplayName = "Pumpkin Pile" },
+		witch_cauldron = { DisplayName = "Bubbling Cauldron" },
+		lantern_arch = { DisplayName = "Lantern Arch" },
+		moon_fountain = { DisplayName = "Moon Fountain" },
+		bat_topiary = { DisplayName = "Bat Topiary" },
+		ghost_statue = { DisplayName = "Ghost Statue" },
+		parade_float = { DisplayName = "Parade Float" },
+		skeleton_band = { DisplayName = "Skeleton Drummer" },
+	},
+	DecorSpots = { "Front left", "Front right", "Back left", "Back right", "Left side", "Right side" },
 
 	-- Colours the built models and scenery are painted with.
 	Palette = {

@@ -9,6 +9,7 @@ local Map = require("./Map")
 local Balance = require("../src/shared/Config/Balance")
 local Layout = require("../src/shared/Config/Layout")
 local Progression = require("../src/shared/Progression")
+local Festival = require("../src/shared/Festival")
 local Theme = require("../src/shared/Themes/MoonlightFestival")
 
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
@@ -19,6 +20,8 @@ local Props = Loader.require("src/shared/Themes/MoonlightFestival/Props")
 local Scenery = Loader.require("src/shared/Themes/MoonlightFestival/Scenery")
 local Crowd = Loader.require("src/shared/Themes/MoonlightFestival/Crowd")
 local ActivityLook = Loader.require("src/shared/Themes/MoonlightFestival/Activity")
+local FestivalLook = Loader.require("src/shared/Themes/MoonlightFestival/Festival")
+local FestivalConfig = require("../src/shared/Config/Festival")
 local Kit = Loader.require("src/shared/Kit")
 
 local TOLERANCE = 0.06
@@ -238,6 +241,76 @@ describe("theme props", function()
 		end
 	end)
 
+	it("builds every festival decoration small enough to fit its spot", function()
+		-- Every plot has a decoration in each spot, so the budget counts the
+		-- heaviest in all of them.
+		local size = Layout.DecorSize
+		local heaviest, brightest = 0, 0
+		for _, choice in FestivalConfig.Decor do
+			assert(FestivalLook.Decor[choice.Id], `the theme has no model for decoration {choice.Id}`)
+			for spot, place in Layout.Decor do
+				local yaw = math.atan2(-place.X, -place.Z)
+				local base = PLOT_CFRAME * CFrame.new(place.X, 0.5, place.Z) * CFrame.Angles(0, yaw, 0)
+				local model = FestivalLook.decor(choice.Id, base, spot)
+				expect(model.Name).toBe(choice.Id)
+				assertFinite(model, choice.Id)
+				for _, part in partsIn(model) do
+					assertPlaced(
+						part,
+						base,
+						outside(part, base, Vector3.new(size, Layout.DecorHeight - 4, size)),
+						choice.Id
+					)
+				end
+				local parts, lights = #partsIn(model), lightCount(model)
+				assert(parts <= FestivalLook.MaxDecorParts, `{choice.Id} has {parts} parts`)
+				assert(lights <= FestivalLook.MaxDecorLights, `{choice.Id} has {lights} lights`)
+				heaviest, brightest = math.max(heaviest, parts), math.max(brightest, lights)
+			end
+		end
+		for id in FestivalLook.Decor do
+			assert(Festival.find(FestivalConfig.Decor, id), `the theme has a model for unknown decoration {id}`)
+		end
+		plotParts += heaviest * #Layout.Decor
+		plotLights += brightest * #Layout.Decor
+	end)
+
+	it("builds the festival board, the trophy shelf and the name sign in their places", function()
+		local board = FestivalLook.board(slotOrigin(Layout.Board), slotSize(Layout.Board))
+		assert(board.PrimaryPart, "the board has no Anchor for its prompt")
+		assertInside(board, slotOrigin(Layout.Board), slotSize(Layout.Board), "the festival board")
+
+		-- The fullest the shelf gets: a cup for every building's path and a
+		-- plaque for every count.
+		local cups = {}
+		for _ in Layout.Slots do
+			table.insert(cups, roblox.Color3.new(1, 0.8, 0.2))
+		end
+		local shelf = FestivalLook.shelf(slotOrigin(Layout.Shelf), slotSize(Layout.Shelf), {
+			Paths = cups,
+			Best = 12,
+			KOs = 40,
+			Parades = 9,
+		})
+		assertInside(shelf, slotOrigin(Layout.Shelf), slotSize(Layout.Shelf), "the trophy shelf")
+
+		local floor = PLOT_CFRAME * CFrame.new(0, 0.5, 0)
+		local holder = Instance.new("Folder")
+		local sign = FestivalLook.nameSign(holder, floor, "The Whispering Broomstick Spooktacular")
+		local lo, hi = boxIn(sign, floor)
+		local gate = Layout.Gate
+		assert(lo[2] > gate.Size[2], "the name sign hangs in the gateway")
+		assert(
+			math.abs(lo[1]) < gate.Size[1] and math.abs(hi[1]) < gate.Size[1],
+			"the name sign is wider than the arch"
+		)
+
+		for _, model in { board, shelf, holder } do
+			plotParts += #partsIn(model)
+			plotLights += lightCount(model)
+		end
+	end)
+
 	it("sets up every moving part for the client", function()
 		local slot = Layout.Slots.attraction_3
 		local model = Props.attraction_3(slotOrigin(slot), slotSize(slot))
@@ -300,6 +373,24 @@ describe("theme scenery", function()
 		local booth = Layout.Activity
 		local bw, bh, bd = booth.Size[1] / 2, booth.Size[2], booth.Size[3] / 2
 		table.insert(keepOut, { "activity booth", { booth.X - bw, 0, booth.Z - bd, booth.X + bw, bh, booth.Z + bd } })
+		for name, place in { ["festival board"] = Layout.Board, ["trophy shelf"] = Layout.Shelf } do
+			local w, h, d = place.Size[1] / 2, place.Size[2], place.Size[3] / 2
+			table.insert(keepOut, { name, { place.X - w, 0, place.Z - d, place.X + w, h, place.Z + d } })
+		end
+		local decorHalf = Layout.DecorSize / 2
+		for spot, place in Layout.Decor do
+			table.insert(keepOut, {
+				`decoration spot {spot}`,
+				{
+					place.X - decorHalf,
+					0,
+					place.Z - decorHalf,
+					place.X + decorHalf,
+					Layout.DecorHeight,
+					place.Z + decorHalf,
+				},
+			})
+		end
 		local start = booth.Pad
 		-- It stands on the walkway, so only what's over the walkway counts.
 		table.insert(

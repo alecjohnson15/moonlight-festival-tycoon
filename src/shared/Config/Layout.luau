@@ -107,6 +107,25 @@ return {
 	-- is { width, height, depth }, as for Slots.
 	Activity = { X = -1, Z = -40, Size = { 12, 8, 6 }, Pad = { X = -1, Z = -33 } },
 
+	-- The owner's own festival (Config/Festival). Decor holds the spots
+	-- round the edge of the plot for decorations, each DecorSize studs
+	-- square and up to DecorHeight tall, facing into the plot; Board is
+	-- where the owner picks the festival's name, colours and decorations,
+	-- and Shelf is where their trophies go, either side of Ghost Catcher's
+	-- booth and facing the gate. Sizes are { width, height, depth }.
+	Decor = {
+		{ X = -40, Z = 40 },
+		{ X = 40, Z = 40 },
+		{ X = -40, Z = -41.5 },
+		{ X = 40, Z = -41.5 },
+		{ X = -40, Z = 4 },
+		{ X = 40, Z = -12 },
+	},
+	DecorSize = 7,
+	DecorHeight = 10,
+	Board = { X = -11, Z = -41, Size = { 4, 6, 2 } },
+	Shelf = { X = 10, Z = -41, Size = { 6, 6, 2.5 } },
+
 	-- Where each station and attraction is built. Size is { width, height,
 	-- depth }: the theme's model fits inside it, and it is the size of the
 	-- greybox block drawn when the theme has no model for that upgrade. A

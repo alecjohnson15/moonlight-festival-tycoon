@@ -17,7 +17,7 @@ local Activity = {}
 -- The wisps' pale blue-green glow, which the booth is lit in too.
 Activity.Color = W.Teal:Lerp(P.Ghost, 0.45)
 
--- A booth of striped canvas, facing +Z: a counter of jars holding caught
+-- A booth of canvas striped in the owner's festival colours, facing +Z: a counter of jars holding caught
 -- wisps, a big net, a ghost bobbing over one corner and the game's name over
 -- the top. origin is the middle of its footprint on the floor, and it stays
 -- inside size. A blank board on the back wall, named Status, is for the
@@ -35,7 +35,11 @@ function Activity.booth(origin: CFrame, size: Vector3): Model
 	Kit.block(model, at(0, 0.15, 0), V(11, 0.3, 5.6), P.DarkWood, M.WoodPlanks)
 	for i = 1, 3 do
 		local x = -5 + (i - 0.5) * (10 / 3)
-		Kit.solid(Kit.block(model, at(x, 3.2, -2.55), V(10 / 3, 6.1, 0.3), stripes[(i - 1) % 2 + 1], M.Fabric))
+		local stripe = (i - 1) % 2 + 1
+		Kit.paint(
+			Kit.solid(Kit.block(model, at(x, 3.2, -2.55), V(10 / 3, 6.1, 0.3), stripes[stripe], M.Fabric)),
+			stripe
+		)
 	end
 	for _, x in { -5.2, 5.2 } do
 		for _, z in { -2.5, 2.4 } do
@@ -49,8 +53,17 @@ function Activity.booth(origin: CFrame, size: Vector3): Model
 	local length = math.sqrt(run * run + drop * drop)
 	for i = 1, 6 do
 		local x = -5.5 + (i - 0.5) * (11 / 6)
-		local color = stripes[(i - 1) % 2 + 1]
-		Kit.block(model, at(x, 7, -0.1) * CFrame.Angles(slope, 0, 0), V(11 / 6, 0.25, length), color, M.Fabric)
+		local stripe = (i - 1) % 2 + 1
+		Kit.paint(
+			Kit.block(
+				model,
+				at(x, 7, -0.1) * CFrame.Angles(slope, 0, 0),
+				V(11 / 6, 0.25, length),
+				stripes[stripe],
+				M.Fabric
+			),
+			stripe
+		)
 	end
 
 	-- The counter, with jars of caught wisps on top.

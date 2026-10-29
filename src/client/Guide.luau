@@ -7,8 +7,8 @@
 -- a haunt.
 --
 -- It also shows the notes the server sends through the Notice remote: a pad
--- that needs more coins, and how much more a second each purchase earns,
--- rising off what it built. And it shows the preview of a path pad stepped on
+-- that needs more coins, how much more a second each purchase earns, rising
+-- off what it built, and something new unlocked for the player's festival. And it shows the preview of a path pad stepped on
 -- once: what the path does, what it adds per second, what it locks, and a
 -- see-through model of what it builds. Everything here is drawn on this
 -- client only, from attributes the server publishes; the server decides
@@ -35,6 +35,7 @@ local TEXT = Color3.fromRGB(255, 244, 214)
 local WARN = Color3.fromRGB(255, 170, 120)
 local BAR = Color3.fromRGB(110, 220, 120)
 local BEAM = Color3.fromRGB(255, 222, 130)
+local CHOSEN = Color3.fromRGB(120, 230, 150)
 local FONT = Enum.Font.FredokaOne
 local BODY = Enum.Font.GothamBold
 local Strings = Theme.Strings
@@ -629,6 +630,12 @@ function Guide.mount()
 			Sounds.play("Deny")
 		elseif message.Kind == "Built" and type(message.Station) == "string" and (message.Gain or 0) > 0 then
 			task.spawn(showGain, message.Station, message.Gain)
+		elseif message.Kind == "Festival" and type(message.Names) == "table" then
+			showNote(
+				Strings.FestivalUnlocked:format(table.concat(message.Names, ", ")),
+				Strings.FestivalUnlockedHint,
+				CHOSEN
+			)
 		end
 	end)
 	RunService.RenderStepped:Connect(onRenderStep)

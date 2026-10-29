@@ -1,7 +1,7 @@
 -- Dresses the world around the builds. Scenery.plot dresses one plot: a
 -- fence with lantern posts in the plot's own colour, string lights, an arch
--- over the gate, a cobbled walkway, mist and clutter in the corners, all clear
--- of the slots and buttons in Config/Layout. Scenery.world does the plaza and
+-- over the gate, a cobbled walkway, mist and a little clutter, all clear of
+-- the slots, buttons and decoration spots in Config/Layout. Scenery.world does the plaza and
 -- the haunted land around the plots: lamps, a bonfire, a graveyard with a
 -- crypt, a pond, a windmill, dead woods and circling bats. It returns the
 -- terrain to fill as a list, for the server to paint.
@@ -57,7 +57,6 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	end
 
 	local model = Kit.model(parent, plot.Name)
-	local random = Kit.random(index * 101)
 	local wash = P.PlotWashes[(index - 1) % #P.PlotWashes + 1]
 	local bulbs = { wash, P.Candle }
 	local edge = Layout.PlotSize / 2 - 1
@@ -76,12 +75,13 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		M.Cobblestone
 	)
 
-	-- The fence, open at the gate.
-	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3)
-	Pieces.fence(model, point(edge, 0, edge), point(edge, 0, -edge), 3)
-	Pieces.fence(model, point(-edge, 0, -edge), point(edge, 0, -edge), 3)
-	Pieces.fence(model, point(-edge, 0, edge), point(-opening, 0, edge), 3)
-	Pieces.fence(model, point(opening, 0, edge), point(edge, 0, edge), 3)
+	-- The fence, open at the gate. Posts are spaced out a little, as every
+	-- plot has one.
+	Pieces.fence(model, point(-edge, 0, edge), point(-edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(edge, 0, edge), point(edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(-edge, 0, -edge), point(edge, 0, -edge), 3, 6)
+	Pieces.fence(model, point(-edge, 0, edge), point(-opening, 0, edge), 3, 6)
+	Pieces.fence(model, point(opening, 0, edge), point(edge, 0, edge), 3, 6)
 
 	-- Lantern posts around the edge, lit in this plot's colour, with string
 	-- lights between them.
@@ -96,14 +96,16 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 		{ inset, 0 },
 		{ inset, inset },
 	}
+	-- Every other one is lit, as every plot has them.
 	local tops = {}
-	for _, spot in ring do
+	for order, spot in ring do
 		local x, z = spot[1], spot[2]
-		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, 18))
+		local range = if order % 2 == 1 then 22 else nil
+		table.insert(tops, Pieces.lanternPost(model, at(x, 0, z, inward(x, z)), 7.5, wash, range))
 	end
 	-- Spaced out a little, as every plot has them.
 	for i = 1, #tops - 1 do
-		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 3)
+		Pieces.stringLights(model, tops[i], tops[i + 1], 2, bulbs, 4)
 	end
 
 	-- The arch over the gate: stone pillars topped with jack-o'-lanterns, a
@@ -130,34 +132,15 @@ function Scenery.plot(plot: BasePart, index: number, parent: Instance): Model
 	for side = -1, 1, 2 do
 		Kit.glow(model, skull * CFrame.new(side * 0.28, 0.08, 0.56), V(0.3, 0.3, 0.1), W.Red, true)
 	end
-	Pieces.stringLights(model, tops[#tops], arc[#arc] + Vector3.new(0, 0.4, 0), 1.5, bulbs)
-	Pieces.stringLights(model, arc[1] + Vector3.new(0, 0.4, 0), tops[1], 1.5, bulbs)
+	Pieces.stringLights(model, tops[#tops], arc[#arc] + Vector3.new(0, 0.4, 0), 1.5, bulbs, 3.5)
+	Pieces.stringLights(model, arc[1] + Vector3.new(0, 0.4, 0), tops[1], 1.5, bulbs, 3.5)
 
-	-- Clutter in the corners and along the sides, clear of everything built.
-	local function corner(x: number, z: number, scary: boolean)
-		local yaw = inward(x, z)
-		if scary then
-			Pieces.gravestone(model, at(x, 0, z, yaw), random.number(1.2, 1.8))
-			Pieces.gravestone(model, at(x + 2.5, 0, z + 1, yaw + 0.3), random.number(1, 1.4))
-			Pieces.skeleton(model, at(x - 2.2, 0, z - 1.5, yaw), 1.8)
-		else
-			Pieces.hayBale(model, at(x, 0, z, yaw))
-			Pieces.jackOLantern(model, at(x + 1, 1.5, z, yaw), 1.3, false)
-			Pieces.corn(model, at(x - 2.5, 0, z - 1.5), 4, random)
-		end
-		Pieces.pumpkin(model, at(x + 1.5, 0, z - 2.5, random.number(0, 3)), random.number(1, 1.6))
-	end
-	corner(-41, 41, false)
-	corner(41, 41, true)
-	corner(-41, -41, true)
-	corner(41, -41, false)
+	-- Clutter along the sides, clear of everything built. The corners and
+	-- the middle of each side are the owner's decoration spots
+	-- (Layout.Decor), which the server dresses.
 	Pieces.barrel(model, at(-43, 0, 14), 2)
 	Pieces.barrel(model, at(-42, 0, 16.5), 1.7)
-	Pieces.corn(model, at(43, 0, 12), 4.5, random)
 	Pieces.gravestone(model, at(42, 0, 8, -math.pi / 2), 1.4)
-	for _, x in { -10, 8 } do
-		Pieces.pumpkin(model, at(x, 0, -43, random.number(0, 3)), random.number(1, 1.5))
-	end
 	Pieces.cobweb(
 		model,
 		point(-pillarX + 1, pillarHeight, gate.Z + 1.1),

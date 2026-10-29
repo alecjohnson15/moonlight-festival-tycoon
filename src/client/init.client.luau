@@ -1,11 +1,12 @@
 -- Client entry point. The client draws the HUD, the guide to what's next,
 -- the night's sounds, everything that moves on the plots, pets, the wardrobe,
--- the arena's fights and Ghost Catcher's wisps; it never decides coins,
--- ownership, purchases, hits or catches.
+-- the festival board, the arena's fights and Ghost Catcher's wisps; it never
+-- decides coins, ownership, purchases, hits or catches.
 
 local Activity = require(script.Activity)
 local Arena = require(script.Arena)
 local BuildEffects = require(script.BuildEffects)
+local FestivalBoard = require(script.FestivalBoard)
 local Guide = require(script.Guide)
 local Hud = require(script.Hud)
 local Motion = require(script.Motion)
@@ -24,5 +25,6 @@ BuildEffects.start()
 Pets.start()
 Swing.start()
 Wardrobe.mount()
+FestivalBoard.mount()
 Arena.start()
 Activity.start()

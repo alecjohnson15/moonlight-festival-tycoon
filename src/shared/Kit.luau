@@ -175,6 +175,14 @@ function Kit.solid<T>(part: T): T
 	return part
 end
 
+-- Marks a part to be painted in one of its plot owner's festival colours
+-- (Config/Festival palettes): 1 or 2, the palette's first or second colour.
+-- The server paints it; until then it keeps the colour it was made with.
+function Kit.paint<T>(part: T, index: number): T
+	(part :: any):SetAttribute("Paint", index)
+	return part
+end
+
 -- A light on a part. Flickering lights are tagged for the client to animate.
 function Kit.light(part: BasePart, color: Color3, range: number, brightness: number, flicker: boolean?): PointLight
 	local light = Instance.new("PointLight")
