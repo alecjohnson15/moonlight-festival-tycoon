@@ -640,6 +640,17 @@ describe("theme scenery", function()
 		end
 		expect(seats).toBe(8)
 
+		-- The game's title is on the wheel: its name, and the tagline under it.
+		local name, tagline
+		for _, label in wheel:GetDescendants() do
+			if label:IsA("TextLabel") and label.Text == Theme.Name then
+				name = label
+			elseif label:IsA("TextLabel") and label.Text == Theme.Tagline then
+				tagline = label
+			end
+		end
+		assert(name and tagline and name.Parent == tagline.Parent, "the wheel has no title sign")
+
 		-- The wheel stands in the gap between the middle two plots.
 		local half = Layout.PlotSize / 2
 		local left, right = Layout.plotX(Layout.PlotCount / 2) + half, Layout.plotX(Layout.PlotCount / 2 + 1) - half

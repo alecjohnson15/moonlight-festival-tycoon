@@ -85,6 +85,10 @@ tester round.
   reaper statue turns its head to follow you and whispers once. It should be
   eerie, not frightening (Mild): nothing chases, jumps out or flashes. Check
   you can't get stuck on anything along the trail.
+- **Title signs:** the sign on the Wheel's front legs, and the one over the
+  gateway to the bonfire on the side you see walking back, read "Halloween
+  Tycoon" with "Your Dream Festival" under it. Both lines of the Wheel's
+  sign should be readable from the spawn, on a phone too.
 
 ## Performance and devices
 

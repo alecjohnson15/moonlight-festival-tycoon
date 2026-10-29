@@ -36,7 +36,7 @@ Nothing third-party ships inside the game yet. These tools are used only to buil
 | Part and terrain materials (grass, cobblestone, slate, wood planks and so on) | Roblox | Built into the Roblox engine | Roblox platform terms | Within Roblox | None needed | Engine-provided |
 | UI fonts (Gotham family, Fredoka One) | Roblox (Fredoka One by Milena Brandão) | Built into the Roblox engine | Roblox platform terms; Fredoka One is also under the SIL Open Font License | Within Roblox | None needed | Engine-provided |
 
-No uploaded models, images, audio or music are in the game yet; the team uploads the audio files above when ready. The festival names in `src/shared/Themes/MoonlightFestival/init.luau` (stations, goods, attractions and cosmetics) are original placeholders and need the same review before launch.
+No uploaded models, images, audio or music are in the game yet; the team uploads the audio files above when ready. The festival names in `src/shared/Themes/MoonlightFestival/init.luau` (stations, goods, attractions and cosmetics) are original placeholders and need the same review before launch. So does the game's title, Halloween Tycoon: Your Dream Festival: its words are common ones, so check Roblox for experiences with the same or a close name before launch.
 
 ## References
 

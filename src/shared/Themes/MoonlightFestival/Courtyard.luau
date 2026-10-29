@@ -123,9 +123,9 @@ local function wheel(parent: Instance, hub: CFrame, floorY: number): Model
 		Kit.block(model, braceAt, V(LEG_SPREAD * 2 * (1 - along) - 1, 0.6, 0.6), P.DarkStone, M.Metal)
 	end
 
-	-- The festival's name across the front legs, facing the plaza.
+	-- The game's title across the front legs, facing the plaza.
 	local signAt = hub * CFrame.new(0, floorY + 6.5 - hub.Position.Y, RING_GAP + 3.8)
-	Pieces.sign(model, signAt, Vector2.new(15, 2.4), Theme.Name, P.Moonlight)
+	Pieces.titleSign(model, signAt, Vector2.new(15, 2.4), P.Moonlight)
 
 	model:SetAttribute("Centre", hub)
 	model:SetAttribute("Radius", radius)
