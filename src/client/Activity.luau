@@ -1,6 +1,7 @@
 -- Ghost Catcher on this client (Config/Activity): the wisps of a round the
--- server started for this player, a timer and a count while it runs, a burst
--- and "+N" for every catch, and how the round went at the end. It also writes
+-- server started for this player, a timer and a count in the corner of the
+-- screen while it runs, a burst and "+N" for every catch, and how the round
+-- went at the end. It also writes
 -- on every booth's Status board whether its next round is ready. The server
 -- places the wisps and decides every catch; this only draws them.
 
@@ -16,11 +17,11 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared.Config.Activity)
 local Theme = require(Shared.Config.Theme)
 local Format = require(Shared.Format)
+local Corner = require(script.Parent.Corner)
 local Sounds = require(script.Parent.Sounds)
 
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Activity") :: RemoteEvent
 
-local PANEL = Color3.fromRGB(26, 18, 40)
 local TEXT = Color3.fromRGB(255, 244, 214)
 local GAIN = Color3.fromRGB(150, 255, 140)
 local GOLD = Color3.fromRGB(255, 205, 90)
@@ -62,58 +63,33 @@ local function label(parent: Instance, props: { [string]: any }): TextLabel
 	return text
 end
 
-local function card(size: Vector2, y: number): Frame
-	local frame = make("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, y),
-		Size = UDim2.fromOffset(size.X, size.Y),
-		BackgroundColor3 = PANEL,
-		BackgroundTransparency = 0.08,
-		Visible = false,
-	}, nil)
-	make("UICorner", { CornerRadius = UDim.new(0, 12) }, frame)
-	make("UIStroke", { Color = GLOW, Thickness = 2.5, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, frame)
-	return frame
-end
-
-local gui = make("ScreenGui", { Name = "Activity", ResetOnSpawn = false })
-
--- The panel while a round runs.
-local panel = card(Vector2.new(300, 64), 140)
-panel.Parent = gui
-label(panel, {
-	Position = UDim2.fromOffset(14, 6),
-	Size = UDim2.new(1, -90, 0, 28),
-	TextXAlignment = Enum.TextXAlignment.Left,
-	TextColor3 = GLOW,
-	Text = Strings.ActivityPlaying,
-})
-local countLabel = label(panel, {
-	Position = UDim2.fromOffset(14, 36),
-	Size = UDim2.new(1, -90, 0, 22),
-	TextXAlignment = Enum.TextXAlignment.Left,
+-- The card in the corner (client/Corner) while a round runs: how many are
+-- caught so far, and the seconds left.
+local panel = Corner.card(Corner.Order.Activity, GLOW)
+Corner.title(panel, { TextColor3 = GLOW, Text = Strings.ActivityPlaying })
+local row = Corner.row(panel, 18)
+local countLabel = label(row, {
+	Size = UDim2.fromScale(0.7, 1),
 	Font = Enum.Font.GothamBold,
+	TextScaled = false,
+	TextSize = 14,
+	TextXAlignment = Enum.TextXAlignment.Left,
 })
-local timerLabel = label(panel, {
-	AnchorPoint = Vector2.new(1, 0.5),
-	Position = UDim2.new(1, -14, 0.5, 0),
-	Size = UDim2.fromOffset(64, 44),
+local timerLabel = label(row, {
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.fromScale(1, 0),
+	Size = UDim2.fromScale(0.3, 1),
+	TextScaled = false,
+	TextSize = 18,
+	TextXAlignment = Enum.TextXAlignment.Right,
 	TextColor3 = GOLD,
 })
 
--- How the round went.
-local result = card(Vector2.new(340, 128), 140)
-result.Parent = gui
-local resultTitle = label(result, { Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -28, 0, 36) })
-local resultEarned =
-	label(result, { Position = UDim2.fromOffset(14, 48), Size = UDim2.new(1, -28, 0, 30), TextColor3 = GAIN })
-local resultBest = label(result, {
-	Position = UDim2.fromOffset(14, 84),
-	Size = UDim2.new(1, -28, 0, 30),
-	Font = Enum.Font.GothamBold,
-	TextColor3 = GOLD,
-})
-local resultScale = make("UIScale", {}, result)
+-- How the round went, in the same place.
+local result = Corner.card(Corner.Order.Activity, GLOW)
+local resultTitle = Corner.title(result)
+local resultEarned = Corner.line(result, { TextColor3 = GAIN, TextSize = 15 })
+local resultBest = Corner.line(result, { TextColor3 = GOLD })
 
 local function myPlot(): BasePart?
 	local plots = Workspace:FindFirstChild("Plots")
@@ -203,7 +179,7 @@ local function onStart(message)
 	round = { StartedAt = message.StartedAt, Wisps = shown, Count = 0, Total = #shown }
 	resultUntil = 0
 	result.Visible = false
-	panel.Visible = true
+	Corner.pop(panel)
 	showCount()
 	Sounds.play("RoundStart")
 end
@@ -232,11 +208,7 @@ local function onEnd(message)
 	resultTitle.TextColor3 = if message.Perfect then GOLD else TEXT
 	resultEarned.Text = Strings.ActivityEarned:format(Format.whole(message.Earned or 0))
 	resultBest.Text = Strings.ActivityBest:format(message.Best or 0)
-	result.Visible = true
-	resultScale.Scale = 0.6
-	TweenService:Create(resultScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-		Scale = 1,
-	}):Play()
+	Corner.pop(result)
 	resultUntil = os.clock() + RESULT_SECONDS
 	Sounds.play("RoundEnd")
 end
@@ -307,7 +279,6 @@ local function onRenderStep(dt: number)
 end
 
 function Activity.start()
-	gui.Parent = player:WaitForChild("PlayerGui")
 	Remote.OnClientEvent:Connect(function(message)
 		if type(message) ~= "table" then
 			return

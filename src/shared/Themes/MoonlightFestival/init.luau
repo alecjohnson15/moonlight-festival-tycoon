@@ -35,8 +35,8 @@ return {
 		RideNext = "Next ride in %s",
 		Payout = "+%s",
 
-		-- The guide: the goal line at the bottom of the screen, the beam that
-		-- points the way, and the notes that pop up over it.
+		-- The guide: the goal card in the corner of the screen, the beam that
+		-- points the way, and the notes that pop up beside it.
 		GoalClaim = "Walk into a glowing gate to claim your own haunt",
 		GoalBuy = "Step on the glowing pad to build: %s",
 		GoalSave = "Next: %s",

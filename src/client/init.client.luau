@@ -1,4 +1,5 @@
--- Client entry point. The client draws the HUD, the guide to what's next,
+-- Client entry point. The client draws the HUD, the guide to what's next
+-- (in a corner, with the other notes and events), the bar of things to hold,
 -- the night's sounds (with the ambience of each place), everything that
 -- moves on the plots and in the woods, pets, the wardrobe, the festival
 -- board, the arena's fights, Ghost Catcher's wisps and the Moonlight
@@ -7,8 +8,10 @@
 local Activity = require(script.Activity)
 local Arena = require(script.Arena)
 local BuildEffects = require(script.BuildEffects)
+local Corner = require(script.Corner)
 local FestivalBoard = require(script.FestivalBoard)
 local Guide = require(script.Guide)
+local Hotbar = require(script.Hotbar)
 local Hud = require(script.Hud)
 local Motion = require(script.Motion)
 local Parade = require(script.Parade)
@@ -21,7 +24,9 @@ local Wardrobe = require(script.Wardrobe)
 
 Sounds.start()
 SoundZones.start()
+Corner.mount()
 Hud.mount()
+Hotbar.mount()
 Guide.mount()
 PlotActivity.start()
 Parade.start()
