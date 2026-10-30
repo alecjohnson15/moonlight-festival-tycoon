@@ -1,0 +1,67 @@
+{
+  "name": "moonlight-festival-tycoon-showcase",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared",
+        "ShowcasePlan": {
+          "$path": "src/showcase/Plan.luau"
+        }
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "RequestPurchase": {
+          "$className": "RemoteEvent"
+        },
+        "EquipCosmetic": {
+          "$className": "RemoteEvent"
+        },
+        "CosmeticSwung": {
+          "$className": "RemoteEvent"
+        },
+        "ArenaAction": {
+          "$className": "RemoteEvent"
+        },
+        "ArenaEffect": {
+          "$className": "RemoteEvent"
+        },
+        "Notice": {
+          "$className": "RemoteEvent"
+        },
+        "Activity": {
+          "$className": "RemoteEvent"
+        },
+        "Festival": {
+          "$className": "RemoteEvent"
+        },
+        "Parade": {
+          "$className": "RemoteEvent"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server",
+        "Showcase": {
+          "$path": "src/showcase/Server.luau"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client",
+          "Showcase": {
+            "$path": "src/showcase/Client.luau"
+          }
+        }
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    }
+  }
+}

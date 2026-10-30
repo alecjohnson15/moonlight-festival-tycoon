@@ -40,22 +40,21 @@ local function caption(upgrade, attraction: Earnings.Attraction, visitors: numbe
 	return strings.ShowpieceDraw:format(Format.rate(upgrade.Draw or 0))
 end
 
-local function show(player: Player, owned: { [string]: boolean })
+-- rideClocks holds how far into its round each ride is.
+local function show(plot: BasePart, owned: { [string]: boolean }, rideClocks: { [string]: number })
 	local visitors = Earnings.visitorsPerSecond(owned, Balance)
-	local plot = PlotService.plotOf(player)
-	if plot and plot:GetAttribute("VisitorsPerSecond") ~= visitors then
+	if plot:GetAttribute("VisitorsPerSecond") ~= visitors then
 		plot:SetAttribute("VisitorsPerSecond", visitors)
 	end
 
-	local rideClocks = clocks[player] or {}
 	local effective = Earnings.effective(owned, Balance)
 	for id, attraction in Earnings.attractions(owned, Balance) do
 		local upgrade = effective[id]
-		PlotService.updateStation(player, id, caption(upgrade, attraction, visitors), {
+		PlotService.updateStation(plot, id, caption(upgrade, attraction, visitors), {
 			VisitorsPerSecond = attraction.Visitors,
 		})
 		-- Set once per round rather than every tick, so it doesn't jitter.
-		local station = PlotService.station(player, id)
+		local station = PlotService.station(plot, id)
 		if upgrade.Type == "Ride" and station and station:GetAttribute("NextRoundAt") == nil then
 			local remaining = upgrade.RoundSeconds - (rideClocks[id] or 0)
 			station:SetAttribute("NextRoundAt", Workspace:GetServerTimeNow() + remaining)
@@ -66,12 +65,19 @@ end
 -- Updates the player's attraction labels straight away, such as after a purchase.
 function AttractionService.refresh(player: Player)
 	local data = DataService.get(player)
-	if data then
-		show(player, data.Owned)
+	local plot = PlotService.plotOf(player)
+	if data and plot then
+		show(plot, data.Owned, clocks[player] or {})
 	end
 end
 
-local function tick(player: Player, owned: { [string]: boolean }, elapsed: number)
+-- Brings visitors to a staged plot (PlotService.stage) and labels its
+-- attractions once, paying nobody.
+function AttractionService.stage(plot: BasePart, owned: { [string]: boolean })
+	show(plot, owned, {})
+end
+
+local function tick(player: Player, plot: BasePart, owned: { [string]: boolean }, elapsed: number)
 	-- Rides pay per round below; everything else earns continuously.
 	local steady = 0
 	for _, attraction in Earnings.attractions(owned, Balance) do
@@ -98,7 +104,7 @@ local function tick(player: Player, owned: { [string]: boolean }, elapsed: numbe
 		if payout.Coins > 0 then
 			EconomyService.addCoins(player, payout.Coins)
 		end
-		local station = PlotService.station(player, payout.Id)
+		local station = PlotService.station(plot, payout.Id)
 		if station then
 			station:SetAttribute("LastPayout", payout.Coins)
 			station:SetAttribute("PayoutAt", Workspace:GetServerTimeNow())
@@ -107,7 +113,7 @@ local function tick(player: Player, owned: { [string]: boolean }, elapsed: numbe
 		end
 	end
 
-	show(player, owned)
+	show(plot, owned, rideClocks)
 end
 
 function AttractionService.init()
@@ -123,8 +129,9 @@ function AttractionService.start()
 		local elapsed = task.wait(Balance.IncomeTickSeconds)
 		for _, player in Players:GetPlayers() do
 			local data = DataService.get(player)
-			if data and PlotService.plotOf(player) then
-				tick(player, data.Owned, elapsed)
+			local plot = PlotService.plotOf(player)
+			if data and plot then
+				tick(player, plot, data.Owned, elapsed)
 			end
 		end
 	end

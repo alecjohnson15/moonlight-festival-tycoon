@@ -38,6 +38,8 @@ local FestivalService = {}
 
 local plots: { BasePart } = {}
 local ownerOf: { [BasePart]: Player } = {}
+-- The festival on each staged plot (FestivalService.stage), shaped like a save.
+local staged: { [BasePart]: any } = {}
 local plotOf: { [Player]: BasePart } = {}
 -- What each player had unlocked when last told, and what their progress
 -- looked like then.
@@ -102,7 +104,7 @@ end
 -- The palette a plot is painted in: its owner's, or the first.
 local function paletteFor(plot: BasePart): string
 	local owner = ownerOf[plot]
-	local data = owner and DataService.get(owner)
+	local data = staged[plot] or (owner and DataService.get(owner))
 	if not data then
 		return Config.Palettes[1].Id
 	end
@@ -328,6 +330,16 @@ local function onRequest(player: Player, message: unknown)
 		return
 	end
 	publish(player, data)
+end
+
+-- Dresses a staged plot (PlotService.stage) in the festival in data, which
+-- is shaped like a save: its name sign, trophies, decorations and colours.
+function FestivalService.stage(plot: BasePart, data)
+	staged[plot] = data
+	buildSign(plot, data)
+	buildShelf(plot, data)
+	buildDecor(plot, indexOf(plot), data)
+	paint(plot)
 end
 
 function FestivalService.init()
