@@ -95,6 +95,10 @@ src/
     Swing.luau            the thump and dust when a weapon lands
     Arena.luau            the arena panel, special move button, knockback
     ArenaEffects.luau     hit sparks, knockouts and special move effects
+  showcase/               only in the showcase build (showcase.project.json)
+    Plan.luau             the maxed-out plots, as ReplicatedStorage.Shared.ShowcasePlan
+    Server.luau           dresses the festival, as Server.Showcase
+    Client.luau           H hides the screen, as Client.Showcase
 tests/                    Lune tests, including the theme's models
 tools/make_sounds.py      makes the original audio in assets/audio
 tools/make_arena_sounds.py  makes the arena's sounds in assets/audio
@@ -120,6 +124,12 @@ The remotes are declared in `default.project.json`: `RequestPurchase` (open a pu
 6. Sound: the files in `assets/audio` are uploaded to the project owner's Roblox account, and their ids are in `Sounds` in `src/shared/Themes/MoonlightFestival/init.luau`, under the file's name in CamelCase (`parade_march.ogg` is `ParadeMarch`), and for the four `arena_*` files in `Sounds` in `Themes/MoonlightFestival/Arena.luau`. A sound with an empty id plays a plain Roblox sound or nothing, and with no music id the music button stays hidden. Roblox only plays audio in an experience whose owner may use it, so a copy published by another account or a group needs each sound shared with that experience in the Creator Hub, or uploaded again there (Studio: **Window > Asset Manager**, then **Bulk Import**; right-click an upload and choose **Copy Asset ID**) with the new ids pasted as `"rbxassetid://<id>"`.
 7. To try the arena, walk through the gateway behind the spawn, past the bonfire and up the ramp. With **Test > Clients and Servers** set to 2 players you can fight yourself.
 
+## Store screenshots
+
+`showcase.project.json` builds a place with the festival dressed for screenshots: `rojo build showcase.project.json -o showcase.rbxl`, open it in Studio and press Play. You get the plot beside the courtyard (Plot 4), maxed out on the paths that look best (Ghoul Grub Bar, Bumper Crop, Enchanted Pies, Scream Maze, Moon Beacon, Terror Train), with every earned item worn and in the wardrobe, a full trophy shelf, every decoration and lots of coins. Three neighbours, Luna, Grimsby and Pip, have the other paths, so every path is on show somewhere, with visitors, festivals and booths of their own. The Moonlight Parade starts 20 seconds in and comes round every 2 minutes. Press **H** to hide everything on the screen, and again to bring it back. What goes where is in `src/showcase/Plan.luau`.
+
+It is the live project plus three modules in `src/showcase`, and a test keeps it that way. The server only loads them in Studio, and saves stay in memory, so the showcase can't touch a real save. Don't publish a showcase place over the game: build the live one from `default.project.json`.
+
 ## Checks
 
 ```sh
@@ -127,6 +137,7 @@ stylua --check src tests tools   # formatting
 selene src                       # lint
 lune run tests/run               # tests, including the theme's models
 rojo build default.project.json -o build.rbxl
+rojo build showcase.project.json -o showcase.rbxl
 ```
 
 StyLua must be built with its `luau` feature: `cargo install stylua --features luau` (the release binaries Rokit downloads are built with it). Without it StyLua skips every `.luau` file and the check passes having read nothing, which is what CI did until October 2026. CI now checks that StyLua passes a tidy Luau file and fails an untidy one before trusting the result.
@@ -135,7 +146,7 @@ CI runs the same four on every pull request. What they cover, and what they don'
 
 - **Formatting and lint** read every Luau file under `src`, `tests` and `tools` (lint: `src` only).
 - **Tests** run the pure modules (`Progression`, `Earnings`, `Wardrobe`, `Combat`, `Activity`, `Festival`, `Parade`, the save schema, the receipt ledger and rate limiter) and the config, including every route through the upgrade tree against the pacing rule. They also build the theme's models and scenery with Lune's Roblox library, which catches bad property names and types, and check that models fit their slots and stay clear of pads, gates and walkways.
-- **The build** checks that Rojo can assemble the place.
+- **The build** checks that Rojo can assemble the place, and the showcase place.
 - **Not covered:** the server services and client scripts never run in CI, because they need a live Roblox engine (DataStores, MarketplaceService, terrain, touches, physics, the camera and UI). Nothing measures fun, readability, frame rate, memory or mobile layout. Those are checked by playing in Studio and on real devices; see [docs/playtest.md](docs/playtest.md).
 
 A fully built plot, on its heaviest paths, with its Ghost Catcher booth and its heaviest festival decorations, is about 1,450 parts and 51 lights, and the land around the plots about 3,800 parts; a test keeps a plot under 1,500 parts and 60 lights. `Lighting.Technology` is set to Future in `default.project.json`, as scripts can't change it.

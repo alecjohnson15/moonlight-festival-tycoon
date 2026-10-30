@@ -34,13 +34,13 @@ end
 
 -- OutPerSecond is what a station makes; a kitchen's InPerSecond is what it
 -- takes from the growers. Clients animate goods moving at these rates.
-local function show(player: Player, chain: Earnings.Chain)
+local function show(plot: BasePart, chain: Earnings.Chain)
 	local selling = 0
 	for _, amount in chain.Selling do
 		selling += amount
 	end
 	for id, station in chain.Stations do
-		PlotService.updateStation(player, id, caption(station, selling), {
+		PlotService.updateStation(plot, id, caption(station, selling), {
 			OutPerSecond = station.Out,
 			InPerSecond = station.In,
 		})
@@ -50,9 +50,15 @@ end
 -- Updates the player's station labels straight away, such as after a purchase.
 function ProductionService.refresh(player: Player)
 	local data = DataService.get(player)
-	if data then
-		show(player, Earnings.chain(data.Owned, Balance))
+	local plot = PlotService.plotOf(player)
+	if data and plot then
+		show(plot, Earnings.chain(data.Owned, Balance))
 	end
+end
+
+-- Labels a staged plot's stations (PlotService.stage) once, paying nobody.
+function ProductionService.stage(plot: BasePart, owned: { [string]: boolean })
+	show(plot, Earnings.chain(owned, Balance))
 end
 
 function ProductionService.init()
@@ -67,7 +73,8 @@ function ProductionService.start()
 		local elapsed = task.wait(Balance.IncomeTickSeconds)
 		for _, player in Players:GetPlayers() do
 			local data = DataService.get(player)
-			if data and PlotService.plotOf(player) then
+			local plot = PlotService.plotOf(player)
+			if data and plot then
 				local chain = Earnings.chain(data.Owned, Balance)
 				local earned = chain.CoinsPerSecond * elapsed + (carry[player] or 0)
 				local whole = math.floor(earned)
@@ -75,7 +82,7 @@ function ProductionService.start()
 				if whole > 0 then
 					EconomyService.addCoins(player, whole)
 				end
-				show(player, chain)
+				show(plot, chain)
 			end
 		end
 	end

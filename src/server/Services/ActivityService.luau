@@ -148,12 +148,9 @@ local function step()
 	end
 end
 
--- The booth and its pad on a newly claimed plot.
-local function buildBooth(player: Player)
-	local plot = PlotService.plotOf(player)
-	if not plot or booths[player] then
-		return
-	end
+-- A booth and its pad on a plot, and the invisible column over the pad
+-- that's stepped on.
+local function makeBooth(plot: BasePart): (Folder, BasePart)
 	local spec = Layout.Activity
 	local folder = Instance.new("Folder")
 	folder.Name = "Activity"
@@ -191,6 +188,17 @@ local function buildBooth(player: Player)
 	trigger.Transparency = 1
 	trigger.CanTouch = true
 	trigger.CanQuery = false
+	folder.Parent = plot
+	return folder, trigger
+end
+
+-- The booth and its pad on a newly claimed plot.
+local function buildBooth(player: Player)
+	local plot = PlotService.plotOf(player)
+	if not plot or booths[player] then
+		return
+	end
+	local folder, trigger = makeBooth(plot)
 	trigger.Touched:Connect(function(hit)
 		local character = hit.Parent
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -198,9 +206,13 @@ local function buildBooth(player: Player)
 			start(player)
 		end
 	end)
-
-	folder.Parent = plot
 	booths[player] = folder
+end
+
+-- Puts a booth on a staged plot (PlotService.stage), which nobody plays.
+function ActivityService.stage(plot: BasePart)
+	local _, trigger = makeBooth(plot)
+	trigger:Destroy()
 end
 
 local function forget(player: Player)

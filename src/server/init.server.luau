@@ -2,6 +2,8 @@
 -- hooks in init() and runs its loops in start(), so no player is handled
 -- before every service is listening.
 
+local RunService = game:GetService("RunService")
+
 local Services = script.Services
 
 local ORDER = {
@@ -21,9 +23,22 @@ local ORDER = {
 	"AnalyticsService",
 }
 
-local services = {}
+-- The showcase build (showcase.project.json) adds a Showcase module beside
+-- the services, which dresses the festival for store screenshots. It goes
+-- first, so it is listening before any save loads, and only runs in Studio.
+-- The live game's project leaves it out.
+local modules = {}
+local showcase = script:FindFirstChild("Showcase")
+if showcase and RunService:IsStudio() then
+	table.insert(modules, showcase)
+end
 for _, name in ORDER do
-	local service = require(Services:FindFirstChild(name))
+	table.insert(modules, Services:FindFirstChild(name))
+end
+
+local services = {}
+for _, module in modules do
+	local service = require(module)
 	service.init()
 	table.insert(services, service)
 end
