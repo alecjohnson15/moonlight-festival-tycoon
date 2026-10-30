@@ -38,7 +38,7 @@ src/
       Balance.luau        upgrade costs, income, goods and visitors
       Layout.luau         plot size, gate, buy buttons, build slots, the booth
       Cosmetics.luau      everything players can wear, and how it unlocks
-      Catalog.luau        Robux cosmetics (ids are 0 until set up)
+      Catalog.luau        Robux cosmetics and their game pass ids
       Theme.luau          picks the active theme pack
       Arena.luau          the arena's size, place and rules of a fight
       Weapons.luau        every arena weapon's stats and special move
