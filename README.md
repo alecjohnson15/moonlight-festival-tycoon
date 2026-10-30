@@ -105,6 +105,7 @@ docs/progression.md       the upgrade paths and the 90 minute pacing rule
 docs/arena.md             the arena's rules, weapons and the paid edge
 docs/rights-register.md   every external asset and dependency
 docs/store-page.md        the icon and thumbnails in assets/marketing and where to upload them
+docs/launch.md            publishing the game, its rating, its game passes and the soft launch
 ```
 
 The remotes are declared in `default.project.json`: `RequestPurchase` (open a purchase prompt), `EquipCosmetic` (wear or take off an item), `CosmeticSwung` (the server telling clients a weapon swung), `ArenaAction` (a fighter's special move), `ArenaEffect` (the server telling clients what to draw in the arena), `Activity` (Ghost Catcher rounds), `Festival` (renaming and decorating a festival, and the server opening the panel), `Parade` (the server telling clients about the parade, and a client that joins mid-parade asking for it) and `Notice` (notes for the guide). A client only names what it wants; the server checks it. Gates and buy buttons use touches, and arena swings use the weapon Tool's `Activated`, which the server sees directly.
@@ -148,7 +149,7 @@ A fully built plot, on its heaviest paths, with its Ghost Catcher booth and its 
 - **Change the save shape:** bump `Migrations.CURRENT_VERSION` and append a step. Never edit a step that has shipped.
 - **Add a cosmetic:** add it to `Config/Cosmetics.luau` with its slot, line and unlock (or `Premium = true` and a matching `Config/Catalog.luau` entry), name it in the theme pack's `Cosmetics`, and give it a look in `Wearables.luau`. The tests check each item fits the body, can't touch or collide, that every paid look of a weapon fights like an earned one, and that every route through the upgrade tree earns every free item in the order they're listed. Unlock free items from things every route buys, or from `Building` with no `Path` (any path of that building), since an item that needs one path can't be earned on the others.
 - **Tune the arena:** fight rules (health, shield time, knockout time, knockback lift) are in `Config/Arena.luau`; weapon styles, tiers, special moves and the premium edge are in `Config/Weapons.luau`, and the tests fail if a paid weapon gets more than a slight edge. To add a weapon, add it to `Roster` there and give its special a look in the theme's `Arena.luau`.
-- **Sell a cosmetic:** create a game pass on the Roblox website for each item in `Config/Catalog.luau` (`SuggestedRobux` is a starting price), and paste its id into `PassId` only after a price and value review. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
+- **Sell a cosmetic:** create a game pass on the Roblox website for each item in `Config/Catalog.luau` (`SuggestedRobux` is a starting price, and `assets/marketing/passes` has an icon for each), and paste its id into `PassId` only after a price and value review. [docs/launch.md](docs/launch.md) has the steps. The brief rules out paid random rewards, rerolls, fake scarcity, misleading discounts, repeat prompts after a no, and anything that speeds up progression.
 
 ## Not built yet
 
