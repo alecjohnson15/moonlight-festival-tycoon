@@ -34,8 +34,10 @@ type Session = {
 
 local DataService = {}
 
--- nil only in Studio without API access, where progress lives in memory.
+-- nil only in Studio without API access, or after keepInMemory, where
+-- progress lives in memory.
 local store: DataStore? = nil
+local memoryOnly = false
 local sessions: { [Player]: Session } = {}
 local loadedCallbacks: { (Player, Migrations.Save) -> () } = {}
 
@@ -226,7 +228,17 @@ function DataService.saveNow(player: Player): boolean
 	return save(player, session, false)
 end
 
+-- Keeps every save in memory, never reading or writing the DataStore. The
+-- showcase build (src/showcase) calls it before init, so its maxed-out
+-- saves can never reach a real one.
+function DataService.keepInMemory()
+	memoryOnly = true
+end
+
 function DataService.init()
+	if memoryOnly then
+		return
+	end
 	local ok, result = pcall(function()
 		local candidate = DataStoreService:GetDataStore(STORE_NAME)
 		if RunService:IsStudio() then

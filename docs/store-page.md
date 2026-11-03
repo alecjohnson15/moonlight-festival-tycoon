@@ -11,6 +11,10 @@ The icon and thumbnails for the game's Roblox page are in `assets/marketing`. Th
 
 Use `icon.png` as the icon to start with and keep `icon-vs.png` to try against it later. Upload both thumbnails.
 
+## Screenshots from the game
+
+Real screenshots sit well beside the generated art, and show players what they'll actually find. The showcase build has the festival ready for them: build it with `rojo build showcase.project.json -o showcase.rbxl` (or use a place file someone built), open it in Studio and press Play. Your plot is maxed out beside the courtyard, three neighbours are busy, the parade starts 20 seconds in, and **H** hides everything on the screen. The README's "Store screenshots" section has the rest. Thumbnails are 16:9, so take shots with Studio's window wide, then crop them to 1920x1080.
+
 ## Uploading
 
 Open the [Creator Dashboard](https://create.roblox.com/dashboard/creations), pick the game, then go to **Configurations > Places** and choose the start place (marked with a star).

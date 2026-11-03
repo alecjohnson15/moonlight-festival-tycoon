@@ -56,3 +56,6 @@ jobs:
 
       - name: Build place
         run: rojo build default.project.json -o build.rbxl
+
+      - name: Build showcase place
+        run: rojo build showcase.project.json -o showcase.rbxl

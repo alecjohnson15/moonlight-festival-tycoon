@@ -37,6 +37,9 @@ local WARNING_COLOR = Color3.fromRGB(255, 170, 120)
 local PATH_LABEL_WIDTH = 7
 local TRIGGER_HEIGHT = 3
 local LABEL_FONT = Enum.Font.FredokaOne
+-- The owner a staged plot carries (see PlotService.stage): no player's id,
+-- so no client takes it for their own.
+local STAGED_OWNER = 0
 
 local PlotService = {}
 
@@ -195,13 +198,12 @@ local function buildAddOn(plot: BasePart, folder: Folder, upgrade, withEffect: b
 	model.Parent = station
 end
 
--- Builds one owned upgrade on the player's plot: an artist's model from
+-- Builds one owned upgrade on a plot: an artist's model from
 -- ReplicatedStorage.Assets if the theme names one, else the theme's built
 -- model, else a greybox block. With withEffect, clients animate it in.
-function PlotService.build(player: Player, upgradeId: string, withEffect: boolean?)
-	local plot = plotOf[player]
+local function buildOn(plot: BasePart, upgradeId: string, withEffect: boolean?)
 	local upgrade = upgradesById[upgradeId]
-	if not plot or not upgrade then
+	if not upgrade then
 		return
 	end
 	local folder = childFolder(plot, "Built")
@@ -252,17 +254,25 @@ function PlotService.build(player: Player, upgradeId: string, withEffect: boolea
 	end
 end
 
--- The built station for an upgrade on the player's plot, if there is one.
-function PlotService.station(player: Player, upgradeId: string): Instance?
+-- Builds one owned upgrade on the player's plot. With withEffect, clients
+-- animate it in.
+function PlotService.build(player: Player, upgradeId: string, withEffect: boolean?)
 	local plot = plotOf[player]
-	local folder = plot and plot:FindFirstChild("Built")
+	if plot then
+		buildOn(plot, upgradeId, withEffect)
+	end
+end
+
+-- The built station for an upgrade on a plot, if there is one.
+function PlotService.station(plot: BasePart, upgradeId: string): Instance?
+	local folder = plot:FindFirstChild("Built")
 	return folder and folder:FindFirstChild(upgradeId)
 end
 
 -- Sets a station's caption line and attributes, skipping anything unchanged
 -- so nothing replicates when nothing changed.
-function PlotService.updateStation(player: Player, upgradeId: string, caption: string, attributes: { [string]: any })
-	local station = PlotService.station(player, upgradeId)
+function PlotService.updateStation(plot: BasePart, upgradeId: string, caption: string, attributes: { [string]: any })
+	local station = PlotService.station(plot, upgradeId)
 	if not station then
 		return
 	end
@@ -527,21 +537,23 @@ function PlotService.plotOf(player: Player): BasePart?
 	return plotOf[player]
 end
 
-local function setGate(plot: BasePart, owner: Player?)
+local function setGate(plot: BasePart, ownerName: string?)
 	local gate = plot:FindFirstChild("Gate")
 	if not gate or not gate:IsA("BasePart") then
 		return
 	end
-	gate.CanCollide = owner == nil
-	gate.Transparency = if owner then 0.85 else 0.2
+	gate.CanCollide = ownerName == nil
+	gate.Transparency = if ownerName then 0.85 else 0.2
 	local billboard = gate:FindFirstChild("GateLabel")
 	local label = billboard and billboard:FindFirstChild("Title")
 	if label and label:IsA("TextLabel") then
-		label.Text = if owner then Theme.Strings.PlotOwner:format(owner.DisplayName) else Theme.Strings.ClaimGate
+		label.Text = if ownerName then Theme.Strings.PlotOwner:format(ownerName) else Theme.Strings.ClaimGate
 	end
 end
 
-local function claimPlot(player: Player, plot: BasePart)
+-- Gives the player the plot, as touching its gate does, and builds what
+-- they own on it.
+function PlotService.claim(player: Player, plot: BasePart)
 	-- One plot per player, one owner per plot, and only once the save is in.
 	if plotOf[player] or plot:GetAttribute("OwnerUserId") ~= nil then
 		return
@@ -554,7 +566,7 @@ local function claimPlot(player: Player, plot: BasePart)
 	plotOf[player] = plot
 	plot:SetAttribute("OwnerUserId", player.UserId)
 	player:SetAttribute("HasPlot", true)
-	setGate(plot, player)
+	setGate(plot, player.DisplayName)
 
 	for _, upgrade in Balance.Upgrades do
 		if data.Owned[upgrade.Id] then
@@ -592,9 +604,26 @@ local function setUpGate(plot: BasePart)
 		local player = character and Players:GetPlayerFromCharacter(character)
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		if player and humanoid and humanoid.Health > 0 then
-			claimPlot(player, plot)
+			PlotService.claim(player, plot)
 		end
 	end)
+end
+
+-- Dresses a plot nobody plays as if ownerName had built everything in
+-- owned. It has no buy buttons and can't be claimed. Only the showcase
+-- build (src/showcase) stages plots, to fill the festival out for
+-- screenshots.
+function PlotService.stage(plot: BasePart, owned: { [string]: boolean }, ownerName: string)
+	if plot:GetAttribute("OwnerUserId") ~= nil then
+		return
+	end
+	plot:SetAttribute("OwnerUserId", STAGED_OWNER)
+	setGate(plot, ownerName)
+	for _, upgrade in Balance.Upgrades do
+		if owned[upgrade.Id] then
+			buildOn(plot, upgrade.Id, false)
+		end
+	end
 end
 
 local function releasePlot(player: Player)

@@ -5,6 +5,8 @@
 -- board, the arena's fights, Ghost Catcher's wisps and the Moonlight
 -- Parade; it never decides coins, ownership, purchases, hits or catches.
 
+local RunService = game:GetService("RunService")
+
 local Activity = require(script.Activity)
 local Arena = require(script.Arena)
 local BuildEffects = require(script.BuildEffects)
@@ -38,3 +40,11 @@ Wardrobe.mount()
 FestivalBoard.mount()
 Arena.start()
 Activity.start()
+
+-- The showcase build (showcase.project.json) adds a Showcase module, which
+-- hides the screen for store screenshots. The live game's project leaves it
+-- out.
+local showcase = script:FindFirstChild("Showcase")
+if showcase and RunService:IsStudio() then
+	require(showcase).start()
+end
