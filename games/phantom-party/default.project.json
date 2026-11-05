@@ -1,0 +1,61 @@
+{
+  "name": "phantom-party",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "Action": {
+          "$className": "RemoteEvent"
+        },
+        "Round": {
+          "$className": "RemoteEvent"
+        },
+        "Fx": {
+          "$className": "RemoteEvent"
+        },
+        "Vote": {
+          "$className": "RemoteEvent"
+        },
+        "Request": {
+          "$className": "RemoteFunction"
+        },
+        "Profile": {
+          "$className": "RemoteEvent"
+        },
+        "Trade": {
+          "$className": "RemoteEvent"
+        },
+        "Emote": {
+          "$className": "RemoteEvent"
+        },
+        "RequestPurchase": {
+          "$className": "RemoteEvent"
+        },
+        "Notice": {
+          "$className": "RemoteEvent"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    }
+  }
+}
