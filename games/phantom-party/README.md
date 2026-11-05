@@ -8,8 +8,10 @@ with a cartoon blade. One **Guardian** has the Moonbeam Blaster and one shot at
 a time to knock the Phantom out. On bigger servers a **Medic** can revive a
 tagged guest (who then knows who tagged them) and a **Saboteur** helps the
 Phantom by cutting the lights. Everyone else is a **Guest**: survive, grab
-candy coins, and find clue pages that fill the Truth Bell until it names the
-Phantom's room, then lights them up for everyone.
+candy coins, piece together leads (a glimpse of a mask's colour, a scuffle
+heard in the library, fresh footprints), and find clue pages that fill the
+Truth Bell until it hints at the Phantom's room, then lights them up for
+everyone, once a round.
 
 Mild for ages 9 to 12: tagged players are "dazed" (stars spin over their
 head) and then fade back to the plaza. No blood, no deaths, cartoon gear.
@@ -39,7 +41,15 @@ are opened only with coins earned by playing, and their odds are shown first.
   trails) across six rarities, from a coin boutique, two crates (one
   seasonal) opened with coins, the free and premium Moon Pass tracks, and
   eight game passes. Earned copies can be traded; paid ones stay with you.
-- **A trading hub** with a both-accept countdown and an all-or-nothing swap.
+- **A trading hub** with a both-accept countdown and a swap that settles
+  through a journal, so a server crash can't duplicate or lose an item.
+- **Leads**, a private notebook of imperfect clues, and a Truth Bell paced
+  to the size of the party.
+- **First-time tips** for each role, a results card with the decisive
+  moment and a party star, private **mastery goals** for each role, and a
+  wisp hunt in the plaza for anyone out of the round.
+- **Settings** for music, reduce motion and captions; keyboard, touch and
+  controller all supported.
 - **A 30-tier Moon Pass** season with a free track (coins, items and crates)
   and a premium track of nine named cosmetics.
 - **Practice rounds** against dummies for a player alone on a server, so
@@ -48,9 +58,10 @@ are opened only with coins earned by playing, and their odds are shown first.
   racing final-thirty-seconds track, ambience for each map, stings and 24
   effects, all from `tools/make_sounds.py`.
 
-`docs/design.md` explains the design, `docs/launch.md` how to publish it, and
+`docs/design.md` explains the design, `docs/launch.md` how to publish it,
 `docs/marketing.md` has the store text and the prompts for the icon and
-thumbnails.
+thumbnails, and `docs/AUTONOMOUS_UPGRADE_REPORT.md` reports the overnight
+upgrade pass: what was found, what changed and what still needs a person.
 
 ## Folder map
 
@@ -58,18 +69,22 @@ thumbnails.
 default.project.json   Rojo project for this game alone
 src/shared/Config      Tunable numbers and lists: roles, rounds, combat,
                        items, shop, crates, the pass, the Robux catalog,
-                       rewards, emotes, sounds
+                       rewards, emotes, sounds, leads, tips, mastery,
+                       captions, analytics
 src/shared/Rules       Pure rules the tests check: dealing, round outcome,
                        chat, votes, tagging, inventories, trades, crates,
-                       progress
+                       progress, the bell, leads, tips, wisps, the recap,
+                       mastery, analytics
 src/shared/Look        Builders: the two maps, the plaza, every cosmetic
-src/server             Services: rounds, combat, pickups, maps, the plaza,
-                       saves, purchases, profiles, outfits, trades, chat,
-                       emotes, analytics
+src/server             Services: rounds, combat, pickups, leads, maps, the
+                       plaza, wisps, saves, purchases, profiles, outfits,
+                       trades (Lib/TradeJournal), chat, emotes, analytics
 src/client             HUD, role card, map vote, round buttons, effects,
-                       lighting and music, menus, spectating
-tests                  Lune tests (lune run tests/run)
-tools                  make_sounds.py and passes.json
+                       lighting and music, menus, spectating, leads, tips,
+                       captions
+tests                  Lune tests (lune run tests/run), models and the
+                       map walk-through
+tools                  make_sounds.py, passes.json and simulate.luau
 assets/audio           The generated sounds, ready to upload
 ```
 
@@ -81,7 +96,8 @@ Luau support, Selene 0.31.0 and Lune 0.11.1), then from this folder:
 ```
 stylua src tests            # format
 selene src                  # lint (writes roblox.yml on its first run)
-lune run tests/run          # 73 tests
+lune run tests/run          # 183 tests
+lune run tools/simulate     # role deal and Truth Bell tables
 rojo build -o phantom-party.rbxl
 rojo serve                  # live sync into Studio
 python3 tools/make_sounds.py    # remake every sound (numpy and ffmpeg)
