@@ -10,8 +10,9 @@
 --
 -- The server reads what it needs by name: Spawns, Stations (one marker per
 -- shop, with a Station attribute), Boards (each has a Screen part and a Stat
--- attribute), MapBoard (a sign whose text says what's next) and VipGate (a
--- velvet rope only VIP holders can walk through).
+-- attribute), MapBoard (a sign whose text says what's next), VipGate (a
+-- velvet rope only VIP holders can walk through) and Wisps (spots for the
+-- plaza's wisp hunt while a round is on).
 
 local Gear = require(script.Parent.Gear)
 local Kit = require(script.Parent.Kit)
@@ -701,6 +702,17 @@ function Lobby.build(origin: CFrame): Model
 		end
 		for i, spot in { { -70, -70 }, { 70, 70 }, { -70, 70 }, { -20, 70 }, { 20, 70 } } do
 			Pieces.tree(dressing, at(spot[1], 0, spot[2]), 18, 900 + i, LEAVES)
+		end
+	end
+
+	-- Wisp spots: while a round is on, glowing wisps float at a few of these
+	-- for players in the plaza (out, sitting out or just joined) to catch.
+	do
+		local wisps = Kit.new("Folder", lobby, { Name = "Wisps" })
+		for i = 0, 11 do
+			local angle = (i + 0.25) / 12 * PI * 2
+			local radius = if i % 2 == 0 then 35 else 40
+			Kit.marker(wisps, "Wisp", at(math.cos(angle) * radius, 3.5, math.sin(angle) * radius))
 		end
 	end
 

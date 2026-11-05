@@ -1,12 +1,22 @@
 -- Watching a round. When you're out, or sitting in the plaza while others
 -- play, a small bar at the bottom lets you follow anyone still standing,
 -- flipping between them with the arrows. Watching never shows anyone's
--- role: you see what a guest beside them would see.
+-- role: you see what a guest beside them would see, and nothing you see
+-- can reach the living (chat and emotes from the plaza don't reach them).
+--
+-- Above the button, a line says when the next party starts (you're in it
+-- unless you sit out) and how the plaza's wisp hunt is going. Someone who
+-- joins mid-round is told the same in a corner card.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Format = require(Shared.Format)
+local Game = require(Shared.Config.Game)
 local Corner = require(script.Parent.Corner)
 local Sounds = require(script.Parent.Sounds)
 local State = require(script.Parent.State)
@@ -66,8 +76,22 @@ local watchButton = Ui.button(gui, "Watch the party", Ui.Colors.Accent, {
 })
 Ui.fitScale(watchButton)
 
+-- When the next party starts, and the wisp hunt.
+local nextLine = Ui.label(gui, "", {
+	AnchorPoint = Vector2.new(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -66),
+	Size = UDim2.fromOffset(460, 20),
+	TextSize = 14,
+	TextColor3 = Ui.Colors.Text,
+	TextStrokeTransparency = 0.4,
+	Visible = false,
+})
+Ui.fitScale(nextLine)
+
 local watching: Player? = nil
 local active = false
+local wisps, wispGoal = 0, 8
+local toldJoiner = false
 
 -- Everyone still standing in the round.
 local function standing(): { Player }
@@ -159,6 +183,38 @@ local function refresh()
 	watchButton.Visible = can and not active
 end
 
+-- Seconds until the next party's roles are dealt, roughly (a round can end
+-- early), or nil when there's no round on.
+local function nextPartyIn(): number?
+	local round = State.Round
+	local left = State.left(round.EndsAt)
+	if round.State == "Playing" then
+		return left + Game.Seconds.Results + Game.Seconds.Intermission
+	elseif round.State == "Results" then
+		return left + Game.Seconds.Intermission
+	end
+	return nil
+end
+
+local function refreshLine()
+	local round = State.Round
+	local away = not round.InRound or State.Me == "Out"
+	local seconds = nextPartyIn()
+	if not away or not seconds then
+		nextLine.Visible = false
+		return
+	end
+	local text = if State.SittingOut
+		then `Next party in about {Format.clock(math.ceil(seconds))} (you're sitting out).`
+		else `Next party in about {Format.clock(math.ceil(seconds))}. You're in it!`
+	if round.State == "Playing" then
+		text ..= `  Wisps caught: {wisps}/{wispGoal}`
+	end
+	nextLine.Text = text
+	nextLine.Visible = true
+	nextLine.Position = if active then UDim2.new(0.5, 0, 1, -70) else UDim2.new(0.5, 0, 1, -66)
+end
+
 function Spectate.start()
 	previous.Activated:Connect(function()
 		step(-1)
@@ -168,8 +224,36 @@ function Spectate.start()
 	end)
 	stop.Activated:Connect(Spectate.stop)
 	watchButton.Activated:Connect(Spectate.begin)
-	State.on("Round", refresh)
+	State.on("Round", function()
+		refresh()
+		local round = State.Round
+		-- Joined while a round is on: say what happens next.
+		if round.State == "Playing" and not round.InRound and not toldJoiner then
+			toldJoiner = true
+			local seconds = nextPartyIn() or 0
+			Corner.note(
+				"A party is under way",
+				`You'll be in the next one, in about {Format.clock(math.ceil(seconds))}. Watch it, or catch wisps round the plaza!`,
+				Ui.Colors.Accent,
+				8
+			)
+		end
+		if round.State ~= "Playing" then
+			wisps = 0
+		end
+	end)
 	State.on("Me", refresh)
+	State.on("Wisp", function(count, goal)
+		wisps, wispGoal = count, goal
+	end)
+	local elapsed = 0
+	RunService.Heartbeat:Connect(function(dt)
+		elapsed += dt
+		if elapsed >= 0.5 then
+			elapsed = 0
+			refreshLine()
+		end
+	end)
 	player.CharacterAdded:Connect(function()
 		-- A new body in the plaza; keep watching if a round is still on.
 		task.defer(function()

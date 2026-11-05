@@ -405,6 +405,24 @@ end
 handlers.Blackout = blackout
 handlers.Reveal = reveal
 
+-- A wisp caught in the plaza; every Goal together sets off fireworks.
+function handlers.Wisp(position: Vector3, count: number, goal: number, celebrate: boolean)
+	sparkleRing(position, Color3.fromRGB(180, 230, 255), 6)
+	Sounds.play("Pop", position)
+	State.fire("Wisp", count, goal)
+	if celebrate then
+		Sounds.play("Fanfare")
+		Corner.note("The plaza moon is glowing!", "Everyone in the plaza caught the wisps together.", Ui.Colors.Gold, 5)
+		local moon = Vector3.new(0, 30, 0)
+		for index = 1, 8 do
+			task.delay(index * 0.25, function()
+				local spot = moon + Vector3.new(math.random(-24, 24), math.random(-4, 10), math.random(-24, 24))
+				sparkleRing(spot, Color3.fromHSV(math.random(), 0.6, 1), 10)
+			end)
+		end
+	end
+end
+
 function handlers.Notice(text: string)
 	Corner.note(text, nil, Ui.Colors.Gold, 5)
 end

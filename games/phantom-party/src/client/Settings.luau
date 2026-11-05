@@ -220,6 +220,7 @@ local function settings(holder: Frame)
 			local result = State.request("SitOut", not sittingOut)
 			if result.Ok then
 				sittingOut = result.SittingOut == true
+				State.SittingOut = sittingOut
 			end
 			pick(tab)
 		end

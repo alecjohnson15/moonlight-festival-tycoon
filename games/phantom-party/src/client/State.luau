@@ -27,6 +27,8 @@ State.Bell = { Value = 0, Room = nil :: string?, Spent = false }
 State.Census = { Alive = 0, Dazed = 0, Out = 0, Total = 0 }
 State.Results = nil :: { [string]: any }?
 State.Pay = nil :: { [string]: any }?
+-- Whether the player chose to sit out rounds (client/Settings).
+State.SittingOut = false
 
 local listeners: { [string]: { (...any) -> () } } = {}
 

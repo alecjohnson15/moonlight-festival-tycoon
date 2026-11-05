@@ -18,6 +18,7 @@ local Shop = require(Shared.Config.Shop)
 local CrateRules = require(Shared.Rules.Crates)
 local Inventory = require(Shared.Rules.Inventory)
 local Progress = require(Shared.Rules.Progress)
+local Tips = require(Shared.Rules.Tips)
 local RateLimiter = require(script.Parent.Parent.Lib.RateLimiter)
 local AnalyticsService = require(script.Parent.AnalyticsService)
 local DataService = require(script.Parent.DataService)
@@ -111,6 +112,8 @@ function ProfileService.snapshot(player: Player): { [string]: any }?
 		Pity = data.Pity,
 		Stats = data.Stats,
 		Settings = data.Settings,
+		Tips = data.Tips,
+		Mastery = data.Mastery,
 	}
 end
 
@@ -337,12 +340,25 @@ handlers.ClaimAll = function(player)
 	return { Ok = #results > 0, Results = results }
 end
 
+-- The switches in Settings, all on or off.
+local SETTINGS = { Music = true, ReduceMotion = true, Captions = true }
+
 handlers.Setting = function(player, key, value)
 	local data = DataService.get(player)
-	if not data or key ~= "Music" or typeof(value) ~= "boolean" then
+	if not data or typeof(key) ~= "string" or not SETTINGS[key] or typeof(value) ~= "boolean" then
 		return { Ok = false }
 	end
-	data.Settings.Music = value
+	data.Settings[key] = value
+	return { Ok = true }
+end
+
+-- A first-time tip was shown: don't show it again.
+handlers.TipSeen = function(player, id)
+	local data = DataService.get(player)
+	if not data or not Tips.valid(id) then
+		return { Ok = false }
+	end
+	data.Tips[id] = true
 	return { Ok = true }
 end
 

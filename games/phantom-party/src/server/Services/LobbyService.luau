@@ -31,6 +31,11 @@ local function origin(): CFrame
 	return CFrame.new(at[1], at[2], at[3])
 end
 
+-- The plaza's model, once built.
+function LobbyService.model(): Model?
+	return model
+end
+
 -- A random spot to put a player in the lobby.
 function LobbyService.spawnCFrame(): CFrame
 	if #spawnPoints == 0 then
