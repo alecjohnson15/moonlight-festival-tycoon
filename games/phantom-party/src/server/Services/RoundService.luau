@@ -4,7 +4,9 @@
 --   Intermission  a countdown while everyone votes for the next map.
 --   Reveal        players stand still in the map while their role shows.
 --   Playing       the round itself, until one team wins or time runs out.
---   Results       who was who, who won and what everyone earned.
+--   Results       who was who, who won, the moment that decided it, the
+--                 party star (Rules/Recap), what everyone earned and, privately,
+--                 any role mastery goals met (Rules/Mastery).
 --
 -- Roles are dealt by Rules/Deal with tickets, so everyone gets their turn.
 -- Each player is told only their own role (the Shadows also learn each
@@ -20,9 +22,12 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 local Format = require(Shared.Format)
 local Game = require(Shared.Config.Game)
+local MasteryConfig = require(Shared.Config.Mastery)
 local Roles = require(Shared.Config.Roles)
 local Deal = require(Shared.Rules.Deal)
+local Mastery = require(Shared.Rules.Mastery)
 local Progress = require(Shared.Rules.Progress)
+local Recap = require(Shared.Rules.Recap)
 local Round = require(Shared.Rules.Round)
 local Vote = require(Shared.Rules.Vote)
 local Lib = script.Parent.Parent.Lib
@@ -57,6 +62,9 @@ local lastMap: string? = nil
 local practiceTurn = 0
 local voteLimiter = RateLimiter.new(0.3)
 local random = Random.new()
+-- What happened this round, for the recap and the mastery goals.
+local moments: Recap.Moments = {}
+local bellRang = false
 
 local function rand(): number
 	return random:NextNumber()
@@ -193,6 +201,8 @@ end
 -- Puts everyone in the round, in the map, frozen, and tells each their role.
 local function setUp(players: { Player }, mapId: string): boolean
 	Match.reset()
+	moments = {}
+	bellRang = false
 	local map = MapService.load(mapId)
 	Match.Map = map
 	Match.MapId = mapId
@@ -414,6 +424,7 @@ end
 -- Results --------------------------------------------------------------
 
 local function results(winner: string, reason: string)
+	local timeLeft = math.max(0, Match.EndsAt - os.clock())
 	setState("Results", Game.Seconds.Results)
 	CombatService.finish()
 	PickupService.finish()
@@ -444,6 +455,7 @@ local function results(winner: string, reason: string)
 		end
 		return a.Name < b.Name
 	end)
+	local star = Recap.star(reveal)
 	broadcast({
 		Kind = "Results",
 		Winner = winner,
@@ -451,6 +463,10 @@ local function results(winner: string, reason: string)
 		Map = Match.MapId,
 		Practice = Match.Practice,
 		Reveal = reveal,
+		Recap = {
+			Decisive = Recap.decisive(reason, timeLeft, reveal, moments),
+			Star = star,
+		},
 	})
 	LobbyService.setBoard(if winner == "Guests" then "The guests win!" else "The Phantom wins!")
 
@@ -481,9 +497,30 @@ local function results(winner: string, reason: string)
 				Revives = if Match.Practice then 0 else participant.Revives,
 				Clues = if Match.Practice then 0 else participant.Clues,
 			})
+			-- Mastery goals: counted in the save, shown only to this player,
+			-- never paid. Practice rounds don't count.
+			local met = {}
+			local data = DataService.get(player)
+			if MasteryConfig.Enabled and data and not Match.Practice then
+				local goals = Mastery.earned({
+					Role = participant.Role,
+					Won = won,
+					Survived = survived,
+					BellRang = bellRang,
+					Misfired = participant.Misfired,
+					Hero = participant.Hero,
+					Dawn = reason == "Time",
+					Takedown = participant.Takedown,
+					Tags = participant.Tags,
+					Revives = participant.Revives,
+					Clues = participant.Clues,
+					BlackoutsUsed = participant.BlackoutsUsed,
+				})
+				met = Mastery.record(data.Mastery, goals)
+			end
 			RoundRemote:FireClient(
 				player,
-				{ Kind = "Pay", Coins = pay.Coins, Xp = pay.Xp, Lines = pay.Lines, Won = won }
+				{ Kind = "Pay", Coins = pay.Coins, Xp = pay.Xp, Lines = pay.Lines, Won = won, Mastery = met }
 			)
 			AnalyticsService.roundPlayed(player, participant.Role, won, Match.Practice)
 		end
@@ -546,6 +583,20 @@ end
 function RoundService.init()
 	VoteRemote.OnServerEvent:Connect(onVote)
 	Match.on("Out", onOut)
+	-- The moments the recap tells.
+	Match.on("Down", function(target: Match.Participant, by: Match.Participant?, how: string?)
+		if Match.State ~= "Playing" then
+			return
+		end
+		if target.Role == "Phantom" and by then
+			moments.Catch = { By = by.Name, Hero = by.Hero }
+		elseif Roles.team(target.Role) == "Guests" then
+			moments.LastDown = { By = if by then by.Name else nil, Target = target.Name, How = how or "Swing" }
+		end
+	end)
+	Match.on("Rang", function()
+		bellRang = true
+	end)
 	-- A revived dummy gets back up and wanders again.
 	Match.on("Revived", function(participant: Match.Participant)
 		if Match.State == "Playing" then

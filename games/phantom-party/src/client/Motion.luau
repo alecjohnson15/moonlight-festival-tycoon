@@ -4,11 +4,14 @@
 -- crates in the vault), the ferris wheel tagged Wheel turns with its
 -- gondolas hanging level, and pickups (coins, clue pages, a dropped
 -- blaster) spin and bob so they catch the eye. Lights tagged Flicker
--- flicker. Anything far from the camera is left alone.
+-- flicker, unless the player has Reduce motion on, when they hold steady.
+-- Anything far from the camera is left alone.
 
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+
+local Ui = require(script.Parent.Ui)
 
 local NEAR = 320
 local FLICKER_STEP = 1 / 20
@@ -169,7 +172,9 @@ local function onRenderStep(dt: number)
 		sinceFlicker = 0
 		for light, brightness in flickers do
 			local parent = light.Parent
-			if parent and parent:IsA("BasePart") and near(parent.Position, camera) then
+			if Ui.ReduceMotion then
+				light.Brightness = brightness
+			elseif parent and parent:IsA("BasePart") and near(parent.Position, camera) then
 				local seed = parent.Position.X + parent.Position.Z
 				light.Brightness = brightness * (1 + math.noise(now * 4, seed) * 0.6)
 			end

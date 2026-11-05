@@ -242,6 +242,10 @@ handlers.Equip = function(player, itemId)
 	local ok, err = Inventory.equip(data, itemId, ProfileService.extra(player))
 	if ok then
 		AnalyticsService.step(player, "Equipped")
+		local item = Items.get(itemId)
+		if item then
+			AnalyticsService.equipped(player, item.Kind)
+		end
 		outfitChanged(player)
 		ProfileService.push(player)
 	end

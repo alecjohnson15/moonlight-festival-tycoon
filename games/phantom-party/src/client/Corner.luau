@@ -4,7 +4,6 @@
 -- computer the stack sits in the bottom right; on a phone or tablet, where
 -- the thumbstick and jump button fill the bottom, it sits in the top right.
 
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Ui = require(script.Parent.Ui)
@@ -73,7 +72,7 @@ end
 
 local function pop(card: Frame)
 	local scale = Ui.make("UIScale", { Scale = 0.85 }, card)
-	TweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	Ui.pop(scale, 1)
 end
 
 -- A note that shows for a few seconds and goes.

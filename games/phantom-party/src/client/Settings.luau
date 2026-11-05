@@ -1,6 +1,6 @@
 -- Help and settings: how to play (the roles and the keys), your saved
--- stats, and the switches: music on or off, and sitting out rounds to hang
--- out in the plaza.
+-- stats, and the switches: music on or off, reduce motion, captions for
+-- sounds, and sitting out rounds to hang out in the plaza.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -196,20 +196,38 @@ local function switch(parent: Instance, order: number, title: string, text: stri
 	end)
 end
 
+-- Flips a saved setting on the server, then here.
+local function flip(name: string, value: boolean)
+	local result = State.request("Setting", name, value)
+	if result.Ok and State.Profile then
+		State.Profile.Settings = State.Profile.Settings or {}
+		State.Profile.Settings[name] = value
+		State.fire("Profile")
+	end
+	pick(tab)
+end
+
 local function settings(holder: Frame)
 	local list = scroller(holder)
-	local profile = State.Profile
-	local musicOn = not profile or not profile.Settings or profile.Settings.Music ~= false
+	local musicOn = State.setting("Music", true)
 	switch(list, 1, "Music", "The plaza and party music. Sound effects stay on.", musicOn, function()
-		local value = not musicOn
-		local result = State.request("Setting", "Music", value)
-		if result.Ok and State.Profile then
-			State.Profile.Settings = State.Profile.Settings or {}
-			State.Profile.Settings.Music = value
-			State.fire("Profile")
-		end
-		pick(tab)
+		flip("Music", not musicOn)
 	end)
+	local calm = State.setting("ReduceMotion", false)
+	switch(list, 3, "Reduce motion", "No bouncing menus, crate shuffles or flickering lights.", calm, function()
+		flip("ReduceMotion", not calm)
+	end)
+	local captions = State.setting("Captions", false)
+	switch(
+		list,
+		4,
+		"Captions",
+		"Words at the bottom of the screen for sounds, and which way they came from.",
+		captions,
+		function()
+			flip("Captions", not captions)
+		end
+	)
 	switch(
 		list,
 		2,
@@ -259,6 +277,7 @@ function Settings.start()
 		end
 	end)
 	State.on("Profile", function()
+		Ui.ReduceMotion = State.setting("ReduceMotion", false)
 		if Ui.isOpen(panel) and tab ~= "Settings" then
 			pick(tab)
 		end

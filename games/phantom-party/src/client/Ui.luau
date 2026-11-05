@@ -14,6 +14,20 @@ local Gear = require(Shared.Look.Gear)
 
 local Ui = {}
 
+-- The player's Reduce motion setting (Settings keeps it in step with the
+-- save): pops, shuffles and flicker are skipped while it's on.
+Ui.ReduceMotion = false
+
+-- Grows a UIScale from its current size to target with a little bounce,
+-- or jumps straight there with Reduce motion on.
+function Ui.pop(scale: UIScale, target: number, seconds: number?)
+	if Ui.ReduceMotion then
+		scale.Scale = target
+		return
+	end
+	TweenService:Create(scale, TweenInfo.new(seconds or 0.25, Enum.EasingStyle.Back), { Scale = target }):Play()
+end
+
 Ui.Colors = {
 	Panel = Color3.fromRGB(24, 16, 38),
 	Card = Color3.fromRGB(40, 28, 62),
@@ -116,7 +130,7 @@ function Ui.button(parent: Instance, text: string, color: Color3, props: { [stri
 		scale.Scale = 0.94
 	end)
 	button.MouseButton1Up:Connect(function()
-		TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+		Ui.pop(scale, 1, 0.15)
 	end)
 	button.MouseLeave:Connect(function()
 		scale.Scale = 1
@@ -262,7 +276,7 @@ function Ui.show(panel: GuiObject)
 	if scale then
 		local target = Ui.screenScale()
 		scale.Scale = target * 0.9
-		TweenService:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Back), { Scale = target }):Play()
+		Ui.pop(scale, target, 0.2)
 	end
 end
 

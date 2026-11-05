@@ -221,7 +221,7 @@ local function refreshProfile()
 	if lastCoins and profile.Coins > lastCoins then
 		local scale = coinText:FindFirstChildOfClass("UIScale") or Ui.make("UIScale", {}, coinText)
 		scale.Scale = 1.25
-		TweenService:Create(scale, TweenInfo.new(0.3, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+		Ui.pop(scale, 1, 0.3)
 	end
 	lastCoins = profile.Coins
 	levelText.Text = `Level {profile.Level}`

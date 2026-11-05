@@ -4,7 +4,6 @@
 -- guaranteed pull.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CrateConfig = require(Shared.Config.Crates)
@@ -80,7 +79,12 @@ local function reveal(result: { [string]: any }, crate: CrateConfig.Crate)
 		end
 	end
 	local random = Random.new()
-	for step = 1, 14 do
+	-- With Reduce motion on, no flashing shuffle: a short pause instead.
+	local steps = if Ui.ReduceMotion then 0 else 14
+	if Ui.ReduceMotion then
+		task.wait(0.6)
+	end
+	for step = 1, steps do
 		local itemId = pool[random:NextInteger(1, #pool)]
 		local item = Items.get(itemId)
 		for _, child in frame:GetChildren() do
@@ -109,7 +113,7 @@ local function reveal(result: { [string]: any }, crate: CrateConfig.Crate)
 	rarity.Text = `{string.upper(result.Rarity)}  ·  {Items.KIND_NAMES[item and item.Kind or ""] or ""}`
 	rarity.TextColor3 = color
 	local scale = Ui.make("UIScale", { Scale = 0.6 }, frame)
-	TweenService:Create(scale, TweenInfo.new(0.4, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	Ui.pop(scale, 1, 0.4)
 	Sounds.play("CrateReveal")
 	Corner.note("From the crate", `{item and item.Name or result.Item} ({result.Rarity})`, color)
 	local row = Ui.make("Frame", {

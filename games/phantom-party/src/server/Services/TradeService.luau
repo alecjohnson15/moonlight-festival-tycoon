@@ -186,12 +186,14 @@ local function complete(session: TradeRules.Session)
 		end
 	end
 	AnalyticsService.traded(a, #aList, #bList)
+	AnalyticsService.traded(b, #bList, #aList)
 end
 
 local function open(a: Player, b: Player)
 	local session = TradeRules.new(a, b)
 	sessions[a] = session
 	sessions[b] = session
+	AnalyticsService.tradeOpened(a, b)
 	for _, player in { a, b } do
 		TradeRemote:FireClient(player, "Open", view(session, player))
 	end

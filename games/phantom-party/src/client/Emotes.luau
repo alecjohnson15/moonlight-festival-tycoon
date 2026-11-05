@@ -94,7 +94,7 @@ local function bubble(character: Model?, text: string, color: Color3?)
 		TextColor3 = Color3.fromRGB(40, 28, 62),
 	})
 	local scale = Ui.make("UIScale", { Scale = 0.3 }, frame)
-	TweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	Ui.pop(scale, 1)
 	task.delay(EmoteConfig.BubbleSeconds, function()
 		if board.Parent then
 			board:Destroy()

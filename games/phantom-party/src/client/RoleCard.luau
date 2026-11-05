@@ -1,11 +1,12 @@
 -- The two moments that take the middle of the screen, briefly:
 --   - the role reveal as a round begins: your role, your goal, what you can
 --     do and, for the Shadows, who's on your side;
---   - the results: who won, who was who, and what you earned.
+--   - the results: who won, the moment that decided it, who was who, the
+--     party star, what you earned and any mastery goals you met (only you
+--     see those).
 -- Both are cards of a fixed, modest size that close on their own.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Roles = require(Shared.Config.Roles)
@@ -31,7 +32,7 @@ local function card(width: number, height: number, accent: Color3): Frame
 	local scale = Ui.fitScale(frame)
 	local target = scale.Scale
 	scale.Scale = target * 0.6
-	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = target }):Play()
+	Ui.pop(scale, target, 0.35)
 	return frame
 end
 
@@ -137,7 +138,9 @@ local function results(message)
 	local color = if guestsWon
 		then Color3.fromHex(Roles.List.Guardian.Color)
 		else Color3.fromHex(Roles.List.Phantom.Color)
-	local frame = card(420, 300, color)
+	local recap = if typeof(message.Recap) == "table" then message.Recap else {}
+	local star = recap.Star
+	local frame = card(420, if star then 328 else 304, color)
 	current = frame
 	Ui.label(frame, if guestsWon then "THE GUESTS WIN!" else "THE PHANTOM WINS!", {
 		Position = UDim2.fromOffset(0, 10),
@@ -147,14 +150,18 @@ local function results(message)
 		TextColor3 = color,
 		TextStrokeTransparency = 0.5,
 	})
-	Ui.label(frame, REASONS[message.Reason] or "", {
-		Position = UDim2.fromOffset(0, 46),
-		Size = UDim2.new(1, 0, 0, 18),
-		TextSize = 13,
-		TextColor3 = Ui.Colors.Dim,
+	local decisive = if typeof(recap.Decisive) == "string" and recap.Decisive ~= ""
+		then recap.Decisive
+		else REASONS[message.Reason] or ""
+	Ui.label(frame, decisive, {
+		Position = UDim2.fromOffset(16, 46),
+		Size = UDim2.new(1, -32, 0, 22),
+		TextSize = 14,
+		TextWrapped = true,
+		TextColor3 = Ui.Colors.Text,
 	})
 	local list = Ui.make("ScrollingFrame", {
-		Position = UDim2.fromOffset(16, 70),
+		Position = UDim2.fromOffset(16, 74),
 		Size = UDim2.new(1, -32, 0, 140),
 		BackgroundTransparency = 1,
 		ScrollBarThickness = 4,
@@ -212,6 +219,24 @@ local function results(message)
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 	end
+	if star then
+		local role = Roles.List[star.Role]
+		local starLabel = Ui.label(frame, `PARTY STAR: {star.Name} ({if role then role.Name else star.Role})`, {
+			Position = UDim2.fromOffset(16, 218),
+			Size = UDim2.new(1, -32, 0, 16),
+			Font = Ui.Title,
+			TextSize = 14,
+			TextColor3 = Ui.Colors.Gold,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		})
+		starLabel.Name = "Star"
+		Ui.label(frame, star.Why, {
+			Position = UDim2.fromOffset(16, 234),
+			Size = UDim2.new(1, -32, 0, 14),
+			TextSize = 11,
+			TextColor3 = Ui.Colors.Dim,
+		})
+	end
 	local pay = Ui.label(frame, "", {
 		Name = "Pay",
 		Position = UDim2.new(0, 16, 1, -80),
@@ -251,6 +276,13 @@ local function paid(message)
 	end
 	if message.Coins > 0 or message.Xp > 0 then
 		Corner.note("Round rewards", text, Ui.Colors.Gold, 8)
+	end
+	-- Mastery goals met: only this player is told.
+	if typeof(message.Mastery) == "table" then
+		for _, goal in message.Mastery do
+			local times = if goal.Count == 1 then "first time!" else `{goal.Count} times`
+			Corner.note(`Mastery: {goal.Name}`, `{goal.Text} ({times})`, Color3.fromRGB(190, 150, 255), 8)
+		end
 	end
 end
 

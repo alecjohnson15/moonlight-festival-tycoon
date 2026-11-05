@@ -2,6 +2,7 @@
 -- flat or from a spot in the world; the music, which changes with the round
 -- (lobby, round, last thirty seconds); and the map's ambience while the
 -- player is at the party. The player can turn the music off in Settings.
+-- Every one-off sound is also passed to listeners (client/Captions).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -18,6 +19,12 @@ local made: { [string]: Sound } = {}
 local music: string? = nil
 local ambience: string? = nil
 local musicOn = true
+local listeners: { (string, Vector3?) -> () } = {}
+
+-- Calls listener(name, position?) for every one-off sound played.
+function Sounds.listen(listener: (string, Vector3?) -> ())
+	table.insert(listeners, listener)
+end
 
 local function idOf(name: string): string?
 	local spec = SoundConfig.List[name]
@@ -52,6 +59,9 @@ end
 -- Plays a sound once. With a position, it comes from there and fades with
 -- distance.
 function Sounds.play(name: string, position: Vector3?, pitch: number?)
+	for _, listener in listeners do
+		task.spawn(listener, name, position)
+	end
 	local sound = get(name)
 	if not sound then
 		return

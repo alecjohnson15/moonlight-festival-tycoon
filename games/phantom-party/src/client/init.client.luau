@@ -1,13 +1,15 @@
 -- Client entry point. The client draws the HUD, the role card, the map
 -- vote, the round buttons, the effects, the lighting and music of each
 -- place, the menus (boutique, items, crates, Moon Pass, trades, emotes,
--- help) and the spectator bar. It never decides roles, hits, coins,
+-- help), the spectator bar, first-time tips, the leads notebook and
+-- captions for sounds. It never decides roles, hits, coins,
 -- ownership, crate results or trades: it asks the server and shows the
 -- answer.
 
 local StarterGui = game:GetService("StarterGui")
 
 local Atmosphere = require(script.Atmosphere)
+local Captions = require(script.Captions)
 local ChatTags = require(script.ChatTags)
 local Controls = require(script.Controls)
 local Corner = require(script.Corner)
@@ -64,5 +66,6 @@ Spectate.start()
 ChatTags.start()
 Notices.start()
 Tips.start()
+Captions.start()
 -- Last, so every screen is listening when the first snapshot arrives.
 State.start()
