@@ -89,16 +89,13 @@ local function figure(name: string, look: Look.Look): Model
 		CanCollide = false,
 	})
 	model.PrimaryPart = root
-	Kit.part(
-		model,
-		{
-			Name = "Head",
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.new(1.3, 1.3, 1.3),
-			CFrame = CFrame.new(0, 2.1, 0),
-			Color = skin,
-		}
-	)
+	Kit.part(model, {
+		Name = "Head",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(1.3, 1.3, 1.3),
+		CFrame = CFrame.new(0, 2.1, 0),
+		Color = skin,
+	})
 	Kit.part(model, { Name = "Body", Size = Vector3.new(2, 2, 1), CFrame = CFrame.new(0, 0.4, 0), Color = top })
 	Kit.part(model, { Name = "Legs", Size = Vector3.new(1.8, 2, 0.9), CFrame = CFrame.new(0, -1.6, 0), Color = bottom })
 	for _, child in model:GetChildren() do

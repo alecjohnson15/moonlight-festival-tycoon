@@ -189,14 +189,18 @@ local function bench(parent: Instance, cframe: CFrame)
 		parent,
 		{ Size = Vector3.new(6, 1, 2.4), CFrame = cframe * CFrame.new(0, 1.2, 0), Color = C.Velvet, Material = FABRIC }
 	)
-	part(
-		parent,
-		{ Size = Vector3.new(6, 2.4, 0.6), CFrame = cframe * CFrame.new(0, 2.3, 1), Color = C.Velvet, Material = FABRIC }
-	)
-	part(
-		parent,
-		{ Size = Vector3.new(6.2, 0.7, 2.6), CFrame = cframe * CFrame.new(0, 0.35, 0), Color = C.Gold, Material = METAL }
-	)
+	part(parent, {
+		Size = Vector3.new(6, 2.4, 0.6),
+		CFrame = cframe * CFrame.new(0, 2.3, 1),
+		Color = C.Velvet,
+		Material = FABRIC,
+	})
+	part(parent, {
+		Size = Vector3.new(6.2, 0.7, 2.6),
+		CFrame = cframe * CFrame.new(0, 0.35, 0),
+		Color = C.Gold,
+		Material = METAL,
+	})
 end
 
 -- A dressmaker's dummy on a stand.
@@ -819,26 +823,20 @@ local function buildRunway(root: Instance, refs: Refs)
 	local judgeHair = { Color3.fromRGB(20, 20, 30), Color3.fromRGB(255, 80, 200), Color3.fromRGB(235, 235, 240) }
 	for index, seat in Layout.Judges do
 		local judge = Kit.model(`Judge{index}`, hallFolder)
-		part(
-			judge,
-			{
-				Name = "Chair",
-				Size = Vector3.new(3, 5, 1),
-				CFrame = seat * CFrame.new(0, 2.5, 1.4),
-				Color = C.Gold,
-				Material = METAL,
-			}
-		)
-		part(
-			judge,
-			{
-				Name = "Body",
-				Size = Vector3.new(2, 2.4, 1.2),
-				CFrame = seat * CFrame.new(0, 3.2, 0.4),
-				Color = judgeColors[index],
-				Material = FABRIC,
-			}
-		)
+		part(judge, {
+			Name = "Chair",
+			Size = Vector3.new(3, 5, 1),
+			CFrame = seat * CFrame.new(0, 2.5, 1.4),
+			Color = C.Gold,
+			Material = METAL,
+		})
+		part(judge, {
+			Name = "Body",
+			Size = Vector3.new(2, 2.4, 1.2),
+			CFrame = seat * CFrame.new(0, 3.2, 0.4),
+			Color = judgeColors[index],
+			Material = FABRIC,
+		})
 		local head = ball(
 			judge,
 			(seat * CFrame.new(0, 5.1, 0.4)).Position,
