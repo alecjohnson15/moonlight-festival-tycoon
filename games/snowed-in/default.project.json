@@ -1,0 +1,110 @@
+{
+  "name": "snowed-in",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "PickRole": { "$className": "RemoteEvent" },
+        "Fire": { "$className": "RemoteEvent" },
+        "Ability": { "$className": "RemoteEvent" },
+        "Build": { "$className": "RemoteEvent" },
+        "Craft": { "$className": "RemoteEvent" },
+        "Cook": { "$className": "RemoteEvent" },
+        "Eat": { "$className": "RemoteEvent" },
+        "Shop": { "$className": "RemoteEvent" },
+        "Equip": { "$className": "RemoteEvent" },
+        "Decorate": { "$className": "RemoteEvent" },
+        "RequestPurchase": { "$className": "RemoteEvent" },
+        "Notice": { "$className": "RemoteEvent" },
+        "Fx": { "$className": "RemoteEvent" },
+        "Profile": { "$className": "RemoteEvent" },
+        "Results": { "$className": "RemoteEvent" },
+        "Open": { "$className": "RemoteEvent" },
+        "Snapshot": { "$className": "RemoteEvent" }
+      },
+      "State": {
+        "$className": "Configuration"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "ServerStorage": {
+      "Stash": {
+        "$className": "Folder"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      },
+      "$properties": {
+        "CameraMaxZoomDistance": 60,
+        "CharacterWalkSpeed": 16
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": true,
+        "RespawnTime": 3
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "Gravity": 196.2
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Brightness": 2,
+        "ClockTime": 9,
+        "GlobalShadows": true,
+        "Ambient": [0.45, 0.5, 0.6],
+        "OutdoorAmbient": [0.55, 0.6, 0.7],
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.4
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.42,
+          "Offset": 0.1,
+          "Color": [0.85, 0.9, 0.97],
+          "Decay": [0.68, 0.75, 0.86],
+          "Glare": 0,
+          "Haze": 2.2
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.6,
+          "Size": 30,
+          "Threshold": 1.4
+        }
+      },
+      "Grade": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Saturation": 0.05,
+          "Contrast": 0.05,
+          "TintColor": [1, 1, 1]
+        }
+      }
+    },
+    "SoundService": {
+      "$properties": {
+        "AmbientReverb": "Mountains"
+      }
+    }
+  }
+}

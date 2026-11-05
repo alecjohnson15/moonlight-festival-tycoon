@@ -1,0 +1,68 @@
+name: Snowed In
+
+# Checks games/snowed-in, the co-op survival game, on its own: the same
+# tools and versions as ci.yml (and the same cache), run from the game's
+# folder against its own configs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "games/snowed-in/**"
+      - ".github/workflows/game-snowed-in.yml"
+  pull_request:
+    paths:
+      - "games/snowed-in/**"
+      - ".github/workflows/game-snowed-in.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games/snowed-in
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same versions as games/snowed-in/rokit.toml and ci.yml, so the
+      # compiled tools are shared through the same cache.
+      - name: Restore tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/stylua
+            ~/.cargo/bin/selene
+            ~/.cargo/bin/lune
+            ~/.cargo/bin/rojo
+          key: tools-${{ runner.os }}-stylua-2.6.0-luau-selene-0.31.0-lune-0.11.1-rojo-7.7.1
+
+      - name: Install tools
+        if: steps.tools.outputs.cache-hit != 'true'
+        run: |
+          cargo install --locked stylua@2.6.0 --features luau
+          cargo install --locked selene@0.31.0 lune@0.11.1 rojo@7.7.1
+
+      # A tidy Luau file must pass and an untidy one must fail, or the check
+      # below isn't really looking at the code.
+      - name: Make sure StyLua reads Luau
+        run: |
+          printf 'local count: number = 1\n' > "$RUNNER_TEMP/tidy.luau"
+          printf 'local  count: number = 1\n' > "$RUNNER_TEMP/untidy.luau"
+          stylua --check "$RUNNER_TEMP/tidy.luau"
+          if stylua --check "$RUNNER_TEMP/untidy.luau" > /dev/null; then
+            echo "::error::StyLua passed an untidy .luau file, so it is not checking Luau"
+            exit 1
+          fi
+
+      - name: Check formatting
+        run: stylua --check src tests tools
+
+      - name: Lint
+        run: selene src
+
+      - name: Test
+        run: lune run tests/run
+
+      - name: Build place
+        run: rojo build default.project.json -o snowed-in.rbxl
