@@ -109,7 +109,10 @@ src/
 tests/             Lune specs (no Studio needed)
 tools/             make_sounds.py (the sound and music generator),
                    RunModel.luau (a deterministic model of a whole run),
-                   simulate_run.luau (prints it for 1 to 8 players)
+                   simulate_run.luau (prints it for 1 to 8 players),
+                   make_manifest.luau (writes publish/manifest.json)
+publish/           publish.ps1: uploads sounds, makes passes, wires ids,
+                   builds and publishes with an Open Cloud key
 assets/audio/      45 generated .ogg files to upload
 assets/marketing/  Pass icons; the store icon and thumbnails go here
 docs/              launch.md, design.md, marketing.md, playtest.md,
@@ -146,3 +149,5 @@ that touches this folder.
 
 `docs/launch.md` walks through it: publish, upload the sounds, the content
 rating answers, the nine game passes and their icons, and the soft launch.
+With an Open Cloud key, `publish/publish.ps1` does the sounds, passes,
+settings and publish in one run (`publish/README.md`).

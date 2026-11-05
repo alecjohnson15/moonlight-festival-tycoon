@@ -1,0 +1,356 @@
+{
+  "catalogFile": "src/shared/Config/Catalog.luau",
+  "devices": {
+    "consoleEnabled": false,
+    "desktopEnabled": true,
+    "mobileEnabled": true,
+    "tabletEnabled": true,
+    "vrEnabled": false
+  },
+  "game": "Snowed In: Survive 10 Nights",
+  "passes": [
+    {
+      "description": "Unlocks the Ranger role straight away (it can also be earned with 600 snowflakes).",
+      "icon": "assets/marketing/passes/ranger.png",
+      "id": "Ranger",
+      "name": "Ranger Role",
+      "price": 149
+    },
+    {
+      "description": "Unlocks the Medic role straight away (it can also be earned with 600 snowflakes).",
+      "icon": "assets/marketing/passes/medic.png",
+      "id": "Medic",
+      "name": "Medic Role",
+      "price": 149
+    },
+    {
+      "description": "Opens the premium row of the Expedition Pass: 13 extra rewards, shown on the pass before you buy. You still earn them by playing.",
+      "icon": "assets/marketing/passes/expedition_premium.png",
+      "id": "ExpeditionPremium",
+      "name": "Expedition Pass: Premium",
+      "price": 299
+    },
+    {
+      "description": "A cape that shimmers green and purple like the northern lights.",
+      "icon": "assets/marketing/passes/aurora_cape.png",
+      "id": "AuroraCape",
+      "name": "Aurora Cape",
+      "price": 129
+    },
+    {
+      "description": "A crown of glowing icicles.",
+      "icon": "assets/marketing/passes/icicle_crown.png",
+      "id": "IcicleCrown",
+      "name": "Icicle Crown",
+      "price": 99
+    },
+    {
+      "description": "A trail of northern lights that follows your feet.",
+      "icon": "assets/marketing/passes/aurora_trail.png",
+      "id": "AuroraTrail",
+      "name": "Aurora Trail",
+      "price": 79
+    },
+    {
+      "description": "A pet penguin in a tiny scarf that waddles after you.",
+      "icon": "assets/marketing/passes/penguin.png",
+      "id": "Penguin",
+      "name": "Penguin Buddy",
+      "price": 149
+    },
+    {
+      "description": "A pet arctic fox with a big fluffy tail.",
+      "icon": "assets/marketing/passes/arctic_fox.png",
+      "id": "ArcticFox",
+      "name": "Arctic Fox Buddy",
+      "price": 149
+    },
+    {
+      "description": "Four cabin decorations: Aurora Lights, Golden Wreath, Giant Snow Globe and Rainbow Glow.",
+      "icon": "assets/marketing/passes/cozy_cabin.png",
+      "id": "CozyCabin",
+      "name": "Cozy Cabin Pack",
+      "price": 199
+    }
+  ],
+  "place": {
+    "description": "A blizzard has buried Pinehollow and the rescue train won't come until someone fixes the radio. Keep the Great Hearth burning for 10 nights!\n\nChop wood, dig up coal and scrap, build walls, lanterns and ember turrets, and fight off frostlings, snow hounds and two giant yetis with torches, slings and a sunstone cannon. Pick a role: Scout, Builder, Cook, Ranger or Medic, each with its own power. Find the four frozen radio parts, carry them to the tower and call the train. Get frozen? A friend can thaw you.\n\nEarn snowflakes, decorate your own cabin, and climb the Expedition Pass. Co-op for up to 8 friends. Cartoon monsters, no gore.",
+    "displayName": "Snowed In: Survive 10 Nights",
+    "serverSize": 8
+  },
+  "placeFile": "snowed-in.rbxl",
+  "products": {},
+  "sounds": [
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Music Day",
+      "file": "assets/audio/music_day.ogg",
+      "name": "MusicDay"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Music Night",
+      "file": "assets/audio/music_night.ogg",
+      "name": "MusicNight"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Music Boss",
+      "file": "assets/audio/music_boss.ogg",
+      "name": "MusicBoss"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Wind",
+      "file": "assets/audio/wind.ogg",
+      "name": "Wind"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Chill",
+      "file": "assets/audio/chill.ogg",
+      "name": "Chill"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Notice",
+      "file": "assets/audio/notice.ogg",
+      "name": "Notice"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Night Horn",
+      "file": "assets/audio/night_horn.ogg",
+      "name": "NightHorn"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Dawn Chime",
+      "file": "assets/audio/dawn_chime.ogg",
+      "name": "DawnChime"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Freeze",
+      "file": "assets/audio/freeze.ogg",
+      "name": "Freeze"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Thaw",
+      "file": "assets/audio/thaw.ogg",
+      "name": "Thaw"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Chop",
+      "file": "assets/audio/chop.ogg",
+      "name": "Chop"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Feed",
+      "file": "assets/audio/feed.ogg",
+      "name": "Feed"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Hit",
+      "file": "assets/audio/hit.ogg",
+      "name": "Hit"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Ability",
+      "file": "assets/audio/ability.ogg",
+      "name": "Ability"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Blaze",
+      "file": "assets/audio/blaze.ogg",
+      "name": "Blaze"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Broken",
+      "file": "assets/audio/broken.ogg",
+      "name": "Broken"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Build",
+      "file": "assets/audio/build.ogg",
+      "name": "Build"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Called",
+      "file": "assets/audio/called.ogg",
+      "name": "Called"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Cannon",
+      "file": "assets/audio/cannon.ogg",
+      "name": "Cannon"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Click",
+      "file": "assets/audio/click.ogg",
+      "name": "Click"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Cook",
+      "file": "assets/audio/cook.ogg",
+      "name": "Cook"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Craft",
+      "file": "assets/audio/craft.ogg",
+      "name": "Craft"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Crate",
+      "file": "assets/audio/crate.ogg",
+      "name": "Crate"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Deny",
+      "file": "assets/audio/deny.ogg",
+      "name": "Deny"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Deposit",
+      "file": "assets/audio/deposit.ogg",
+      "name": "Deposit"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Dig",
+      "file": "assets/audio/dig.ogg",
+      "name": "Dig"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Eat",
+      "file": "assets/audio/eat.ogg",
+      "name": "Eat"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Flare",
+      "file": "assets/audio/flare.ogg",
+      "name": "Flare"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Hearth Up",
+      "file": "assets/audio/hearth_up.ogg",
+      "name": "HearthUp"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Ice Break",
+      "file": "assets/audio/ice_break.ogg",
+      "name": "IceBreak"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Lose",
+      "file": "assets/audio/lose.ogg",
+      "name": "Lose"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Mine",
+      "file": "assets/audio/mine.ogg",
+      "name": "Mine"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Pack Full",
+      "file": "assets/audio/pack_full.ogg",
+      "name": "PackFull"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Pick",
+      "file": "assets/audio/pick.ogg",
+      "name": "Pick"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Poof",
+      "file": "assets/audio/poof.ogg",
+      "name": "Poof"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Radio Fit",
+      "file": "assets/audio/radio_fit.ogg",
+      "name": "RadioFit"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Repair",
+      "file": "assets/audio/repair.ogg",
+      "name": "Repair"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Roar",
+      "file": "assets/audio/roar.ogg",
+      "name": "Roar"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Slam",
+      "file": "assets/audio/slam.ogg",
+      "name": "Slam"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Sling",
+      "file": "assets/audio/sling.ogg",
+      "name": "Sling"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Splash",
+      "file": "assets/audio/splash.ogg",
+      "name": "Splash"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Swing",
+      "file": "assets/audio/swing.ogg",
+      "name": "Swing"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Train Horn",
+      "file": "assets/audio/train_horn.ogg",
+      "name": "TrainHorn"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Unlock",
+      "file": "assets/audio/unlock.ogg",
+      "name": "Unlock"
+    },
+    {
+      "description": "Original sound for Snowed In: Survive 10 Nights, made for the game.",
+      "displayName": "Snowed In - Win",
+      "file": "assets/audio/win.ogg",
+      "name": "Win"
+    }
+  ],
+  "soundsFile": "src/shared/Config/Sounds.luau"
+}

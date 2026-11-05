@@ -14,6 +14,7 @@ require("./Balance.spec")
 require("./Radio.spec")
 require("./Progress.spec")
 require("./Pacing.spec")
+require("./Publish.spec")
 
 local failures = TestKit.run()
 process.exit(if failures > 0 then 1 else 0)

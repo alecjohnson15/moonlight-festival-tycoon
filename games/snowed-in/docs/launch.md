@@ -12,18 +12,24 @@ root `docs/launch.md`, "Before you start".
 
 ## The short way: let Claude do it with an API key
 
-Halloween Tycoon's passes were made through Roblox's Open Cloud API. The same
-works here:
+`publish/publish.ps1` does steps 2, 3, 4, 6 and 7 in one run from the
+linked PC, through Roblox's Open Cloud API:
 
-1. Publish the place file once by hand (step 2 below), so the game exists.
-2. On the [Creator Hub API keys page](https://create.roblox.com/dashboard/credentials),
-   make a key with `game-pass` (read and write), `universe` and
-   `universe.place` (write) for this game, and paste it in the project chat.
-3. Claude makes the nine passes with the names, descriptions, prices and
-   icons below, puts their ids in `src/shared/Config/Catalog.luau`, and
-   publishes the updated place. Delete the key when it's done.
+1. On the [Creator Dashboard](https://create.roblox.com/dashboard/creations),
+   **Create Experience** (an empty one is fine) and note its universe id and
+   place id.
+2. Make an API key with `universe-places`, `universe` and `universe.place`
+   (write), `game-pass` and `asset` (read and write) for this game.
+   `publish/README.md` has the clicks.
+3. Paste the key, universe id and place id in the project chat and say "go
+   ahead". The script uploads the 45 sounds, makes the nine passes with the
+   names, descriptions, prices and icons below, puts every id in Config,
+   builds the place, sets the name, description, 8-player servers and
+   devices, and publishes it. Delete the key when it's done.
 
-Everything below is the same thing by hand.
+You still do the genre, icon and thumbnails (step 2), the content rating
+questionnaire (step 5) and the soft launch (step 9). Everything below is the
+same thing by hand.
 
 ## 1. Open the place file
 
@@ -53,8 +59,9 @@ joins.
 - **Genre:** Survival (or Action if Survival isn't offered).
 - **Icon:** `assets/marketing/icon.png`. **Thumbnail:** `assets/marketing/thumbnail.png`
   (make both from the prompts in `docs/marketing.md` first).
-- **Devices:** computer, phone, tablet and console (the game has controller
-  buttons; try one before ticking console if you can).
+- **Devices:** computer, phone and tablet. The game has controller
+  buttons, so tick console too once someone has played it with a
+  controller (the script leaves console off).
 
 Save. The game exists on Roblox, but only you can play it.
 
