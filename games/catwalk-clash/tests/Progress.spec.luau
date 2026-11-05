@@ -47,6 +47,22 @@ describe("Style Pass", function()
 		local current = Progress.newPass(Season.Id)
 		expect(Progress.passFor(current, Season)).toBe(current)
 	end)
+
+	it("stops XP when the season ends but keeps reached rewards claimable", function()
+		-- What the pass board promises after 1 February 2027: "Claim any
+		-- rewards you reached; they're yours to keep."
+		local pass = Progress.newPass(Season.Id)
+		Progress.addXp(pass, Season, Season.XpPerTier * 4, open)
+		local after = Season.Ends + 30 * 86400
+		expect(Progress.seasonOpen(Season, after)).toBe(false)
+		expect(#Progress.addXp(pass, Season, Season.XpPerTier * 10, after)).toBe(0)
+		expect(Progress.tier(Season, pass.Xp)).toBe(4)
+		expect((Progress.canClaim(pass, Season, 4, "Free", false))).toBe(true)
+		expect(select(2, Progress.canClaim(pass, Season, 5, "Free", false))).toBe("Locked")
+		-- Season 1's dates are real and the pass ends after it starts.
+		expect(Season.Ends > Season.Starts).toBe(true)
+		expect(os.date("!%Y-%m-%d", Season.Ends)).toBe("2027-02-01")
+	end)
 end)
 
 describe("Daily challenges", function()

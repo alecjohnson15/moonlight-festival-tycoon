@@ -178,4 +178,8 @@ promote it.
   `Config/Themes.luau`.
 - **Season 2** of the Style Pass: copy `Config/Season.luau` with a new Id,
   dates and rewards, add a `style_pass_s2` pass to `Config/Catalog.luau`,
-  and make the pass (step 5). Season 1 ends on 1 February 2027.
+  and make the pass (step 5). Season 1 ends on 1 February 2027. From then
+  the game stops offering the Season 1 Style Pass and tells players the
+  season is over (they keep every reward they reached), but the pass is
+  still on sale on its Roblox page until you take it off sale there, so do
+  that on 1 February 2027.

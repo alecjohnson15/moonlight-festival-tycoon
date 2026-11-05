@@ -1,11 +1,13 @@
 --!strict
 -- The judges' scoring. The judges are rules, not AI: they read the theme
 -- tags of the pieces worn, the names of catalog items and the colours, and
--- can't see how a look actually looks; the audience judges that. A look scores for fitting the theme (wardrobe pieces
--- whose tags match it, catalog items whose names contain its words, colours
--- close to its colours), for being complete, and a little for each judge's
--- own taste and for flair (a small random amount, so judges don't always
--- agree). Paid pieces are tagged like free ones, so money can't buy points.
+-- can't see how a look actually looks; the audience judges that. A look
+-- scores for fitting the theme (wardrobe pieces whose tags match it, catalog
+-- items whose names contain its words, colours close to its colours), for
+-- being complete, and a little for each judge's own taste and for flair (a
+-- small random amount, so judges don't always agree). Every part is capped,
+-- so piling on one thing can't run the score up. Paid pieces are tagged like
+-- free ones, so money can't buy points.
 -- Pure logic, tested in tests/Judge.spec.
 
 local Palette = require(script.Parent.Config.Palette)

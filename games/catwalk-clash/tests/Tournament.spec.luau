@@ -9,6 +9,12 @@ local RobloxLoader = require("./RobloxLoader")
 local Bracket = RobloxLoader.require("src/shared/Bracket")
 local Game = RobloxLoader.require("src/shared/Config/Game")
 local Layout = RobloxLoader.require("src/shared/Config/Layout")
+local People = RobloxLoader.require("src/shared/Config/People")
+local Themes = RobloxLoader.require("src/shared/Config/Themes")
+local Judge = RobloxLoader.require("src/shared/Judge")
+local Look = RobloxLoader.require("src/shared/Look")
+local RivalStyle = RobloxLoader.require("src/shared/RivalStyle")
+local Voting = RobloxLoader.require("src/shared/Voting")
 
 local describe, it, expect = TestKit.describe, TestKit.it, TestKit.expect
 
@@ -170,6 +176,67 @@ describe("Tournament simulation", function()
 		)
 		expect(math.abs(random - 0.2) < 0.03).toBe(true)
 		expect(rating < random).toBe(true)
+	end)
+
+	it("refuses a one-entrant bracket (the server skips that show) and fills small shows with rivals", function()
+		-- RoundService.runShow returns early below two entrants, and rivals
+		-- top every show up to MinEntrants before it starts.
+		local ok = pcall(Bracket.new, Bracket.seeded(list(1), "Random", seeded(3)))
+		expect(ok).toBe(false)
+		expect(Game.Round.MinEntrants >= 2).toBe(true)
+	end)
+
+	it("crowns different rivals when nobody votes, with skill mattering but not deciding", function()
+		-- A solo player who sits out: four rivals, the judges decide every
+		-- matchup. No rival should be a scripted champion.
+		local rng = seeded(41)
+		local runs = 1500
+		local crowns, shows = {}, {}
+		local none = { A = 0, B = 0 }
+		for _ = 1, runs do
+			local theme = Themes.List[math.floor(rng() * #Themes.List) + 1]
+			local pool = table.clone(People.Rivals)
+			local looks, entrants = {}, {}
+			for _ = 1, 4 do
+				local rival = table.remove(pool, math.floor(rng() * #pool) + 1)
+				looks[rival.Name] = Look.summary(RivalStyle.dress(rival, theme, rng))
+				shows[rival.Name] = (shows[rival.Name] or 0) + 1
+				table.insert(entrants, { Id = rival.Name, Rating = 1500 })
+			end
+			local bracket = Bracket.new(Bracket.seeded(entrants, "Random", rng))
+			playOut(bracket, function(match)
+				local verdict = Judge.verdict(People.Judges, theme, looks[match.A], {}, looks[match.B], {}, rng)
+				local tally =
+					Voting.tally(Game.Voting, {}, verdict.Sides, verdict.Scores, none, if rng() < 0.5 then 0 else 1)
+				return if tally.Winner == "A" then match.A else match.B
+			end)
+			local champion = Bracket.champion(bracket) :: string
+			crowns[champion] = (crowns[champion] or 0) + 1
+		end
+		local best, worst, winners = 0, 1, 0
+		local bestName, worstName = "", ""
+		for _, rival in People.Rivals do
+			local rate = (crowns[rival.Name] or 0) / shows[rival.Name]
+			if rate > 0 then
+				winners += 1
+			end
+			if rate > best then
+				best, bestName = rate, rival.Name
+			end
+			if rate < worst then
+				worst, worstName = rate, rival.Name
+			end
+		end
+		print(
+			`        rivals-only shows: {winners}/{#People.Rivals} rivals won; crown rate per show entered from {math.floor(
+				worst * 100
+			)}% ({worstName}) to {math.floor(best * 100)}% ({bestName}), fair share 25%`
+		)
+		expect(winners).toBe(#People.Rivals)
+		-- Skill should matter (a 0.8 rival beats a 0.4 one more often), but no
+		-- rival may win nearly every show they enter.
+		expect(best < 0.65).toBe(true)
+		expect(worst > 0.02).toBe(true)
 	end)
 
 	it("never puts anyone in two matchups of the same round", function()

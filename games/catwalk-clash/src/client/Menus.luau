@@ -470,6 +470,35 @@ local function renderProfile()
 		Size = UDim2.new(1, 0, 0, 34),
 		LayoutOrder = 20,
 	})
+
+	-- The voting rules in plain words, as promised in docs/design.md.
+	Ui.label(list, {
+		Text = "How voting works",
+		Font = Ui.Fonts.Title,
+		TextSize = 18,
+		TextColor3 = C.Aqua,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		LayoutOrder = 21,
+	})
+	Ui.label(list, {
+		Text = table.concat({
+			"• You can't vote in your own matchup.",
+			"• Voting opens a few seconds after both walkers start down the runway.",
+			"• One vote each per matchup. You can change it until voting closes.",
+			"• Nobody sees who's ahead until voting closes.",
+			"• If lots of a walker's friends, or lots of brand-new accounts, vote for them, the extra votes count for less, so a big group can't decide alone.",
+			"• Three judges vote too. They count most when few people are watching.",
+			"• Your first 10 walks can only raise your Style Score.",
+		}, "\n"),
+		TextSize = 12,
+		TextColor3 = C.Muted,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 22,
+	})
 end
 
 ------------------------------------------------------------------------------

@@ -24,19 +24,26 @@ Tycoon in the root of this repository.
   your own booth, a head-to-head bracket on a two-lane runway, and a
   crowning with a Hall of Fame statue. Rivals fill the bracket on small
   servers, so a show runs even solo. Players can choose **Watch only** in
-  Settings to sit out and vote.
+  Settings to sit out and vote, and **Reduced motion** to turn off camera
+  flashes and swoops.
 - **Voting:** server-side, one vote per account per matchup, only while
   both outfits are on show, with walkers barred from their own matchup,
-  friends and brand-new accounts counting half, the split hidden until the
-  end, and judges whose weight fades as the audience grows.
+  extra votes from a walker's friends or brand-new accounts counting half
+  after the first two, the split hidden until the end, and rule-based
+  judges whose weight fades as the audience grows and who give each walker
+  a star rating and a compliment. The rules are explained in game.
+- **Show:** a random bracket draw (byes by luck), an opening lineup of
+  every look, and a catch-up for players who join mid-show.
 - **Wardrobe:** 152 original pieces in ten slots, built from parts, each in
   36 colours and eight finishes; painted tops, bottoms, shoes and gloves on
   the avatar; your own body or the classic one; 14 poses and 15 entrances;
-  a turntable preview; and a closet of saved outfits.
+  a turntable preview; a closet of saved outfits; **Theme look** for a
+  quick starting outfit; and undo and redo.
 - **Catalog:** search the Roblox avatar shop, try anything on for free,
   favourite it, wear it on the runway, or buy it with Roblox's prompt (the
   game earns the commission and the creator is paid).
-- **Progress:** an Elo Style Score with six ranks and a world leaderboard,
+- **Progress:** an Elo Style Score with six ranks and a world leaderboard
+  (the first 10 walks can only raise it),
   Sparkles to spend, a 30-tier Style Pass season, three daily challenges, a
   login streak, and 69 themes including seasonal ones that rotate in by
   date, with a weekly double-reward spotlight.
@@ -72,13 +79,14 @@ Run from this folder; CI runs the same in
 `.github/workflows/game-catwalk-clash.yml`.
 
 ```
-stylua --check src tests
-selene src tests
+stylua --check src tests tools
+selene src tests tools
 lune run tests/run
 rojo build default.project.json -o catwalk-clash.rbxl
 ```
 
-The Lune tests cover the bracket, voting, judging, rivals, Style Score, the
+The Lune tests cover the bracket (including thousands of simulated
+shows), voting, judging, the Theme look, rivals, Style Score, the
 Style Pass, challenges, streaks, the theme picker, look checks and the
 funnel, and build every wardrobe piece and the whole map with Lune's Roblox
 library.
@@ -87,7 +95,10 @@ library.
 
 - **Round timings, rewards, voting weights:** `src/shared/Config/Game.luau`.
 - **A new theme:** add it at the bottom of `Config/Themes.luau`. Give it a
-  `Window` to make it seasonal. Never change an id.
+  `Window` to make it seasonal. Never change an id. Then run
+  `lune run tools/theme_matrix` to refresh `docs/theme-coverage.md`; the
+  tests check that its tags differ from every other theme's and that free
+  pieces can nail it.
 - **A new piece:** add it to `Config/Wardrobe.luau` with tags from the
   theme tag list; the tests check it builds and stays under 40 parts.
 - **Prices and pass ids:** `Config/Catalog.luau` (Robux) and the `Price`
