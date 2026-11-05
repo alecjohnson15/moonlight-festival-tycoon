@@ -31,6 +31,8 @@ local function deepEqual(a: any, b: any): boolean
 	return true
 end
 
+TestKit.equal = deepEqual
+
 function TestKit.describe(name: string, fn: () -> ())
 	table.insert(scope, name)
 	fn()
