@@ -254,6 +254,15 @@ function LookService.catalogNames(player: Player): { string }
 	return names
 end
 
+-- Waits (up to timeout seconds) for a player's pending look changes to be
+-- put on, so the look the show judges is the one everyone sees.
+function LookService.settle(player: Player, timeout: number)
+	local deadline = os.clock() + timeout
+	while (working[player] or pending[player]) and os.clock() < deadline do
+		task.wait(0.1)
+	end
+end
+
 -- While locked (on the runway), a player's look can't change.
 function LookService.setLocked(player: Player, isLocked: boolean)
 	locked[player] = if isLocked then true else nil

@@ -69,7 +69,9 @@
     "StarterPlayer": {
       "$properties": {
         "CharacterWalkSpeed": 18,
-        "EnableMouseLockOption": false
+        "EnableMouseLockOption": false,
+        "LoadCharacterAppearance": false,
+        "GameSettingsAvatar": "R15"
       },
       "StarterPlayerScripts": {
         "Client": {

@@ -390,13 +390,7 @@ local function onReady(player: Player, isReady: any)
 end
 
 local function addRivals()
-	local players = #playerWalkers()
-	local needed = math.max(0, Game.Round.MinEntrants - players)
-	-- A server with an odd number of players gets one rival, so nobody
-	-- starts the show with a bye unless the bracket has to.
-	if needed == 0 and players % 2 == 1 and players < 8 then
-		needed = 1
-	end
+	local needed = math.max(0, Game.Round.MinEntrants - #playerWalkers())
 	for _, rivalInfo in RivalService.pick(needed, rng) do
 		local booth = freeBooth()
 		if not booth then
@@ -433,10 +427,10 @@ local function runDressing()
 			enter(player)
 		end
 	end
-	addRivals()
 	updateReady()
 	setPhase("Dressing", Game.Round.Dressing)
 	screens(`THEME: {string.upper(themeName())}`, "Backstage: get dressed!", theme.Hint)
+	addRivals()
 
 	local lastSecond = -1
 	waitUntil(State:GetAttribute("EndsAt") :: number, function()
@@ -489,7 +483,11 @@ end
 
 local function lockLooks()
 	for _, walker in playerWalkers() do
+		LookService.setLocked(walker.Player :: Player, true)
+	end
+	for _, walker in playerWalkers() do
 		local player = walker.Player :: Player
+		LookService.settle(player, 2)
 		local dressed = LookService.current(player)
 		if dressed then
 			walker.Look = dressed.Look
@@ -649,6 +647,9 @@ local function startWalk(walker: Walker, lane: any)
 		return
 	end
 	local player = walker.Player :: Player
+	if not player.Parent then
+		return
+	end
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	placeCharacter(character, lane.Start, false)
@@ -682,9 +683,12 @@ local function stepDown(walker: Walker)
 	if walker.Spot then
 		place(walker, walker.Spot, walker.Rival ~= nil)
 	end
-	if walker.Player then
-		walking[walker.Player] = nil
-		Show:FireClient(walker.Player, { Type = "YouDone" })
+	local player = walker.Player
+	if player then
+		walking[player] = nil
+		if player.Parent then
+			Show:FireClient(player, { Type = "YouDone" })
+		end
 	end
 end
 
@@ -715,7 +719,7 @@ local function runMatch(match: Bracket.Match)
 	for _, pair in { { walkerA, Layout.Lanes.A }, { walkerB, Layout.Lanes.B } } do
 		local walker = pair[1]
 		place(walker, pair[2].Wait, true)
-		if walker.Player then
+		if walker.Player and walker.Player.Parent then
 			walking[walker.Player] = true
 			Show:FireClient(walker.Player, { Type = "YouWalk", Step = "Wait" })
 		end
@@ -760,6 +764,11 @@ local function runMatch(match: Bracket.Match)
 		rng:NextInteger(0, 1)
 	)
 	current = nil
+	-- Someone who left mid-walk can't win.
+	if walkerA.Gone ~= walkerB.Gone then
+		tally.Winner = if walkerA.Gone then "B" else "A"
+		tally.DecidedBy = "Walkover"
+	end
 	local winner = if tally.Winner == "A" then walkerA else walkerB
 	local loser = if tally.Winner == "A" then walkerB else walkerA
 	local winnerTheme = if tally.Winner == "A" then verdict.ThemeA else verdict.ThemeB
@@ -1011,7 +1020,9 @@ local function cleanUp()
 					humanoid.WalkSpeed = game:GetService("StarterPlayer").CharacterWalkSpeed
 				end
 			end
-			Show:FireClient(player, { Type = "YouDone" })
+			if player.Parent then
+				Show:FireClient(player, { Type = "YouDone" })
+			end
 		end
 	end
 	for _, player in Players:GetPlayers() do

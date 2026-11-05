@@ -67,6 +67,7 @@ local DECIDED = {
 	Judges = "The judges decided this one",
 	Score = "A tie! Decided by Style Score",
 	Coin = "A perfect tie! Decided by a coin toss",
+	Walkover = "Their rival had to leave the show",
 }
 
 local function getControls()
