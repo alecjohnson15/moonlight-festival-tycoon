@@ -158,7 +158,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "pop_idol",
-		Name = "Pop Idol",
+		Name = "Pop Superstar",
 		Hint = "Sparkle like the world tour starts tonight.",
 		Tags = { "music", "glam", "cute" },
 		Colors = { "Hot Pink", "Gold", "Snow", "Lavender" },
@@ -190,7 +190,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "candy_land",
-		Name = "Candy Land",
+		Name = "Candy Carnival",
 		Hint = "Sweet enough to eat.",
 		Tags = { "candy", "cute", "pastel" },
 		Colors = { "Bubblegum", "Mint", "Lemon", "Baby Blue" },
@@ -246,7 +246,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "animal_kingdom",
-		Name = "Animal Kingdom",
+		Name = "Animal Prints",
 		Hint = "Ears, tails and wild prints.",
 		Tags = { "animal", "cute" },
 		Colors = { "Caramel", "Snow", "Black", "Tangerine" },
@@ -278,7 +278,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "all_gold",
-		Name = "All Gold Everything",
+		Name = "Head-to-Toe Gold",
 		Hint = "If it can be gold, make it gold.",
 		Tags = { "glam", "royal" },
 		Colors = { "Gold", "Sunflower", "Rose Gold" },
@@ -286,7 +286,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "rainbow",
-		Name = "Rainbow Bright",
+		Name = "Rainbow Burst",
 		Hint = "Every colour, all at once.",
 		Tags = { "candy", "party", "neon" },
 		Colors = { "Ruby", "Tangerine", "Lemon", "Lime", "Sky", "Violet" },
@@ -310,7 +310,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "mermaid_lagoon",
-		Name = "Mermaid Lagoon",
+		Name = "Mermaid Cove",
 		Hint = "Shimmer like a tail in the sun.",
 		Tags = { "ocean", "fairy" },
 		Colors = { "Aqua", "Teal", "Lavender", "Coral" },
@@ -518,7 +518,7 @@ local Themes: { Theme } = {
 	},
 	{
 		Id = "date_with_the_stars",
-		Name = "Night at the Museum",
+		Name = "Masterpiece Night",
 		Hint = "Look like a priceless work of art.",
 		Tags = { "formal", "fantasy", "royal" },
 		Colors = { "Gold", "Ink", "Ruby", "Cream" },
