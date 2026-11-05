@@ -9,6 +9,8 @@ require("./Rules.spec")
 require("./Saves.spec")
 require("./Config.spec")
 require("./Fairness.spec")
+require("./Evidence.spec")
+require("./Sims.spec")
 require("./Look.spec")
 require("./Compile.spec")
 

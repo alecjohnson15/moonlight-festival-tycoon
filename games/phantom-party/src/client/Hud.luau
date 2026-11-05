@@ -62,7 +62,7 @@ local roleStroke = Ui.stroke(roleChip, Ui.Colors.Gold, 1.5)
 local roleText = Ui.label(roleChip, "", { Size = UDim2.fromScale(1, 1), Font = Ui.Title, TextSize = 14 })
 
 local bellFrame = Ui.make("Frame", {
-	Size = UDim2.fromOffset(200, 18),
+	Size = UDim2.fromOffset(250, 18),
 	BackgroundColor3 = Ui.Colors.Track,
 	Visible = false,
 	LayoutOrder = 3,
@@ -85,6 +85,11 @@ Ui.make("Frame", {
 	BackgroundColor3 = Ui.Colors.Gold,
 	ZIndex = 3,
 }, bellFrame)
+
+-- Other screens can add a row under the top middle (client/Leads).
+function Hud.top(): Frame
+	return top
+end
 
 -- Top left ---------------------------------------------------------------
 
@@ -241,7 +246,9 @@ local function refreshBell()
 	local value = State.Bell.Value or 0
 	TweenService:Create(bellFill, TweenInfo.new(0.4), { Size = UDim2.fromScale(value / 100, 1) }):Play()
 	if State.Bell.Room then
-		bellText.Text = `Truth Bell: Phantom in the {State.Bell.Room}`
+		bellText.Text = `Truth Bell: the Phantom was in the {State.Bell.Room}`
+	elseif State.Bell.Spent then
+		bellText.Text = "The Truth Bell has rung tonight"
 	else
 		bellText.Text = `Truth Bell {value}%`
 	end

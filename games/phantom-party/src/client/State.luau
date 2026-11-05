@@ -23,7 +23,7 @@ State.Guests = {} :: { { UserId: number, Name: string } }
 State.Kit = {} :: { [string]: any }
 -- This player in the round: Lobby, Alive, Dazed or Out.
 State.Me = "Lobby"
-State.Bell = { Value = 0, Room = nil :: string? }
+State.Bell = { Value = 0, Room = nil :: string?, Spent = false }
 State.Census = { Alive = 0, Dazed = 0, Out = 0, Total = 0 }
 State.Results = nil :: { [string]: any }?
 State.Pay = nil :: { [string]: any }?
@@ -91,7 +91,7 @@ function handlers.State(message)
 		State.Allies = {}
 		State.Kit = {}
 		State.Me = "Lobby"
-		State.Bell = { Value = 0, Room = nil }
+		State.Bell = { Value = 0, Room = nil, Spent = false }
 		State.fire("Role")
 		State.fire("Kit")
 		State.fire("Me")
@@ -111,7 +111,7 @@ function handlers.Role(message)
 	State.Allies = message.Allies or {}
 	State.Guests = message.Guests or {}
 	State.Me = "Alive"
-	State.Bell = { Value = 0, Room = nil }
+	State.Bell = { Value = 0, Room = nil, Spent = false }
 	State.fire("Role", message)
 	State.fire("Me")
 end
@@ -127,7 +127,7 @@ function handlers.You(message)
 end
 
 function handlers.Bell(message)
-	State.Bell = { Value = message.Value, Room = message.Room }
+	State.Bell = { Value = message.Value, Room = message.Room, Spent = message.Spent == true }
 	State.fire("Bell")
 end
 

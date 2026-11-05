@@ -5,6 +5,7 @@
 -- and the Truth Bell lighting the Phantom up. Also spins stars over anyone
 -- who's dazed.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -254,6 +255,29 @@ local function reveal(character: Instance?, seconds: number)
 		return
 	end
 	outline(character, Color3.fromRGB(255, 77, 109), 0.4, seconds)
+	-- A word as well as a colour, for anyone who can't tell red apart.
+	local head = character:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		local tag = Instance.new("BillboardGui")
+		tag.Size = UDim2.fromOffset(130, 34)
+		tag.StudsOffset = Vector3.new(0, 3.4, 0)
+		tag.AlwaysOnTop = true
+		tag.Adornee = head
+		local label = Instance.new("TextLabel")
+		label.BackgroundTransparency = 1
+		label.Size = UDim2.fromScale(1, 1)
+		label.Text = "PHANTOM!"
+		label.TextScaled = true
+		label.Font = Enum.Font.FredokaOne
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.TextStrokeColor3 = Color3.fromRGB(120, 0, 30)
+		label.TextStrokeTransparency = 0
+		label.Parent = tag
+		tag.Parent = folder
+		task.delay(seconds, function()
+			tag:Destroy()
+		end)
+	end
 	Sounds.play("Bell")
 	Corner.note("The Truth Bell rings!", "The Phantom is glowing red. Look!", Color3.fromRGB(255, 77, 109), 6)
 end
@@ -391,7 +415,24 @@ Effects.fade = fade
 Effects.burst = burst
 Effects.sparkleRing = sparkleRing
 
+-- Footprints and torn pages fade on each client as they age.
+local function fadeFootprint(mark: Instance)
+	if not mark:IsA("BasePart") then
+		return
+	end
+	local seconds = mark:GetAttribute("Fade")
+	if typeof(seconds) == "number" then
+		TweenService:Create(mark, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Transparency = 1,
+		}):Play()
+	end
+end
+
 function Effects.start()
+	CollectionService:GetInstanceAddedSignal("Footprint"):Connect(fadeFootprint)
+	for _, mark in CollectionService:GetTagged("Footprint") do
+		fadeFootprint(mark)
+	end
 	Fx.OnClientEvent:Connect(function(kind, ...)
 		local handler = handlers[kind]
 		if handler then

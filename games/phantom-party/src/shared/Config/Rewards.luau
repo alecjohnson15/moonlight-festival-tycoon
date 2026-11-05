@@ -33,11 +33,35 @@ Rewards.Xp = {
 -- quickly and later ones take longer.
 Rewards.Level = { Base = 200, Step = 50, Max = 200 }
 
--- Clue pages fill the Truth Bell. Each page adds this much (out of 100).
-Rewards.CluePerPage = 10
--- At 50 the bell shows which room the Phantom is in; at 100 it lights the
--- Phantom up for everyone for a few seconds, then the bell empties again.
-Rewards.ClueRoomAt = 50
-Rewards.ClueRevealSeconds = 4
+-- Clue pages counted for coins and XP in one round, so pages can't be
+-- farmed once the bell has rung. Pages past this still fill the bell.
+Rewards.ClueCap = 10
+
+-- The Truth Bell, which clue pages fill (Rules/Bell). At RoomAt percent it
+-- chimes the room the Phantom is in; full, it lights the Phantom up for
+-- everyone for a few seconds, then empties.
+--
+-- A bigger party finds pages faster, so the bell takes more pages the more
+-- guests there are: Base plus PerGuest for each guest, between Min and Max.
+-- It rings at most MaxRings times a round, and the room hint is a snapshot
+-- of where the Phantom was when the bell passed half, not a live tracker
+-- (TrackRoom), so the Phantom can move away and the guests must act on it.
+--
+-- Rollback to the first version: Base = 10, PerGuest = 0, Min = 10,
+-- Max = 10, TrackRoom = true, MaxRings = math.huge.
+Rewards.Bell = {
+	Base = 8,
+	PerGuest = 0.75,
+	Min = 8,
+	Max = 18,
+	RoomAt = 50,
+	-- How long the room hint stays on screen when it isn't tracking.
+	HintSeconds = 12,
+	TrackRoom = false,
+	MaxRings = 1,
+	RevealSeconds = 4,
+}
+-- The HUD's half-way mark.
+Rewards.ClueRoomAt = Rewards.Bell.RoomAt
 
 return Rewards

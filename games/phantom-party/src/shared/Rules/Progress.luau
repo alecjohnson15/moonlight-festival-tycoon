@@ -80,8 +80,10 @@ function Progress.pay(summary: Summary): { Coins: number, Xp: number, Lines: { L
 	if summary.Revives > 0 then
 		add(`Revived x{summary.Revives}`, summary.Revives * coins.Revive, summary.Revives * xp.Revive)
 	end
-	if summary.Clues > 0 then
-		add(`Clue pages x{summary.Clues}`, summary.Clues * coins.Clue, summary.Clues * xp.Clue)
+	-- Pages pay up to a cap a round, so they can't be farmed.
+	local clues = math.min(summary.Clues, Rewards.ClueCap)
+	if clues > 0 then
+		add(`Clue pages x{clues}`, clues * coins.Clue, clues * xp.Clue)
 	end
 	local totalCoins, totalXp = 0, 0
 	for _, line in lines do

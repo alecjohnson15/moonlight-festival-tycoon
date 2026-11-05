@@ -4,6 +4,12 @@
 -- dealt a role gains a ticket for it; one who is drops back to one. So
 -- everyone gets their turn as the Phantom or the Guardian, but nobody can
 -- predict when.
+--
+-- A player's weight is their tickets squared, so a long wait pulls harder:
+-- over 10,000 simulated rounds on a full server the longest anyone waited
+-- for a turn as the Phantom fell from 88 rounds (one ticket, one weight, up
+-- to 10) to about 30, with everyone's share still fair (tests/Sims.spec,
+-- tools/simulate). Rollback: WEIGHT_POWER = 1, MAX_TICKETS = 10.
 
 local Roles = require(script.Parent.Parent.Config.Roles)
 
@@ -11,11 +17,13 @@ export type Tickets = { [string]: number }
 
 local Deal = {}
 
-Deal.MAX_TICKETS = 10
+Deal.MAX_TICKETS = 20
+Deal.WEIGHT_POWER = 2
 
 local function weight(tickets: { [any]: Tickets }, id: any, roleId: string): number
 	local held = tickets[id]
-	return if held and held[roleId] then held[roleId] else 1
+	local count = if held and held[roleId] then held[roleId] else 1
+	return count ^ Deal.WEIGHT_POWER
 end
 
 -- Each id's role. random() gives a number from 0 up to 1.

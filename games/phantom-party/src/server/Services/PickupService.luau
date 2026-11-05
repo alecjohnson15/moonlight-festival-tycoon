@@ -3,10 +3,13 @@
 -- Coins: anyone still standing picks them up by touching them, up to a cap
 -- a round. They come back a while after they're taken, somewhere else.
 --
--- Clue pages fill the Truth Bell, which the guests share. At half full the
--- bell names the room the Phantom is in; when it's full it lights the
--- Phantom up for everyone for a moment, then empties. A Shadow who touches
--- a page tears it up instead, which anyone nearby might notice.
+-- Clue pages fill the Truth Bell, which the guests share (Rules/Bell). At
+-- half full the bell chimes the room the Phantom is in at that moment; when
+-- it's full it lights the Phantom up for everyone for a moment, then
+-- empties. A bigger party needs more pages, and the bell rings at most
+-- Rewards.Bell.MaxRings times a round. A Shadow who touches a page tears it
+-- up instead, which leaves scraps and leads for anyone nearby
+-- (EvidenceService).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 local Rewards = require(Shared.Config.Rewards)
 local Roles = require(Shared.Config.Roles)
+local BellRules = require(Shared.Rules.Bell)
 local Match = require(script.Parent.Parent.Lib.Match)
 local MapService = require(script.Parent.MapService)
 
@@ -33,8 +37,10 @@ local PAGE_RESPAWN = { 10, 20 }
 local PickupService = {}
 
 local folder: Folder? = nil
-local bell = 0
+local bell: BellRules.Bell = BellRules.new(0)
 local running = 0
+-- The room the bell last chimed, while it's still on screen.
+local hintRoom: string? = nil
 local random = Random.new()
 
 local function participantFor(part: BasePart): Match.Participant?
@@ -52,30 +58,48 @@ local function everyoneInRound(): { Player }
 	return list
 end
 
-local function sendBell(room: string?)
-	local message = { Kind = "Bell", Value = bell, Room = room }
+local function sendBell()
+	local message = { Kind = "Bell", Value = bell.Value, Room = hintRoom, Spent = bell.Spent, Need = bell.Need }
 	for _, player in Players:GetPlayers() do
 		RoundRemote:FireClient(player, message)
 	end
 end
 
-local function ring()
+local function phantomRoom(): string?
 	local phantom = Match.withRole("Phantom")
 	local root = phantom and Match.root(phantom)
 	if not phantom or not root or phantom.State == "Out" then
-		return
+		return nil
 	end
-	if bell >= 100 then
-		bell = 0
-		for _, player in Players:GetPlayers() do
-			Fx:FireClient(player, "Reveal", phantom.Character, Rewards.ClueRevealSeconds)
+	return MapService.roomAt(root.Position) or "grounds"
+end
+
+-- What a page brought to the bell does.
+local function ring(event: string?)
+	local generation = running
+	if event == "Ring" then
+		local phantom = Match.withRole("Phantom")
+		if phantom and phantom.Character and phantom.State ~= "Out" then
+			for _, player in Players:GetPlayers() do
+				Fx:FireClient(player, "Reveal", phantom.Character, Rewards.Bell.RevealSeconds)
+			end
 		end
-		sendBell(nil)
-	elseif bell >= Rewards.ClueRoomAt then
-		sendBell(MapService.roomAt(root.Position) or "the grounds")
-	else
-		sendBell(nil)
+		hintRoom = nil
+		Match.fire("Rang")
+	elseif event == "Hint" then
+		hintRoom = phantomRoom()
+		local shown = hintRoom
+		if not Rewards.Bell.TrackRoom then
+			-- A snapshot: it fades, and the Phantom may have moved on.
+			task.delay(Rewards.Bell.HintSeconds, function()
+				if running == generation and hintRoom == shown then
+					hintRoom = nil
+					sendBell()
+				end
+			end)
+		end
 	end
+	sendBell()
 end
 
 local function freeSpot(markers: { BasePart }, kind: string): BasePart?
@@ -186,13 +210,14 @@ local function makePage(markers: { BasePart }, generation: number)
 			for _, player in everyoneInRound() do
 				Fx:FireClient(player, "Torn", position)
 			end
+			Match.fire("Torn", participant, position)
 		else
 			participant.Clues += 1
-			bell = math.min(100, bell + Rewards.CluePerPage)
 			for _, player in everyoneInRound() do
 				Fx:FireClient(player, "Page", position, participant.Player == player)
 			end
-			ring()
+			Match.fire("Page", participant, position)
+			ring(BellRules.add(bell))
 		end
 		task.delay(random:NextNumber(PAGE_RESPAWN[1], PAGE_RESPAWN[2]), function()
 			if running == generation and Match.State == "Playing" then
@@ -207,7 +232,14 @@ end
 function PickupService.begin()
 	PickupService.finish()
 	running += 1
-	bell = 0
+	local guests = 0
+	for _, participant in Match.Participants do
+		if Roles.team(participant.Role) == "Guests" then
+			guests += 1
+		end
+	end
+	bell = BellRules.new(guests)
+	hintRoom = nil
 	local generation = running
 	local holder = Instance.new("Folder")
 	holder.Name = "Pickups"
@@ -221,7 +253,7 @@ function PickupService.begin()
 	for _ = 1, math.min(PAGES, #pages) do
 		makePage(pages, generation)
 	end
-	sendBell(nil)
+	sendBell()
 end
 
 function PickupService.finish()
@@ -232,21 +264,17 @@ function PickupService.finish()
 	end
 end
 
--- While the bell is past half, keep naming the Phantom's room as they move.
+-- With TrackRoom on (the first version's rule), keep naming the Phantom's
+-- room as they move while the bell is past half.
 function PickupService.start()
-	local lastRoom: string? = nil
 	while true do
 		task.wait(3)
-		if Match.State == "Playing" and bell >= Rewards.ClueRoomAt then
-			local phantom = Match.withRole("Phantom")
-			local root = phantom and Match.root(phantom)
-			local room = root and MapService.roomAt(root.Position)
-			if room ~= lastRoom then
-				lastRoom = room
-				sendBell(room or "the grounds")
+		if Rewards.Bell.TrackRoom and Match.State == "Playing" and bell.Hinted then
+			local room = phantomRoom()
+			if room ~= hintRoom then
+				hintRoom = room
+				sendBell()
 			end
-		else
-			lastRoom = nil
 		end
 	end
 end
