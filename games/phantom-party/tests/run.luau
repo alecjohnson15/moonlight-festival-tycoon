@@ -19,6 +19,7 @@ require("./Accessibility.spec")
 require("./Look.spec")
 require("./Maps.spec")
 require("./Compile.spec")
+require("./Publish.spec")
 
 local failures = TestKit.run()
 process.exit(if failures > 0 then 1 else 0)

@@ -42,17 +42,17 @@ has the current one.
 
    Under **Accepted IP Addresses** add `0.0.0.0/0`, set an expiry a few days
    out, then **Save & Generate Key** and copy it.
-3. Paste the key, the universe id and the place id into the project thread.
-   Claude, working from your PC as with Halloween Tycoon, then:
+3. Paste the key, the universe id and the place id into the project thread
+   and say "go ahead". Claude runs `publish/publish.ps1` from your PC
+   (`publish/README.md` has the details), which:
    - uploads the 33 sounds and puts their ids in `Config/Sounds.luau`,
-   - creates the eight passes with their names, descriptions and prices and
-     puts their ids in `Config/Catalog.luau`,
+   - creates the eight passes with their names, descriptions, prices and
+     icons and puts their ids in `Config/Catalog.luau`,
    - sets the name, description, devices and a 12-player server size,
    - builds the place and publishes it to your experience.
-4. You still do, on the Creator Dashboard: the icon and thumbnails (step 2
-   below), the content rating questionnaire (step 4), pass icons if you want
-   pictures on them, and the release (step 8). Delete the API key when it's
-   done.
+4. You still do, on the Creator Dashboard: the genre, the icon and
+   thumbnails (step 2 below), the content rating questionnaire (step 4) and
+   the release (step 8). Delete the API key when it's done.
 
 ## By hand
 
@@ -126,7 +126,9 @@ Until then the boutique shows them as **Soon**.
 | `vip` | VIP Lounge | Entry to the VIP lounge on the plaza's balcony, a gold VIP tag in chat and a gold name over your head in the lobby. | 199 |
 | `party_emotes` | Party Emotes | Five extra emotes for the lobby and rounds: Spotlight, Confetti Cannon, Glitter Puff, Star Halo and Applause. Looks only. | 99 |
 
-(`tools/passes.json` holds the same list for the Open Cloud script.)
+Each pass has a 512x512 icon in `assets/marketing/passes/`, named by its Id,
+rendered from the game's own models. (`publish/manifest.json` holds the same
+list for the Open Cloud script.)
 
 ### 7. Publish the new file over the old one
 

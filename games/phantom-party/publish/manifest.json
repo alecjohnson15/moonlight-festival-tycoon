@@ -1,0 +1,277 @@
+{
+  "catalogFile": "src/shared/Config/Catalog.luau",
+  "devices": {
+    "consoleEnabled": false,
+    "desktopEnabled": true,
+    "mobileEnabled": true,
+    "tabletEnabled": true,
+    "vrEnabled": false
+  },
+  "game": "Phantom Party: Masquerade Mystery",
+  "passes": [
+    {
+      "description": "Unlocks the premium track of the Moon Pass: nine exclusive cosmetics, including the Midnight Gala Blade at tier 30. Tiers you've already reached unlock at once.",
+      "icon": "assets/marketing/passes/moon_pass.png",
+      "id": "moon_pass",
+      "name": "Moon Pass Premium",
+      "price": 399
+    },
+    {
+      "description": "The Royal Rapier blade, the Gilded Lantern Blaster and the Golden Confetti knockout effect.",
+      "icon": "assets/marketing/passes/royal_set.png",
+      "id": "royal_set",
+      "name": "Royal Masquerade Set",
+      "price": 249
+    },
+    {
+      "description": "A glowing pink and cyan Phantom blade. Looks only: it tags like every other blade.",
+      "icon": "assets/marketing/passes/neon_blade.png",
+      "id": "neon_blade",
+      "name": "Neon Nightmare Blade",
+      "price": 149
+    },
+    {
+      "description": "A navy and gold Guardian blaster that fires a golden beam. Looks only.",
+      "icon": "assets/marketing/passes/starfall_blaster.png",
+      "id": "starfall_blaster",
+      "name": "Starfall Blaster",
+      "price": 149
+    },
+    {
+      "description": "A shining golden sun mask with glowing rays.",
+      "icon": "assets/marketing/passes/sun_mask.png",
+      "id": "sun_mask",
+      "name": "Golden Sun Mask",
+      "price": 99
+    },
+    {
+      "description": "A trail of green ghostfire that follows you as you run.",
+      "icon": "assets/marketing/passes/ghostfire_trail.png",
+      "id": "ghostfire_trail",
+      "name": "Ghostfire Trail",
+      "price": 99
+    },
+    {
+      "description": "Entry to the VIP lounge on the plaza's balcony, a gold VIP tag in chat and a gold name over your head in the lobby.",
+      "icon": "assets/marketing/passes/vip.png",
+      "id": "vip",
+      "name": "VIP Lounge",
+      "price": 199
+    },
+    {
+      "description": "Five extra emotes for the lobby and rounds: Spotlight, Confetti Cannon, Glitter Puff, Star Halo and Applause. Looks only.",
+      "icon": "assets/marketing/passes/party_emotes.png",
+      "id": "party_emotes",
+      "name": "Party Emotes",
+      "price": 99
+    }
+  ],
+  "place": {
+    "description": "Welcome to the masked ball! Every round, one guest is secretly the Phantom, and only you know your own role.\n\n🎭 PHANTOM: tag the guests before time runs out, and don't get caught.\n🌙 GUARDIAN: find the Phantom and knock them out with the Moonbeam Blaster.\n💖 MEDIC: revive a tagged guest, who saw who tagged them!\n💡 SABOTEUR: cut the lights and help the Phantom.\n🎉 GUEST: grab candy coins and clue pages to ring the Truth Bell, which shows where the Phantom is hiding.\n\n🏰 Two huge maps: Hollowmere Manor and the Starlight Carnival, with secret passages, a mirror maze and a ferris wheel.\n🎁 Collect over 60 masks, blades, blasters, knockout effects and trails. Open crates with coins you earn, trade with friends, and climb the Moon Pass.\n💬 Whisper close by: in a round, only people near you can hear you.\n\nCartoon knockouts, no blood. Have fun, and trust no one!",
+    "displayName": "Phantom Party: Masquerade Mystery",
+    "serverSize": 12
+  },
+  "placeFile": "phantom-party.rbxl",
+  "products": {},
+  "sounds": [
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Lobby Music",
+      "file": "assets/audio/music_lobby.ogg",
+      "name": "LobbyMusic"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Round Music",
+      "file": "assets/audio/music_round.ogg",
+      "name": "RoundMusic"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Final Music",
+      "file": "assets/audio/music_final.ogg",
+      "name": "FinalMusic"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Manor Ambience",
+      "file": "assets/audio/ambience_manor.ogg",
+      "name": "ManorAmbience"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Carnival Ambience",
+      "file": "assets/audio/ambience_carnival.ogg",
+      "name": "CarnivalAmbience"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Reveal Shadow",
+      "file": "assets/audio/reveal_shadow.ogg",
+      "name": "RevealShadow"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Reveal Guest",
+      "file": "assets/audio/reveal_guest.ogg",
+      "name": "RevealGuest"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Guests Win",
+      "file": "assets/audio/win_guests.ogg",
+      "name": "GuestsWin"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Phantom Wins",
+      "file": "assets/audio/win_phantom.ogg",
+      "name": "PhantomWins"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Bell",
+      "file": "assets/audio/bell.ogg",
+      "name": "Bell"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Blackout",
+      "file": "assets/audio/blackout.ogg",
+      "name": "Blackout"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Click",
+      "file": "assets/audio/click.ogg",
+      "name": "Click"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Coin",
+      "file": "assets/audio/coin.ogg",
+      "name": "Coin"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Crate Reveal",
+      "file": "assets/audio/crate_reveal.ogg",
+      "name": "CrateReveal"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Crate Roll",
+      "file": "assets/audio/crate_roll.ogg",
+      "name": "CrateRoll"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Daze",
+      "file": "assets/audio/daze.ogg",
+      "name": "Daze"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Deny",
+      "file": "assets/audio/deny.ogg",
+      "name": "Deny"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Draw",
+      "file": "assets/audio/draw.ogg",
+      "name": "Draw"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Fanfare",
+      "file": "assets/audio/fanfare.ogg",
+      "name": "Fanfare"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Level Up",
+      "file": "assets/audio/level_up.ogg",
+      "name": "LevelUp"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Misfire",
+      "file": "assets/audio/misfire.ogg",
+      "name": "Misfire"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Page",
+      "file": "assets/audio/page.ogg",
+      "name": "Page"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Pickup",
+      "file": "assets/audio/pickup.ogg",
+      "name": "Pickup"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Pop",
+      "file": "assets/audio/pop.ogg",
+      "name": "Pop"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Revive",
+      "file": "assets/audio/revive.ogg",
+      "name": "Revive"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Swing",
+      "file": "assets/audio/swing.ogg",
+      "name": "Swing"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Tag",
+      "file": "assets/audio/tag.ogg",
+      "name": "Tag"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Throw",
+      "file": "assets/audio/throw.ogg",
+      "name": "Throw"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Tick",
+      "file": "assets/audio/tick.ogg",
+      "name": "Tick"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Torn",
+      "file": "assets/audio/torn.ogg",
+      "name": "Torn"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Trade Done",
+      "file": "assets/audio/trade_done.ogg",
+      "name": "TradeDone"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Vote",
+      "file": "assets/audio/vote.ogg",
+      "name": "Vote"
+    },
+    {
+      "description": "Original sound for Phantom Party: Masquerade Mystery, made for the game.",
+      "displayName": "Phantom Party - Zap",
+      "file": "assets/audio/zap.ogg",
+      "name": "Zap"
+    }
+  ],
+  "soundsFile": "src/shared/Config/Sounds.luau"
+}

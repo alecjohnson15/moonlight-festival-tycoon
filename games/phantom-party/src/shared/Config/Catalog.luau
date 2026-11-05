@@ -4,7 +4,7 @@
 --
 -- PassId 0 means the pass hasn't been made on Roblox yet; the shop shows it
 -- as coming soon and never prompts. docs/launch.md says how to make them and
--- tools/passes.json lists them for the Open Cloud script.
+-- publish/manifest.json lists them for the Open Cloud script.
 
 export type Product = {
 	Id: string,

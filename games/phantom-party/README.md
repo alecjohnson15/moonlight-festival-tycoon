@@ -84,7 +84,8 @@ src/client             HUD, role card, map vote, round buttons, effects,
                        captions
 tests                  Lune tests (lune run tests/run), models and the
                        map walk-through
-tools                  make_sounds.py, passes.json and simulate.luau
+tools                  make_sounds.py, simulate.luau and make_manifest
+publish                publish.ps1 (Open Cloud publishing) and its list
 assets/audio           The generated sounds, ready to upload
 ```
 

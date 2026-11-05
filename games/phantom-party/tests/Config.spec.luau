@@ -3,7 +3,6 @@
 -- every sound has its file.
 
 local fs = require("@lune/fs")
-local serde = require("@lune/serde")
 
 local Loader = require("./RobloxLoader")
 local TestKit = require("./TestKit")
@@ -157,9 +156,9 @@ describe("Robux catalog", function()
 		end
 	end)
 
-	it("leaves PassId at 0 until the passes are made on Roblox", function()
+	it("has a PassId of 0 (not made yet) or a real pass id", function()
 		for _, product in Catalog do
-			expect(product.PassId).toBe(0)
+			assert(product.PassId == 0 or (product.PassId > 0 and product.PassId % 1 == 0), `{product.Id} PassId`)
 		end
 	end)
 
@@ -167,18 +166,6 @@ describe("Robux catalog", function()
 		for tier, reward in Pass.Premium do
 			assert(reward.Item ~= nil, `premium tier {tier} must be an item`)
 			assert(reward.Coins == nil and reward.Crate == nil, `premium tier {tier} gives coins or a crate`)
-		end
-	end)
-
-	it("matches tools/passes.json, the list the pass-making script reads", function()
-		local list = serde.decode("json", fs.readFile("tools/passes.json"))
-		expect(#list).toBe(#Catalog)
-		for index, product in Catalog do
-			local entry = list[index]
-			expect(entry.id).toBe(product.Id)
-			expect(entry.name).toBe(product.Name)
-			expect(entry.price).toBe(product.Price)
-			expect(entry.description).toBe(product.Description)
 		end
 	end)
 end)
