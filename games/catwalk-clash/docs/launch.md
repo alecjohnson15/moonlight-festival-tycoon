@@ -9,14 +9,15 @@ Roblox changes these screens often. If a button has moved, the
 [publishing guide](https://create.roblox.com/docs/production/publishing/publish-games-and-places)
 has the current one.
 
-**The quick way.** With an Open Cloud API key, Claude can do most of steps
-2, 4, 5 and 6 for you from the linked PC, the way the Halloween Tycoon's passes
-were made. Create the key on the
-[Creator Dashboard](https://create.roblox.com/dashboard/credentials) for this
-game, with the same permissions as the Tycoon's key (game passes, places and
-the experience) plus developer products and assets (for the Sparkles packs
-and the sounds). Paste it in the project chat, say "go ahead", and delete
-the key when it's done. Steps 1, 3, 7 and 8 still need you.
+**The quick way.** With an empty experience and an Open Cloud API key,
+`publish/publish.ps1` does steps 2, 5 and 6 and most of 3 and 4 in one run
+from the linked PC: it uploads the sounds, makes the passes and Sparkles
+packs with their icons, puts every id in Config, builds the place, sets the
+name, description, 12-player servers and devices, and publishes. Make the
+experience and the key as `publish/README.md` says, paste the key, universe
+id and place id in the project chat and say "go ahead"; delete the key when
+it's done. You still do the genre, the Avatar and Security settings in
+step 4, the questionnaire (step 7) and the release (step 8).
 
 ## Before you start
 
@@ -115,9 +116,11 @@ item gives.
 | `sparkles_medium` | Product | Jar of Sparkles | 1,500 Sparkles to spend on wardrobe pieces, poses and entrances. | 129 |
 | `sparkles_large` | Product | Chest of Sparkles | 4,000 Sparkles to spend on wardrobe pieces, poses and entrances. | 299 |
 
-Pass icons: Roblox asks for a 512x512 image for each pass; until there's
-art, the game's icon works for all of them (`docs/marketing.md` has a prompt
-for pass icons).
+Pass icons: one 512x512 picture for each pass and pack is in
+`assets/marketing/passes/`, named by its Id (`vip.png` and so on). Each
+shows what the item gives: the collections are worn by a blocky figure,
+rendered from the game's own pieces. Roblox crops them to a circle; the
+picture stays inside the ring.
 
 Paste the ids into the project chat, one per line, like `vip 1234567890`.
 Claude puts them into `PassId` and `ProductId` in

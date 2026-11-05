@@ -35,7 +35,8 @@ it.
 | Roblox catalog items in the Catalog tab | Their creators (Roblox and UGC creators) | Searched and shown live through `AvatarEditorService` and worn through `HumanoidDescription`; never copied into the game. Purchases use Roblox's prompt, and the creator is paid as usual | Roblox platform terms | Within Roblox |
 | Particle textures (`sparkles_main`, `smoke_main`, `fire_sparks_main`, `explosion01_core_main`) | Roblox | Built into the Roblox engine | Roblox platform terms | Within Roblox |
 | UI fonts (Gotham, Fredoka One) | Roblox (Fredoka One by Milena Brandão) | Built into the Roblox engine | Roblox platform terms; Fredoka One is also SIL Open Font License | Within Roblox |
-| Store icon, thumbnails and pass icons | The project owner, when made | To be generated with an AI image tool from the prompts in `docs/marketing.md` | Depends on the tool's terms | Check the tool allows commercial use before launch |
+| Pass and Sparkles pack icons (`assets/marketing/passes/*.png`) | This project | Rendered offline with three.js (MIT licence) from the game's own wardrobe pieces (`Build/Pieces.luau`) on a blocky figure, plus props built the same way from boxes, balls and stars. three.js is not part of the game | Original | Yes |
+| Store icon and thumbnails | The project owner, when made | To be generated with an AI image tool from the prompts in `docs/marketing.md` | Depends on the tool's terms | Check the tool allows commercial use before launch |
 
 No uploaded models, images or meshes are in the game.
 

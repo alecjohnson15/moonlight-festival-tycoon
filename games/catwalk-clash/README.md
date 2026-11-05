@@ -14,7 +14,9 @@ Tycoon in the root of this repository.
 - [docs/launch.md](docs/launch.md): publishing it on Roblox, step by step.
 - [docs/playtest.md](docs/playtest.md): the play-test script and targets.
 - [docs/marketing.md](docs/marketing.md): store text and prompts for the
-  icon, thumbnails and pass icons.
+  icon and thumbnails.
+- [publish/README.md](publish/README.md): publishing with an Open Cloud key
+  (`publish/publish.ps1`).
 - [docs/rights-register.md](docs/rights-register.md): where every asset
   comes from.
 

@@ -1,0 +1,235 @@
+{
+  "catalogFile": "src/shared/Config/Catalog.luau",
+  "devices": {
+    "consoleEnabled": false,
+    "desktopEnabled": true,
+    "mobileEnabled": true,
+    "tabletEnabled": true,
+    "vrEnabled": false
+  },
+  "game": "Catwalk Clash",
+  "passes": [
+    {
+      "description": "The Style Pass premium track for Season 1: 30 extra rewards, including the Legend Crown, Runway Wings, Spotlight Gown, Golden Hour aura and Sparkles. Every reward is listed on the pass board before you buy.",
+      "icon": "assets/marketing/passes/style_pass_s1.png",
+      "id": "style_pass_s1",
+      "name": "Style Pass: Season 1",
+      "price": 399
+    },
+    {
+      "description": "Paint any piece any colour with the full colour picker, not just the 36 palette colours.",
+      "icon": "assets/marketing/passes/color_studio.png",
+      "id": "color_studio",
+      "name": "Color Studio",
+      "price": 149
+    },
+    {
+      "description": "Save 24 outfits instead of 4.",
+      "icon": "assets/marketing/passes/big_closet.png",
+      "id": "big_closet",
+      "name": "Big Closet",
+      "price": 99
+    },
+    {
+      "description": "A gold VIP name tag, the rooftop VIP Lounge, and the Golden Carpet runway entrance.",
+      "icon": "assets/marketing/passes/vip.png",
+      "id": "vip",
+      "name": "VIP",
+      "price": 249
+    },
+    {
+      "description": "6 royal pieces: Royal Ringlets, Frost Crown, Gala Bodice, Velvet Train, Gala Gown and Crystal Slippers.",
+      "icon": "assets/marketing/passes/royal_gala.png",
+      "id": "royal_gala",
+      "name": "Royal Gala Collection",
+      "price": 199
+    },
+    {
+      "description": "8 glowing pieces: Light-Up Cap, Pulse Collar, Glowline Jacket, Laser Wings, LED Skirt, Light-Up Kicks, Rave Glowsticks and Neon Haze aura.",
+      "icon": "assets/marketing/passes/neon_night.png",
+      "id": "neon_night",
+      "name": "Neon Night Collection",
+      "price": 199
+    },
+    {
+      "description": "5 fairy pieces: Blossom Halo, Petal Top, Blossom Wings, Petal Skirt and Firefly Jar.",
+      "icon": "assets/marketing/passes/fairy_garden.png",
+      "id": "fairy_garden",
+      "name": "Fairy Garden Collection",
+      "price": 199
+    },
+    {
+      "description": "5 space pieces: Orbit Crown, Nebula Armor, Comet Cape, Galaxy Skirt and Moon Scepter.",
+      "icon": "assets/marketing/passes/star_couture.png",
+      "id": "star_couture",
+      "name": "Star Couture Collection",
+      "price": 199
+    },
+    {
+      "description": "6 extra runway poses: Superstar, Heart Hands, Hair Flip, Victory, Shy Wave and Power Lean.",
+      "icon": "assets/marketing/passes/supermodel_poses.png",
+      "id": "supermodel_poses",
+      "name": "Supermodel Poses",
+      "price": 99
+    },
+    {
+      "description": "5 extra runway entrances: Fireworks, Starfall, Rainbow Road, Thunder Strut and Neon Pulse.",
+      "icon": "assets/marketing/passes/showstopper_entrances.png",
+      "id": "showstopper_entrances",
+      "name": "Showstopper Entrances",
+      "price": 149
+    }
+  ],
+  "place": {
+    "description": "👗 DRESS UP. STRUT. WIN THE CROWN. 👑\n\nEvery round the lobby votes on a theme, from Red Carpet Gala to Space Explorer. You get 2 and a half minutes backstage to build your look from 150+ pieces in any colour, or try on anything from the Roblox catalog. Then it's SHOWTIME: walk the runway head-to-head with your entrance effect, strike your pose, and let the crowd and the judges decide who moves on. Win the bracket to take the crown and your statue in the plaza!\n\n⭐ Head-to-head runway battles with live audience voting\n🎨 150+ pieces, 36 colours and 8 finishes, plus the Roblox catalog\n✨ 15 runway entrances and 14 poses\n🏆 Style Score ranks, from Newcomer to Legend, and a world leaderboard\n🎟️ Style Pass seasons with free rewards on every tier\n📅 New themes every season and a double-reward spotlight theme every week\n\nFair voting: you can't vote for yourself, and every outfit gets seen before votes count. Free outfits can win any theme.",
+    "displayName": "Catwalk Clash",
+    "serverSize": 12
+  },
+  "placeFile": "catwalk-clash.rbxl",
+  "products": [
+    {
+      "description": "500 Sparkles to spend on wardrobe pieces, poses and entrances.",
+      "icon": "assets/marketing/passes/sparkles_small.png",
+      "id": "sparkles_small",
+      "name": "Pouch of Sparkles",
+      "price": 49
+    },
+    {
+      "description": "1,500 Sparkles to spend on wardrobe pieces, poses and entrances.",
+      "icon": "assets/marketing/passes/sparkles_medium.png",
+      "id": "sparkles_medium",
+      "name": "Jar of Sparkles",
+      "price": 129
+    },
+    {
+      "description": "4,000 Sparkles to spend on wardrobe pieces, poses and entrances.",
+      "icon": "assets/marketing/passes/sparkles_large.png",
+      "id": "sparkles_large",
+      "name": "Chest of Sparkles",
+      "price": 299
+    }
+  ],
+  "sounds": [
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Lobby Music",
+      "file": "assets/audio/music_lobby.ogg",
+      "name": "LobbyMusic"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Backstage Music",
+      "file": "assets/audio/music_backstage.ogg",
+      "name": "BackstageMusic"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Runway Music",
+      "file": "assets/audio/music_runway.ogg",
+      "name": "RunwayMusic"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Crowd Loop",
+      "file": "assets/audio/crowd_loop.ogg",
+      "name": "CrowdLoop"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Cheer",
+      "file": "assets/audio/cheer.ogg",
+      "name": "Cheer"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Crown",
+      "file": "assets/audio/crown.ogg",
+      "name": "Crown"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Match Win",
+      "file": "assets/audio/match_win.ogg",
+      "name": "MatchWin"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Click",
+      "file": "assets/audio/click.ogg",
+      "name": "Click"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Deny",
+      "file": "assets/audio/deny.ogg",
+      "name": "Deny"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Equip",
+      "file": "assets/audio/equip.ogg",
+      "name": "Equip"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Level Up",
+      "file": "assets/audio/level_up.ogg",
+      "name": "LevelUp"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Purchase",
+      "file": "assets/audio/purchase.ogg",
+      "name": "Purchase"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Ready",
+      "file": "assets/audio/ready.ogg",
+      "name": "Ready"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Reveal",
+      "file": "assets/audio/theme_reveal.ogg",
+      "name": "Reveal"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Shutter",
+      "file": "assets/audio/shutter.ogg",
+      "name": "Shutter"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Sparkle",
+      "file": "assets/audio/sparkle.ogg",
+      "name": "Sparkle"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Tick",
+      "file": "assets/audio/tick.ogg",
+      "name": "Tick"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Vote",
+      "file": "assets/audio/vote.ogg",
+      "name": "Vote"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Vote Reveal",
+      "file": "assets/audio/vote_reveal.ogg",
+      "name": "VoteReveal"
+    },
+    {
+      "description": "Original sound for Catwalk Clash, made for the game.",
+      "displayName": "Catwalk Clash - Whoosh",
+      "file": "assets/audio/whoosh.ogg",
+      "name": "Whoosh"
+    }
+  ],
+  "soundsFile": "src/shared/Config/Sounds.luau"
+}

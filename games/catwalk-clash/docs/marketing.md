@@ -76,7 +76,8 @@ Square, readable at 150x150, no small text.
 
 ## Pass icons (512x512, Roblox crops them to a circle)
 
-One prompt, changing the object in brackets: "A glossy 3D icon of [a gold
+Done: `assets/marketing/passes/` has one for every pass and Sparkles pack,
+rendered from the game's own pieces. To make painted ones instead, one prompt, changing the object in brackets: "A glossy 3D icon of [a gold
 crown with pink gems / a glowing neon jacket and light-up cap / a pair of
 petal fairy wings / a silver orbit crown with tiny planets / a paint palette
 with a rainbow colour wheel / a big wardrobe with doors open / a gold VIP
