@@ -4,7 +4,11 @@
 --     outfit, walked, voted, finished a show, won a matchup, saved an
 --     outfit, came back. Each step is logged once per player, ever.
 --   - custom events: ShowFinished (placing), ThemePlayed (which theme won
---     the vote) and ReturnSession (sessions so far, from the second on).
+--     the vote), ReturnSession (sessions so far, from the second on),
+--     ReadyPressed (seconds of dressing left), MatchWalked (1 for a win,
+--     with the round), OutfitSaved (outfits in the closet), CatalogSearch
+--     (results on the first page, with the category), CatalogBuyPrompt and
+--     JoinedMidShow. None carries names or anything a player typed.
 -- Nothing here changes the game; a failed call is skipped.
 
 local AnalyticsService = game:GetService("AnalyticsService")

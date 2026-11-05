@@ -19,6 +19,7 @@ local ProfileService = require(script.Parent.ProfileService)
 local PurchaseService = require(script.Parent.PurchaseService)
 local CatalogService = require(script.Parent.CatalogService)
 local LookService = require(script.Parent.LookService)
+local Analytics = require(script.Parent.AnalyticsService)
 
 local Remotes = ReplicatedStorage.Remotes
 
@@ -116,6 +117,7 @@ local function onLooks(player: Player, request: any)
 			return
 		end
 		ProfileService.notify(player, "Saved", "Outfit saved to your closet!")
+		Analytics.event(player, "OutfitSaved", #data.Looks)
 	elseif action == "Wear" then
 		if validIndex(data.Looks, request.Index) then
 			LookService.set(player, data.Looks[request.Index].Look)
@@ -170,7 +172,7 @@ local function onSettings(player: Player, request: any)
 	if not data then
 		return
 	end
-	for _, name in { "Music", "Effects", "WatchOnly" } do
+	for _, name in { "Music", "Effects", "WatchOnly", "ReducedMotion" } do
 		if type(request[name]) == "boolean" then
 			data.Settings[name] = request[name]
 		end

@@ -1,7 +1,8 @@
 --!strict
 -- The Style Score that follows a player from show to show: an Elo rating,
 -- so beating a higher-rated walker earns more than beating a newcomer, plus
--- a small bonus for walking at all. Ranks come from Config/Ranks.
+-- a small bonus for walking at all. The first ProtectedWalks walks can't
+-- lose points. Ranks come from Config/Ranks.
 
 local StyleScore = {}
 
@@ -13,6 +14,7 @@ export type Settings = {
 	NewUntilWalks: number,
 	RivalScale: number,
 	WalkBonus: number,
+	ProtectedWalks: number?,
 }
 
 -- The chance the Elo model gives A of beating B.
@@ -35,6 +37,11 @@ function StyleScore.update(
 		k *= settings.RivalScale
 	end
 	local change = k * ((if won then 1 else 0) - StyleScore.expected(rating, opponent))
+	-- A player's first few walks can only raise their score, so a new
+	-- player's first losses never drop their rank.
+	if walks < (settings.ProtectedWalks or 0) then
+		change = math.max(change, 0)
+	end
 	local result = rating + change + settings.WalkBonus
 	return math.max(settings.Floor, math.round(result))
 end

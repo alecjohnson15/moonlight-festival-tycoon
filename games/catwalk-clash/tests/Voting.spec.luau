@@ -24,7 +24,7 @@ describe("Voting", function()
 		expect(bad).toBe("BadSide")
 	end)
 
-	it("counts friends and brand new accounts for less", function()
+	it("counts friends and brand new accounts for less in Flat mode", function()
 		expect(Voting.weight(settings, false, 400)).toBe(1)
 		expect(Voting.weight(settings, true, 400)).toBe(settings.FriendWeight)
 		expect(Voting.weight(settings, true, 1)).toBe(settings.FriendWeight * settings.NewAccountWeight)
@@ -47,16 +47,79 @@ describe("Voting", function()
 	end)
 
 	it("stops a friend group from beating a smaller honest crowd", function()
-		local ballots = {}
-		-- Four friends of walker A against three strangers voting B.
-		for index = 1, 4 do
-			ballots[index] = { Side = "A", Weight = Voting.weight(settings, true, 400) }
+		for _, mode in { "Capped", "Flat" } do
+			local modeSettings = table.clone(settings)
+			modeSettings.Mode = mode
+			local ballots = {}
+			-- Four friends of walker A against three strangers voting B.
+			for index = 1, 4 do
+				ballots[index] = Voting.ballot(modeSettings, "A", true, 400)
+			end
+			for index = 5, 7 do
+				ballots[index] = Voting.ballot(modeSettings, "B", false, 400)
+			end
+			local tally = Voting.tally(modeSettings, ballots, { "A", "B", "B" }, none, none, 0)
+			expect(tally.Winner).toBe("B")
 		end
-		for index = 5, 7 do
-			ballots[index] = { Side = "B", Weight = Voting.weight(settings, false, 400) }
+	end)
+
+	it("counts a few friends and newcomers in full, and only caps a crowd of them", function()
+		local one = { Voting.ballot(settings, "A", true, 400) }
+		expect(Voting.tally(settings, one, {}, none, none, 0).A).toBe(1)
+		local newcomer = { Voting.ballot(settings, "B", false, 1) }
+		expect(Voting.tally(settings, newcomer, {}, none, none, 0).B).toBe(1)
+		local crowd = {}
+		for index = 1, 6 do
+			crowd[index] = Voting.ballot(settings, "A", true, 400)
 		end
+		local full = settings.SuspectFullVotes
+		local expected = full + (6 - full) * settings.SuspectWeight
+		expect(Voting.tally(settings, crowd, {}, none, none, 0).A).toBe(expected)
+	end)
+
+	it("never marks a vote against a friend as suspect", function()
+		-- The server passes friendOfChosen for the walker voted for only.
+		local ballot = Voting.ballot(settings, "B", false, 400)
+		expect(ballot.Suspect).toBe(false)
+		expect(ballot.Weight).toBe(1)
+	end)
+
+	it("shows plain vote counts, never weights", function()
+		local ballots = {
+			Voting.ballot(settings, "A", true, 1),
+			Voting.ballot(settings, "A", true, 1),
+			Voting.ballot(settings, "A", true, 1),
+			Voting.ballot(settings, "B", false, 400),
+		}
 		local tally = Voting.tally(settings, ballots, { "A", "B", "B" }, none, none, 0)
-		expect(tally.Winner).toBe("B")
+		expect(tally.VotesA).toBe(3)
+		expect(tally.VotesB).toBe(1)
+	end)
+
+	it("always picks A or B, the same way every time, for any ballots", function()
+		local state = 12345
+		local function random()
+			state = (state * 48271) % 2147483647
+			return state / 2147483647
+		end
+		for _ = 1, 500 do
+			local ballots = {}
+			for index = 1, math.floor(random() * 20) do
+				local side = if random() < 0.5 then "A" else "B"
+				ballots[index] = Voting.ballot(settings, side, random() < 0.3, if random() < 0.2 then 2 else 400)
+			end
+			local judges = {}
+			for index = 1, 3 do
+				judges[index] = if random() < 0.5 then "A" else "B"
+			end
+			local scores = { A = math.floor(random() * 3), B = math.floor(random() * 3) }
+			local first = Voting.tally(settings, ballots, judges, scores, none, 1)
+			local again = Voting.tally(settings, ballots, judges, scores, none, 1)
+			expect(first.Winner == "A" or first.Winner == "B").toBe(true)
+			expect(first.Winner).toBe(again.Winner)
+			expect(first.Share >= 0.5 and first.Share <= 1).toBe(true)
+			expect(first.VotesA + first.VotesB).toBe(#ballots)
+		end
 	end)
 
 	it("breaks ties on judges' score, then Style Score, then a coin", function()

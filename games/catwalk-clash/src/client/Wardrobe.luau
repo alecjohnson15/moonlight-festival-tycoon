@@ -12,7 +12,9 @@
 --
 -- Changes are sent to the server (SetLook) a moment after the last tap; the
 -- server checks them and dresses the character. During dressing, the Ready
--- button tells the show you're done.
+-- button tells the show you're done. Above the tabs' content, Undo and Redo
+-- step through this session's changes, and Theme look dresses you in a
+-- starting outfit for the theme from what you own (shared/Stylist).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,6 +30,7 @@ local Entrances = require(Config.Entrances)
 local Catalog = require(Config.Catalog)
 local GameConfig = require(Config.Game)
 local Look = require(Shared.Look)
+local Stylist = require(Shared.Stylist)
 local Pieces = require(Shared.Build.Pieces)
 local Ui = require(script.Parent.Ui)
 local State = require(script.Parent.State)
@@ -44,6 +47,7 @@ local WardrobeUi = {}
 
 local SEND_DELAY = 0.25
 local SYNC_AFTER = 0.8
+local HISTORY = 40
 
 local player = Players.LocalPlayer
 local window: Ui.Window
@@ -51,6 +55,13 @@ local content: Frame
 local bottomBar: Frame
 local readyButton: TextButton
 local working: Look.Look = Look.default()
+-- Undo history: committed is the look as of the last finished change.
+local committed: Look.Look = Look.default()
+local undoStack: { Look.Look } = {}
+local redoStack: { Look.Look } = {}
+local undoButton: TextButton
+local redoButton: TextButton
+local actionCallbacks: { (string) -> () } = {}
 local lastEdit = 0
 local sendQueued = false
 local tab = "Studio"
@@ -119,10 +130,80 @@ end
 
 local render: () -> ()
 
+-- Tells listeners (the first-outfit guide in Tips) what the player just did:
+-- "Equip", "Paint", "ThemeLook", "Undo" or "Ready".
+local function action(name: string)
+	for _, callback in actionCallbacks do
+		task.spawn(callback, name)
+	end
+end
+
+-- Takes a look from the server as the new starting point for undo.
+local function rebase(look: Look.Look)
+	working = deepCopy(look)
+	committed = deepCopy(look)
+end
+
+local function updateHistoryButtons()
+	if undoButton then
+		undoButton.TextTransparency = if #undoStack > 0 then 0 else 0.6
+		redoButton.TextTransparency = if #redoStack > 0 then 0 else 0.6
+	end
+end
+
 local function edited()
+	if not Look.same(committed, working) then
+		table.insert(undoStack, committed)
+		if #undoStack > HISTORY then
+			table.remove(undoStack, 1)
+		end
+		redoStack = {}
+		committed = deepCopy(working)
+	end
+	updateHistoryButtons()
 	lastEdit = os.clock()
 	send()
 	render()
+end
+
+-- Steps back (or forward) through this session's changes.
+local function travel(from: { Look.Look }, to: { Look.Look })
+	local look = table.remove(from)
+	if not look then
+		Sounds.play("Deny")
+		return
+	end
+	table.insert(to, deepCopy(working))
+	working = deepCopy(look)
+	committed = deepCopy(look)
+	updateHistoryButtons()
+	lastEdit = os.clock()
+	Sounds.play("Click")
+	send()
+	render()
+end
+
+-- A starting outfit for this round's theme from the pieces you own.
+local function themeLook()
+	local theme = State.theme()
+	if not theme or State.phase() == "Lobby" or State.phase() == "ThemeVote" or State.phase() == "Waiting" then
+		Sounds.play("Deny")
+		Corner.toast("Theme look", "Wait for the theme to be revealed, then try again.", C.Violet, 3)
+		return
+	end
+	working = Stylist.suggest(
+		theme,
+		function(piece)
+			return State.owns("Piece", piece.Id)
+		end,
+		working,
+		function()
+			return math.random()
+		end
+	)
+	Sounds.play("Sparkle")
+	edited()
+	action("ThemeLook")
 end
 
 local function themeTags(): { [string]: boolean }
@@ -430,6 +511,7 @@ local function paintPanel(order: number, targets: { string })
 		chips(panel, 3, FINISHES, paint.F, function(name)
 			paint.F = name
 			edited()
+			action("Paint")
 		end)
 	end
 	local allowNone = paintTarget == "Shoes" or paintTarget == "Gloves"
@@ -441,6 +523,7 @@ local function paintPanel(order: number, targets: { string })
 		else
 			edited()
 		end
+		action("Paint")
 	end)
 end
 
@@ -507,6 +590,7 @@ local function renderStudio()
 					F = piece.Finish,
 				}
 				Sounds.play("Equip")
+				action("Equip")
 			end
 			paintTarget = slot
 			edited()
@@ -854,6 +938,11 @@ function WardrobeUi.open(startTab: string?)
 	end
 end
 
+-- Calls back with what the player does in the wardrobe (see action()).
+function WardrobeUi.onAction(callback: (string) -> ())
+	table.insert(actionCallbacks, callback)
+end
+
 function WardrobeUi.isOpen(): boolean
 	return window ~= nil and window.isOpen()
 end
@@ -877,9 +966,28 @@ function WardrobeUi.mount()
 		end
 		render()
 	end)
+	local tools = make("Frame", {
+		Position = UDim2.fromOffset(0, 38),
+		Size = UDim2.new(1, 0, 0, 32),
+		BackgroundTransparency = 1,
+	}, body)
+	Ui.list(tools, true, 6)
+	undoButton = Ui.button(tools, "↶ Undo", C.Panel3, function()
+		travel(undoStack, redoStack)
+		action("Undo")
+	end, { Size = UDim2.fromOffset(86, 30), TextSize = 14, LayoutOrder = 1 })
+	redoButton = Ui.button(tools, "↷ Redo", C.Panel3, function()
+		travel(redoStack, undoStack)
+	end, { Size = UDim2.fromOffset(86, 30), TextSize = 14, LayoutOrder = 2 })
+	Ui.button(tools, "✨ Theme look", C.Violet, themeLook, {
+		Size = UDim2.fromOffset(140, 30),
+		TextSize = 14,
+		LayoutOrder = 3,
+	})
+	updateHistoryButtons()
 	local scroller = Ui.scroller(body, {
-		Position = UDim2.fromOffset(0, 40),
-		Size = UDim2.new(1, 0, 1, -92),
+		Position = UDim2.fromOffset(0, 76),
+		Size = UDim2.new(1, 0, 1, -128),
 	})
 	content = make("Frame", {
 		Size = UDim2.new(1, -8, 0, 0),
@@ -912,12 +1020,15 @@ function WardrobeUi.mount()
 		isReady = not isReady
 		Remotes.Ready:FireServer(isReady)
 		Sounds.play("Ready")
+		if isReady then
+			action("Ready")
+		end
 		render()
 	end, { Size = UDim2.fromOffset(120, 40), TextSize = 16, LayoutOrder = 4, Visible = false })
 
 	window.onOpen(function()
 		if State.Profile and State.Profile.Current then
-			working = deepCopy(State.Profile.Current)
+			rebase(State.Profile.Current)
 		end
 		Camera.set("Wardrobe", Camera.Priority.Wardrobe, turntable, 0.2, 50)
 		render()
@@ -973,7 +1084,7 @@ function WardrobeUi.mount()
 	State.onProfile(function(profile)
 		-- Take the server's version unless the player is mid-edit.
 		if os.clock() - lastEdit > SYNC_AFTER and profile.Current then
-			working = deepCopy(profile.Current)
+			rebase(profile.Current)
 		end
 		render()
 	end)

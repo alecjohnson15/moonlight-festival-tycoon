@@ -8,6 +8,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local State = require(script.Parent.State)
+
 local Camera = {}
 
 Camera.Priority = {
@@ -85,7 +87,10 @@ function Camera.start()
 		end
 		camera.CameraType = Enum.CameraType.Scriptable
 		local goal = shot.Get(dt)
-		local alpha = 1 - (1 - shot.Ease) ^ (dt * 60)
+		-- Reduced motion (Settings): cut straight to each shot.
+		local settings = State.Profile and State.Profile.Settings
+		local reduced = settings ~= nil and settings.ReducedMotion == true
+		local alpha = if reduced then 1 else 1 - (1 - shot.Ease) ^ (dt * 60)
 		camera.CFrame = camera.CFrame:Lerp(goal, math.clamp(alpha, 0, 1))
 		if shot.Fov then
 			camera.FieldOfView += (shot.Fov - camera.FieldOfView) * math.clamp(alpha, 0, 1)

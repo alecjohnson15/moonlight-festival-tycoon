@@ -1,6 +1,8 @@
 -- A tip card in the corner for a player's first few shows, saying what to
 -- do in each part of the round, and the kiosk prompts in the plaza, which
--- open their menus.
+-- open their menus. In a player's very first dressing room the card is a
+-- three-step guide that ticks off as they go (put something on, change a
+-- colour, press Ready); it never blocks anything and goes away by itself.
 
 local ProximityPromptService = game:GetService("ProximityPromptService")
 
@@ -8,6 +10,7 @@ local Ui = require(script.Parent.Ui)
 local State = require(script.Parent.State)
 local Corner = require(script.Parent.Corner)
 local Menus = require(script.Parent.Menus)
+local Wardrobe = require(script.Parent.Wardrobe)
 
 local Tips = {}
 
@@ -19,7 +22,7 @@ local TIPS = {
 	ThemeVote = "Vote for the next theme on the cards below.",
 	Reveal = "That's the theme! Dress to match it.",
 	Dressing = "Pieces marked ✓ theme fit this round best. Colours count too. Press I'M READY when you're done.",
-	Showtime = "Two walkers at a time: vote for your favourite look! Your vote counts with the judges'.",
+	Showtime = "Everyone lines up, then two walkers at a time: vote ◀ or ▶ for your favourite look! You can't vote for yourself, and votes count once both outfits have been seen.",
 	Crowning = "The winner gets the crown and a statue in the plaza. Next round soon!",
 }
 
@@ -32,6 +35,20 @@ local PROMPTS = {
 
 local card: Frame
 local line: TextLabel
+-- The first-outfit guide's steps, done or not.
+local steps = { Equip = false, Paint = false, Ready = false }
+
+local function guide(): string
+	local function box(done: boolean): string
+		return if done then "✅" else "⬜"
+	end
+	return table.concat({
+		"Your first look:",
+		`{box(steps.Equip)} Put on a piece marked ✓ theme, or tap ✨ Theme look`,
+		`{box(steps.Paint)} Change a colour or finish`,
+		`{box(steps.Ready)} Press I'M READY when you love it`,
+	}, "\n")
+end
 
 local function update()
 	local profile = State.Profile
@@ -41,6 +58,9 @@ local function update()
 		return
 	end
 	local text = TIPS[State.phase()]
+	if State.phase() == "Dressing" and shows == 0 then
+		text = guide()
+	end
 	if text then
 		Corner.set(line, text)
 		Corner.pop(card)
@@ -60,6 +80,16 @@ function Tips.mount()
 	end)
 	State.onProfile(function()
 		if card.Visible then
+			update()
+		end
+	end)
+	Wardrobe.onAction(function(name)
+		if name == "ThemeLook" then
+			steps.Equip = true
+		elseif steps[name] ~= nil then
+			steps[name] = true
+		end
+		if State.phase() == "Dressing" and card.Visible then
 			update()
 		end
 	end)

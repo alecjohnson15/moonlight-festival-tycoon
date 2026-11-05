@@ -77,8 +77,17 @@ local function emitter(parent: Instance, props: { [string]: any }): ParticleEmit
 	return particles
 end
 
--- A light flash at a point, with a camera shutter.
+-- Whether the player turned on Reduced motion in Settings.
+function Effects.reduced(): boolean
+	local profile = State.Profile
+	return profile ~= nil and profile.Settings ~= nil and profile.Settings.ReducedMotion == true
+end
+
+-- A light flash at a point, with a camera shutter. None with Reduced motion.
 function Effects.flash(position: Vector3, color: Color3?)
+	if Effects.reduced() then
+		return
+	end
 	local part = Instance.new("Part")
 	part.Anchored = true
 	part.CanCollide = false
@@ -101,6 +110,9 @@ end
 
 -- Photographers' flashes along the runway for a while.
 function Effects.paparazzi(seconds: number, rate: number?)
+	if Effects.reduced() then
+		return
+	end
 	task.spawn(function()
 		local stop = os.clock() + seconds
 		while os.clock() < stop do

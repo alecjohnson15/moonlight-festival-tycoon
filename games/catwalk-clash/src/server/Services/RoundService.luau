@@ -91,6 +91,8 @@ local walking: { [Player]: boolean } = {}
 local current: CurrentMatch? = nil
 local matchCounter = 0
 local bracket: Bracket.Bracket? = nil
+-- The current matchup as sent to clients, for players who join mid-show.
+local matchMessage: { [string]: any }? = nil
 local votesThisRound: { [Player]: number } = {}
 local tasteThisRound: { [Player]: number } = {}
 local posesSeen: { [Player]: { [string]: boolean } } = {}
@@ -307,6 +309,9 @@ local function runLobby()
 	end
 	theme = Themes.get(winner) or Themes.List[1]
 	State:SetAttribute("Theme", theme.Id)
+	for _, player in Players:GetPlayers() do
+		AnalyticsService.event(player, "ThemePlayed", if themeVotes[player] then 1 else 0, { theme.Id })
+	end
 end
 
 ------------------------------------------------------------------------------
@@ -378,6 +383,10 @@ local function onReady(player: Player, isReady: any)
 	end
 	local walker = walkers[playerId(player)]
 	if walker then
+		if isReady == true and not walker.Ready then
+			local left = math.max(0, (State:GetAttribute("EndsAt") :: number) - now())
+			AnalyticsService.event(player, "ReadyPressed", math.floor(left))
+		end
 		walker.Ready = isReady == true
 		local ready, total = updateReady()
 		if total > 0 and ready == total then
@@ -526,17 +535,11 @@ local function onCastVote(player: Player, request: any)
 	if not ok then
 		return
 	end
-	local isFriend = false
-	for _, walker in { match.A, match.B } do
-		if walker.Player and areFriends(player.UserId, walker.Player.UserId) then
-			isFriend = true
-		end
-	end
+	-- Only a vote FOR a friend is suspect; voting against one is fine.
+	local chosen = if request.Side == "A" then match.A else match.B
+	local friendOfChosen = chosen.Player ~= nil and areFriends(player.UserId, chosen.Player.UserId)
 	local first = match.Ballots[player.UserId] == nil
-	match.Ballots[player.UserId] = {
-		Side = request.Side,
-		Weight = Voting.weight(Game.Voting, isFriend, player.AccountAge),
-	}
+	match.Ballots[player.UserId] = Voting.ballot(Game.Voting, request.Side, friendOfChosen, player.AccountAge)
 	match.Dirty = true
 	if first then
 		local data = DataService.get(player)
@@ -610,6 +613,7 @@ local function settleWalker(
 	end
 	ProfileService.reward(player, { Sparkles = sparkles, Xp = xp }, mult, text)
 
+	AnalyticsService.event(player, "MatchWalked", if won then 1 else 0, { roundName })
 	ProfileService.record(player, "Walk", 1)
 	if won then
 		ProfileService.record(player, "MatchWin", 1)
@@ -726,7 +730,7 @@ local function runMatch(match: Bracket.Match)
 	end
 	State:SetAttribute("Match", roundName)
 	setStep("Intro", walkAt)
-	Show:FireAllClients({
+	matchMessage = {
 		Type = "Match",
 		Id = match_.Id,
 		Round = roundName,
@@ -736,7 +740,8 @@ local function runMatch(match: Bracket.Match)
 		OpensAt = match_.OpensAt,
 		PoseAt = poseAt,
 		ClosesAt = closesAt,
-	})
+	}
+	Show:FireAllClients(matchMessage)
 	screens(string.upper(roundName), `{walkerA.Name}  vs  {walkerB.Name}`, `Theme: {themeName()}`)
 	waitUntil(walkAt)
 
@@ -823,7 +828,10 @@ local function runMatch(match: Bracket.Match)
 		ChangeA = changeA,
 		ChangeB = changeB,
 		Judge = judgeLine(verdict, tally.Winner, tally.Share, winnerTheme),
+		FeedbackA = if Game.Show.JudgeFeedback then Judge.feedback(walkerA.Summary, theme, walkerA.Names) else nil,
+		FeedbackB = if Game.Show.JudgeFeedback then Judge.feedback(walkerB.Summary, theme, walkerB.Names) else nil,
 	})
+	matchMessage = nil
 	screens(nil, `{winner.Name} wins!`, `{loser.Name} was amazing too`)
 	waitUntil(doneAt)
 
@@ -1000,6 +1008,7 @@ end
 local function cleanUp()
 	current = nil
 	bracket = nil
+	matchMessage = nil
 	for _, accessory in crowns do
 		accessory:Destroy()
 	end
@@ -1037,23 +1046,70 @@ local function cleanUp()
 	State:SetAttribute("Ready", "")
 end
 
+-- Everyone in the show on the runway at once, posing, so every look is
+-- seen before anyone is knocked out (Game.Show.Lineup).
+local function runLineup()
+	local seconds = Game.Show.LineupSeconds
+	local lineup = {}
+	for index, walker in contestants() do
+		if not walker.Gone and Layout.Lineup[index] then
+			table.insert(lineup, { Walker = walker, Spot = Layout.Lineup[index] })
+		end
+	end
+	local names = {}
+	for _, entry in lineup do
+		local walker = entry.Walker
+		if walker.Player then
+			walking[walker.Player] = true
+		end
+		place(walker, entry.Spot, true)
+		local model = modelOf(walker)
+		if model then
+			LookService.strike(model, walker.Look.Pose)
+		end
+		table.insert(names, { Name = walker.Name, Rival = walker.Rival ~= nil })
+	end
+	local endsAt = now() + seconds
+	setStep("Lineup", endsAt)
+	Show:FireAllClients({ Type = "Lineup", Entrants = names, EndsAt = endsAt })
+	screens("TONIGHT'S LINEUP", themeName(), `{#lineup} looks walk tonight`)
+	waitUntil(endsAt)
+	for _, entry in lineup do
+		local walker = entry.Walker
+		local model = modelOf(walker)
+		if model then
+			LookService.relax(model)
+		end
+		if walker.Spot then
+			place(walker, walker.Spot, walker.Rival ~= nil)
+		end
+		if walker.Player then
+			walking[walker.Player] = nil
+		end
+	end
+end
+
 local function runShow()
 	lockLooks()
 	local entrants = {}
 	for _, walker in contestants() do
 		if not walker.Gone then
-			table.insert(entrants, { Id = walker.Id, Seed = walker.Rating + rng:NextNumber() })
+			table.insert(entrants, { Id = walker.Id, Rating = walker.Rating })
 		end
 	end
 	if #entrants < 2 then
 		return false
 	end
-	bracket = Bracket.new(entrants)
+	bracket = Bracket.new(Bracket.seeded(entrants, Game.Show.Seeding, rngNumber))
 	local remaining = Bracket.walkedCount(bracket :: Bracket.Bracket)
-	setPhase("Showtime", remaining * MATCH_SECONDS)
+	local lineupSeconds = if Game.Show.Lineup then Game.Show.LineupSeconds else 0
+	setPhase("Showtime", remaining * MATCH_SECONDS + lineupSeconds)
 	seatEveryone()
 	sendBracket()
 	screens("SHOWTIME", themeName(), "Vote for your favourite looks!")
+	if Game.Show.Lineup then
+		runLineup()
+	end
 
 	local guarding = true
 	task.spawn(function()
@@ -1135,6 +1191,23 @@ local function onPlayerRemoving(player: Player)
 	end
 end
 
+-- Catches a player who joins mid-show up on the bracket and the matchup
+-- on stage, so they can vote straight away.
+local function syncLateJoiner(player: Player)
+	if State:GetAttribute("Phase") ~= "Showtime" or not bracket then
+		return
+	end
+	local names = {}
+	for id, walker in walkers do
+		names[id] = walker.Name
+	end
+	Show:FireClient(player, { Type = "Bracket", Rounds = Bracket.summary(bracket), Names = names })
+	if matchMessage then
+		Show:FireClient(player, matchMessage)
+	end
+	AnalyticsService.event(player, "JoinedMidShow", 1)
+end
+
 -- Puts a respawned character back where the show needs them.
 local function onCharacterAdded(player: Player, character: Model)
 	character:WaitForChild("HumanoidRootPart", 10)
@@ -1161,6 +1234,14 @@ function RoundService.init()
 	Remotes.Ready.OnServerEvent:Connect(onReady)
 	Remotes.CastVote.OnServerEvent:Connect(onCastVote)
 	PlayerHooks.eachPlayer(checkFriends)
+	Players.PlayerAdded:Connect(function(player)
+		-- Give the client a moment to hook up its remotes.
+		task.delay(3, function()
+			if player.Parent then
+				syncLateJoiner(player)
+			end
+		end)
+	end)
 	PlayerHooks.eachCharacter(onCharacterAdded)
 	Players.PlayerRemoving:Connect(onPlayerRemoving)
 end

@@ -234,14 +234,189 @@ describe("Style Score", function()
 	end)
 
 	it("never drops below the floor", function()
-		expect(StyleScore.update(settings, settings.Floor + 5, settings.Floor + 5, false, 0, false)).toBe(
+		expect(StyleScore.update(settings, settings.Floor + 5, settings.Floor + 5, false, 50, false)).toBe(
 			settings.Floor
 		)
+	end)
+
+	it("never takes points from a player's first walks", function()
+		for walks = 0, settings.ProtectedWalks - 1 do
+			local after = StyleScore.update(settings, settings.Start, 1800, false, walks, false)
+			expect(after >= settings.Start).toBe(true)
+		end
+		local settled =
+			StyleScore.update(settings, settings.Start, settings.Start, false, settings.ProtectedWalks, false)
+		expect(settled < settings.Start).toBe(true)
+	end)
+
+	it("keeps a brand-new player's rank after a loss", function()
+		local after = StyleScore.update(settings, settings.Start, settings.Start, false, 0, false)
+		expect(StyleScore.rank(Ranks, after).Name).toBe(StyleScore.rank(Ranks, settings.Start).Name)
 	end)
 
 	it("gives the highest rank reached", function()
 		expect(StyleScore.rank(Ranks, 0).Name).toBe("Newcomer")
 		expect(StyleScore.rank(Ranks, settings.Start).Name).toBe("Rising Star")
 		expect(StyleScore.rank(Ranks, 99999).Name).toBe(Ranks[#Ranks].Name)
+	end)
+end)
+
+describe("Judge feedback and exploits", function()
+	local theme = Themes.List[1]
+
+	it("gives stars and compliments, never the score", function()
+		for _, each in Themes.List do
+			for _, look in { freeLookFor(each), offThemeLook(each), Look.default() } do
+				local notes = Judge.feedback(Look.summary(look), each, {})
+				assert(#notes >= 1 and #notes <= 3, "feedback has 1 to 3 notes")
+				for _, note in notes do
+					assert(not string.find(note, "%d"), `feedback shows a number: {note}`)
+				end
+			end
+		end
+		expect(Judge.feedback(Look.summary(freeLookFor(theme)), theme, {})[1]).toBe("Theme ★★★")
+	end)
+
+	it("scores an empty look low", function()
+		local look = Look.default()
+		look.Top.C = 1
+		look.Bottom.C = 1
+		for _, each in Themes.List do
+			assert(Judge.themeScore(Look.summary(look), each, {}) < 20, `an empty look scores well for {each.Id}`)
+		end
+	end)
+
+	it("can't be nailed with catalog names alone", function()
+		for _, each in Themes.List do
+			local look = Look.default()
+			local names = {}
+			for index = 1, 14 do
+				look.Catalog[index] = index
+				names[index] = `{each.Words[1]} item {index}`
+			end
+			local score = Judge.themeScore(Look.summary(look), each, names)
+			assert(score < Judge.NAILED, `catalog names alone nail {each.Id} ({score})`)
+		end
+	end)
+
+	it("can't be nailed with one piece, however well it fits", function()
+		for _, each in Themes.List do
+			local best = bestLook(each, isFree)
+			for slot, choice in best.Pieces do
+				local look = Look.default()
+				look.Pieces[slot] = choice
+				look.Top.C = choice.C
+				look.Bottom.C = choice.C
+				local score = Judge.themeScore(Look.summary(look), each, {})
+				assert(score < Judge.NAILED, `one {slot} piece nails {each.Id} ({score})`)
+			end
+		end
+	end)
+end)
+
+describe("Theme look (Stylist)", function()
+	local Stylist = RobloxLoader.require("src/shared/Stylist")
+	local free = function(piece)
+		return isFree(piece)
+	end
+	local ownsFree = {
+		ownsPiece = function(id)
+			return Wardrobe.source(Wardrobe.get(id)) == "Free"
+		end,
+		ownsPose = function()
+			return true
+		end,
+		ownsEntrance = function()
+			return true
+		end,
+		customColors = false,
+		maxCatalog = 14,
+	}
+
+	it("only uses pieces the player owns, and keeps their pose and catalog items", function()
+		local rng = seeded(5)
+		local base = Look.default()
+		base.Catalog = { 123, 456 }
+		base.Pose = "wave"
+		for _, each in Themes.List do
+			local look = Stylist.suggest(each, free, base, rng)
+			expect(Look.same(look, Look.sanitize(look, ownsFree))).toBe(true)
+			expect(look.Pose).toBe("wave")
+			expect(look.Catalog).toEqual({ 123, 456 })
+		end
+	end)
+
+	it("gives a new player a look that nails the theme, every theme", function()
+		local rng = seeded(9)
+		local short = {}
+		for _, each in Themes.List do
+			for _ = 1, 10 do
+				local score = Judge.themeScore(Look.summary(Stylist.suggest(each, free, Look.default(), rng)), each, {})
+				if score < Judge.NAILED then
+					table.insert(short, `{each.Id} {score}`)
+					break
+				end
+			end
+		end
+		assert(#short == 0, `theme looks fall short for {table.concat(short, ", ")}`)
+	end)
+
+	it("gives a different idea when pressed again", function()
+		local rng = seeded(3)
+		local different = 0
+		for _, each in Themes.List do
+			local first = Stylist.suggest(each, free, Look.default(), rng)
+			local second = Stylist.suggest(each, free, Look.default(), rng)
+			if not Look.same(first, second) then
+				different += 1
+			end
+		end
+		expect(different > #Themes.List * 0.8).toBe(true)
+	end)
+end)
+
+describe("Themes", function()
+	local ThemePicker = RobloxLoader.require("src/shared/ThemePicker")
+
+	it("each ask for a different mix of tags", function()
+		local seen = {}
+		for _, each in Themes.List do
+			local tags = table.clone(each.Tags)
+			table.sort(tags)
+			local key = table.concat(tags, "+")
+			assert(not seen[key], `{each.Id} has the same tags as {seen[key]}`)
+			seen[key] = each.Id
+		end
+	end)
+
+	it("have real dates, colours and words", function()
+		local days = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+		for _, each in Themes.List do
+			assert(#each.Words >= 2, `{each.Id} has too few catalog words`)
+			for _, name in each.Colors do
+				assert(Palette.indexOf(name), `{each.Id} uses unknown colour {name}`)
+			end
+			if each.Window then
+				for _, date in { each.Window.From, each.Window.To } do
+					assert(
+						date[1] >= 1 and date[1] <= 12 and date[2] >= 1 and date[2] <= days[date[1]],
+						`{each.Id} has a bad date`
+					)
+				end
+			end
+		end
+	end)
+
+	it("offer three themes and a spotlight on every day for years, past the season's end", function()
+		local start = os.time({ year = 2026, month = 11, day = 1, hour = 12 })
+		local rng = function(n)
+			return (n // 2) + 1
+		end
+		for day = 0, 365 * 3 do
+			local time = start + day * 86400
+			local options = ThemePicker.options(Themes.List, time, {}, rng, 3)
+			assert(#options == 3, `only {#options} themes on day {day}`)
+			assert(Themes.get(ThemePicker.spotlight(Themes.List, time)), `no spotlight on day {day}`)
+		end
 	end)
 end)

@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Catalog = require(ReplicatedStorage.Shared.Config.Catalog)
+local Season = require(ReplicatedStorage.Shared.Config.Season)
 local Lib = script.Parent.Parent.Lib
 local RateLimiter = require(Lib.RateLimiter)
 local ReceiptLedger = require(Lib.ReceiptLedger)
@@ -136,6 +137,10 @@ local function onRequestPurchase(player: Player, itemId: unknown)
 	end
 	local item = itemsById[itemId]
 	if not item then
+		return
+	end
+	-- A season's pass is never sold once its season is over.
+	if itemId == Season.Pass and os.time() >= Season.Ends then
 		return
 	end
 	if item.Kind == "GamePass" and item.PassId ~= 0 and not PurchaseService.ownsPass(player, itemId) then

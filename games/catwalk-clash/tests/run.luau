@@ -11,6 +11,7 @@ require("./Wardrobe.spec")
 require("./World.spec")
 require("./Judge.spec")
 require("./Progress.spec")
+require("./Tournament.spec")
 
 local failures = TestKit.run()
 process.exit(if failures > 0 then 1 else 0)

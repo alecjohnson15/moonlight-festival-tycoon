@@ -1,7 +1,8 @@
 --!strict
--- The knockout bracket for one show. Entrants are seeded by Style Score, the
--- bracket is padded to a power of two, and the top seeds get the byes, so a
--- show with n walkers always takes n - 1 matchups. Matches are played one at
+-- The knockout bracket for one show. Entrants are seeded (Bracket.seeded:
+-- at random by default, or by Style Score), the bracket is padded to a
+-- power of two, and the top seeds get the byes, so a show with n walkers
+-- always takes n - 1 matchups. Matches are played one at
 -- a time in order; a walker who leaves loses their next matchup by
 -- walkover. Pure logic, so it is tested in tests/Bracket.spec.
 
@@ -42,6 +43,20 @@ function Bracket.seedOrder(size: number): { number }
 		order = nextOrder
 	end
 	return order
+end
+
+-- Seeds for Bracket.new. "Random" (the default) shuffles everyone, so byes
+-- and first opponents are luck of the draw; "Rating" seeds by Style Score,
+-- which gives the byes to the highest scores and pits newcomers against the
+-- top seeds first (tests/Bracket.spec simulates both). rng() returns a
+-- number from 0 to 1.
+function Bracket.seeded(list: { { Id: string, Rating: number } }, mode: string, rng: () -> number): { Entrant }
+	local entrants = {}
+	for _, item in list do
+		local seed = if mode == "Rating" then item.Rating + rng() else rng()
+		table.insert(entrants, { Id = item.Id, Seed = seed })
+	end
+	return entrants
 end
 
 local function nextPowerOfTwo(n: number): number

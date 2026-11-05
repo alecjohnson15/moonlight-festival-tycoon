@@ -107,6 +107,9 @@ local function robuxPrice(item: any): string
 	if not id or id == 0 then
 		return "Coming soon"
 	end
+	if item.Id == Season.Pass and os.time() >= Season.Ends then
+		return "Season over"
+	end
 	local known = robuxPrices[item.Id]
 	if known then
 		return `R$ {known}`
@@ -156,7 +159,7 @@ local function renderShop()
 				TextYAlignment = Enum.TextYAlignment.Top,
 			})
 			local price = robuxPrice(item)
-			local available = price ~= "Coming soon"
+			local available = price ~= "Coming soon" and price ~= "Season over"
 			Ui.button(
 				row,
 				if owned then "Owned ✓" else price,
@@ -221,7 +224,12 @@ local function renderPass()
 	local premium = State.hasPass(Season.Pass)
 	local now = os.time()
 	local open = Progress.seasonOpen(Season, now)
+	local ended = now >= Season.Ends
 	local daysLeft = math.max(0, math.ceil((Season.Ends - now) / 86400))
+	local status = if open
+		then `Tier {tier} of {#Season.Tiers} · {daysLeft} days left · XP from walking, voting and challenges`
+		elseif ended then "This season is over. Claim any rewards you reached; they're yours to keep."
+		else "The season hasn't started yet. Come back soon!"
 
 	Ui.label(body, {
 		Text = Season.Name,
@@ -232,16 +240,14 @@ local function renderPass()
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	Ui.label(body, {
-		Text = if open
-			then `Tier {tier} of {#Season.Tiers} · {daysLeft} days left · XP from walking, voting and challenges`
-			else "The season hasn't started yet. Come back soon!",
+		Text = status,
 		TextSize = 12,
 		TextColor3 = C.Muted,
 		Position = UDim2.fromOffset(0, 24),
 		Size = UDim2.new(1, -170, 0, 18),
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
-	if not premium then
+	if not premium and not ended then
 		Ui.button(body, "Get Style Pass", C.Gold, function()
 			Remotes.RequestPurchase:FireServer(Season.Pass)
 		end, {
@@ -575,13 +581,16 @@ local function renderSettings()
 	local body = windows.Settings.Body
 	clear(body)
 	local profile = State.Profile
-	local settings = if profile then profile.Settings else { Music = true, Effects = true, WatchOnly = false }
+	local settings = if profile
+		then profile.Settings
+		else { Music = true, Effects = true, WatchOnly = false, ReducedMotion = false }
 	Ui.list(body, false, 10)
 	for index, entry in
 		{
 			{ "Music", "Music", "Songs and the crowd" },
 			{ "Effects", "Effects", "Sound effects, sparkles and flashes" },
 			{ "WatchOnly", "Watch only", "Sit out shows and just vote" },
+			{ "ReducedMotion", "Reduced motion", "No camera flashes, and camera cuts instead of swoops" },
 		}
 	do
 		local key = entry[1]
@@ -669,7 +678,7 @@ function Menus.mount()
 	register("Pass", Ui.window("StylePass", "Style Pass", Vector2.new(680, 440), C.Gold), renderPass)
 	register("Profile", Ui.window("Profile", "My Style", Vector2.new(520, 500), C.Violet), renderProfile)
 	register("Closet", Ui.window("Closet", "My Closet", Vector2.new(560, 440), C.Pink), renderCloset)
-	register("Settings", Ui.window("Settings", "Settings", Vector2.new(440, 330), C.Panel3), renderSettings)
+	register("Settings", Ui.window("Settings", "Settings", Vector2.new(440, 400), C.Panel3), renderSettings)
 
 	State.onProfile(function()
 		for name, window in windows do

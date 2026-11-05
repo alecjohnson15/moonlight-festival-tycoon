@@ -4,8 +4,13 @@
 --     the vote window, and only after the outfits have been on show for a
 --     moment (server/Services/ShowService);
 --   * one ballot per player per matchup; changing your mind replaces it;
---   * a vote from a Roblox friend of either walker, or from a brand new
---     account, counts for less (Config/Game Voting);
+--   * a vote for a walker from that walker's Roblox friend, or from a brand
+--     new account, is "suspect". In the default Capped mode the first few
+--     suspect votes for each walker count in full and only the rest count
+--     for less, so a real newcomer or a friend in an honest crowd isn't
+--     punished but a big friend group or a pile of new alts can't swing a
+--     matchup (Config/Game Voting). Votes against a friend are never
+--     suspect;
 --   * the judges always vote too, and count most when few people watch;
 --   * nobody sees which way the votes are going until they close, so there
 --     is no bandwagon to join.
@@ -13,7 +18,9 @@
 
 export type Side = "A" | "B"
 
-export type Ballot = { Side: Side, Weight: number }
+-- Weight is the ballot's own weight (always 1 in Capped mode); Suspect
+-- marks a vote for a friend, or from a new account.
+export type Ballot = { Side: Side, Weight: number, Suspect: boolean? }
 
 export type Tally = {
 	A: number,
@@ -31,6 +38,9 @@ export type Tally = {
 }
 
 export type Settings = {
+	Mode: string?,
+	SuspectFullVotes: number?,
+	SuspectWeight: number?,
 	FriendWeight: number,
 	NewAccountWeight: number,
 	NewAccountDays: number,
@@ -41,7 +51,28 @@ export type Settings = {
 
 local Voting = {}
 
--- How much one voter's ballot counts.
+-- Whether a vote needs care: the voter is a Roblox friend of the walker they
+-- voted for, or their account is brand new.
+function Voting.isSuspect(settings: Settings, friendOfChosen: boolean, accountAgeDays: number): boolean
+	return friendOfChosen or accountAgeDays < settings.NewAccountDays
+end
+
+-- Whether ballots are capped per side (the default) rather than each
+-- suspect ballot weighed down on its own (the launch rule, Mode = "Flat").
+function Voting.isCapped(settings: Settings): boolean
+	return settings.Mode ~= "Flat"
+end
+
+-- A ballot for the server to keep: in Capped mode every ballot weighs 1 and
+-- the tally caps the suspect ones; in Flat mode each suspect ballot carries
+-- its reduced weight.
+function Voting.ballot(settings: Settings, side: Side, friendOfChosen: boolean, accountAgeDays: number): Ballot
+	local suspect = Voting.isSuspect(settings, friendOfChosen, accountAgeDays)
+	local weight = if Voting.isCapped(settings) then 1 else Voting.weight(settings, friendOfChosen, accountAgeDays)
+	return { Side = side, Weight = weight, Suspect = suspect }
+end
+
+-- How much one voter's ballot counts in Flat mode.
 function Voting.weight(settings: Settings, isFriendOfWalker: boolean, accountAgeDays: number): number
 	local weight = 1
 	if isFriendOfWalker then
@@ -106,15 +137,36 @@ function Voting.tally(
 		DecidedBy = "Votes",
 	}
 	local audience = 0
+	local capped = Voting.isCapped(settings)
+	local suspects = { A = 0, B = 0 }
 	for _, ballot in ballots do
 		audience += 1
-		if ballot.Side == "A" then
-			result.A += ballot.Weight
+		local forA = ballot.Side == "A"
+		if forA then
 			result.VotesA += 1
 		else
-			result.B += ballot.Weight
 			result.VotesB += 1
 		end
+		if capped and ballot.Suspect then
+			if forA then
+				suspects.A += 1
+			else
+				suspects.B += 1
+			end
+		elseif forA then
+			result.A += ballot.Weight
+		else
+			result.B += ballot.Weight
+		end
+	end
+	if capped then
+		local full = settings.SuspectFullVotes or 2
+		local reduced = settings.SuspectWeight or 0.5
+		local function cappedTotal(count: number): number
+			return math.min(count, full) + math.max(0, count - full) * reduced
+		end
+		result.A += cappedTotal(suspects.A)
+		result.B += cappedTotal(suspects.B)
 	end
 
 	local judgeWeight = Voting.judgeWeight(settings, audience)

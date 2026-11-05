@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Game = require(ReplicatedStorage.Shared.Config.Game)
 local RateLimiter = require(script.Parent.Parent.Lib.RateLimiter)
+local Analytics = require(script.Parent.AnalyticsService)
 
 local Remotes = ReplicatedStorage.Remotes
 local CatalogSearch = Remotes.CatalogSearch :: RemoteFunction
@@ -257,6 +258,9 @@ local function onSearch(player: Player, request: any): any
 	local page = if type(request.Page) == "number" then math.clamp(math.floor(request.Page), 1, MAX_PAGES) else 1
 	local sort = if type(request.Sort) == "string" and SORTS[request.Sort] then request.Sort else "Popular"
 	local result = search(category, cleanKeyword(request.Keyword), sort, page)
+	if page == 1 then
+		Analytics.event(player, "CatalogSearch", if result then #result.Items else 0, { category })
+	end
 	if not result then
 		return { Failed = true }
 	end
@@ -270,6 +274,7 @@ local function onBuy(player: Player, assetId: any)
 	-- Only wearable catalog items can be bought here.
 	if CatalogService.item(assetId) then
 		MarketplaceService:PromptPurchase(player, assetId)
+		Analytics.event(player, "CatalogBuyPrompt", 1)
 	end
 end
 

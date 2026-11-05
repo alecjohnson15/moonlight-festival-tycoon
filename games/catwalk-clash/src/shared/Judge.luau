@@ -1,5 +1,7 @@
 --!strict
--- The judges' scoring. A look scores for fitting the theme (wardrobe pieces
+-- The judges' scoring. The judges are rules, not AI: they read the theme
+-- tags of the pieces worn, the names of catalog items and the colours, and
+-- can't see how a look actually looks; the audience judges that. A look scores for fitting the theme (wardrobe pieces
 -- whose tags match it, catalog items whose names contain its words, colours
 -- close to its colours), for being complete, and a little for each judge's
 -- own taste and for flair (a small random amount, so judges don't always
@@ -79,6 +81,42 @@ function Judge.score(judge: JudgeInfo, summary: Summary, theme: Theme, catalogNa
 	local taste = math.min(countTags(summary, judge.Loves) * 3, 9)
 	local colorTaste = math.min(colorMatches(summary.Colors, judge.Colors) * 2, 6)
 	return Judge.themeScore(summary, theme, catalogNames) + taste + colorTaste + flair * 10
+end
+
+-- A few words for a walker on their look, never the score itself, so the
+-- formula can't be read off and gamed: how well it fits the theme (one to
+-- three stars) and up to two compliments.
+function Judge.feedback(summary: Summary, theme: Theme, catalogNames: { string }): { string }
+	local score = Judge.themeScore(summary, theme, catalogNames)
+	local stars = if score >= Judge.NAILED then "★★★" elseif score >= 35 then "★★☆" else "★☆☆"
+	local notes = { `Theme {stars}` }
+	local distinctTags = 0
+	for _ in summary.Tags do
+		distinctTags += 1
+	end
+	local compliments = {}
+	if colorMatches(summary.Colors, theme.Colors) >= 2 then
+		table.insert(compliments, "Colour match")
+	end
+	if Judge.wordMatches(catalogNames, theme.Words) >= 1 then
+		table.insert(compliments, "Great catalog find")
+	end
+	if summary.PieceCount + summary.CatalogCount >= 6 then
+		table.insert(compliments, "Head-to-toe look")
+	end
+	if distinctTags >= 5 then
+		table.insert(compliments, "Creative mix")
+	end
+	if summary.Glows then
+		table.insert(compliments, "Glow factor")
+	end
+	if #compliments == 0 then
+		table.insert(compliments, if summary.PieceCount == 0 then "Try adding pieces" else "Bold choice")
+	end
+	for index = 1, math.min(2, #compliments) do
+		table.insert(notes, compliments[index])
+	end
+	return notes
 end
 
 export type Verdict = {

@@ -64,9 +64,21 @@ Layout.Podium = {
 	Heights = { First = 2.4, Second = 1.6, Third = 0.9 },
 }
 
+-- The opening lineup: everyone in the show stands on the runway in two
+-- staggered rows of six, facing the audience, before the first matchup.
+Layout.Lineup = {} :: { CFrame }
+for index = 0, 11 do
+	local row = index // 6
+	local column = index % 6
+	local x = -11 + column * 4 + row * 2
+	local z = -108 - row * 6
+	table.insert(Layout.Lineup, facing(Vector3.new(x, stageY + 3, z), SOUTH))
+end
+
 -- Cameras: the wide shot down the runway, a closer one for poses, and the
 -- podium shot. Each is a camera position and the point it looks at.
 Layout.Cameras = {
+	Lineup = { From = Vector3.new(0, 11, -84), At = Vector3.new(0, 5.5, -112) },
 	Runway = { From = Vector3.new(0, 12, -76), At = Vector3.new(0, 5.5, -124) },
 	Pose = { From = Vector3.new(0, 8.5, -86), At = Vector3.new(0, 6, -104) },
 	Podium = { From = Vector3.new(0, 9, -79), At = Vector3.new(0, 7, -95) },

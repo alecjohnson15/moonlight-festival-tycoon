@@ -203,8 +203,10 @@ local function onMatch(message)
 	nameB.Text = message.B.Name
 	rankA.Text = if message.A.Rival then "Studio model" else `{message.A.Rank} · {message.A.Rating}`
 	rankB.Text = if message.B.Rival then "Studio model" else `{message.B.Rank} · {message.B.Rating}`
-	buttonA.Text = message.A.Name
-	buttonB.Text = message.B.Name
+	-- Arrows as well as colours, so the sides read without telling pink
+	-- from aqua.
+	buttonA.Text = `◀ {message.A.Name}`
+	buttonB.Text = `{message.B.Name} ▶`
 	versus.Visible = true
 	Ui.pop(versus)
 	panel.Visible = true
@@ -284,7 +286,12 @@ local function onResult(message)
 
 	if message.Judge then
 		judgeName.Text = message.Judge.Name
-		judgeLine.Text = `"{message.Judge.Line}"`
+		local notes = if message.Winner == "A" then message.FeedbackA else message.FeedbackB
+		local text = `"{message.Judge.Line}"`
+		if type(notes) == "table" and #notes > 0 then
+			text ..= `\n{winnerName}: {table.concat(notes, " · ")}`
+		end
+		judgeLine.Text = text
 		Corner.pop(judgeCard)
 	end
 	Sounds.play("VoteReveal")
@@ -299,17 +306,41 @@ local function onResult(message)
 	if mySide then
 		local change = if mySide == "A" then message.ChangeA else message.ChangeB
 		local won = message.Winner == mySide
-		local themeScore = if mySide == "A" then message.ThemeA else message.ThemeB
+		local notes = if mySide == "A" then message.FeedbackA else message.FeedbackB
+		local judges = if type(notes) == "table" and #notes > 0
+			then table.concat(notes, " · ")
+			else `Theme score {if mySide == "A" then message.ThemeA else message.ThemeB}/100`
 		Sounds.play(if won then "MatchWin" else "Deny")
 		Corner.toast(
-			if won then "You won the matchup!" else "So close!",
-			`Style Score {if change >= 0 then "+" else ""}{change} · Theme score {themeScore}/100`,
+			if won then "You won the matchup!" else "Great walk!",
+			`Style Score {if change >= 0 then "+" else ""}{change} · Judges: {judges}`,
 			if won then C.Green else C.Violet,
 			6
 		)
 	elseif myVote and myVote == message.Winner then
 		Corner.toast("Good taste!", "You picked the winner.", C.Gold, 3)
 	end
+end
+
+-- The opening lineup: every look in the show on the runway at once.
+local function onLineup(message)
+	current = nil
+	panel.Visible = false
+	versus.Visible = false
+	resultFrame.Visible = false
+	showCamera("Lineup")
+	local entrants = if type(message.Entrants) == "table" then message.Entrants else {}
+	local names = {}
+	for _, entry in entrants do
+		table.insert(names, if entry.Rival then `{entry.Name} (model)` else entry.Name)
+	end
+	local seconds = math.max(1, (message.EndsAt or State.now()) - State.now())
+	Corner.toast(`Tonight's lineup: {#names} looks`, table.concat(names, ", "), C.Gold, seconds)
+	Effects.paparazzi(seconds)
+	Sounds.play("Whoosh")
+	task.delay(0.3, function()
+		Sounds.play("Cheer")
+	end)
 end
 
 local function onYouWalk(message)
@@ -590,6 +621,8 @@ function Show.mount()
 		local kind = message.Type
 		if kind == "Bracket" then
 			onBracket(message)
+		elseif kind == "Lineup" then
+			onLineup(message)
 		elseif kind == "Match" then
 			onMatch(message)
 		elseif kind == "VoteCount" then

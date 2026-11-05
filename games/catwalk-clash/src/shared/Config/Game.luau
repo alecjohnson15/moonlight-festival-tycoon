@@ -37,10 +37,35 @@ return {
 		StrutSpeed = 11,
 	},
 
+	-- Switches for the show's newer parts, so each can be turned off on its
+	-- own if it misbehaves (docs/AUTONOMOUS_UPGRADE_REPORT.md has rollback
+	-- notes).
+	Show = {
+		-- "Random" (byes and first opponents by luck of the draw) or
+		-- "Rating" (by Style Score, the launch rule).
+		Seeding = "Random",
+		-- Everyone in the show stands on the runway together for a moment
+		-- before the first matchup, so every look is seen at least once.
+		Lineup = true,
+		LineupSeconds = 7,
+		-- Each walker hears a few words from the judges on their look
+		-- ("Theme ★★★", "Colour match"), never the exact score.
+		JudgeFeedback = true,
+	},
+
 	Voting = {
-		-- A vote from a Roblox friend of either walker counts this much.
+		-- A vote is "suspect" when the voter is a Roblox friend of the walker
+		-- they voted for, or their account is younger than NewAccountDays.
+		-- Capped (the default): for each walker, the first SuspectFullVotes
+		-- suspect votes count in full and any more count SuspectWeight each,
+		-- so a newcomer or a friend in an honest crowd counts like anyone
+		-- else but a big friend group or a pile of new alts can't take over.
+		-- Flat (the launch rule, to roll back): every suspect vote counts
+		-- FriendWeight and/or NewAccountWeight.
+		Mode = "Capped",
+		SuspectFullVotes = 2,
+		SuspectWeight = 0.5,
 		FriendWeight = 0.5,
-		-- A vote from an account younger than NewAccountDays counts this much.
 		NewAccountWeight = 0.5,
 		NewAccountDays = 7,
 		-- Each judge's vote is worth JudgeBase minus JudgeFade per audience
@@ -62,6 +87,8 @@ return {
 		RivalScale = 0.5,
 		-- A small reward for walking at all, win or lose.
 		WalkBonus = 2,
+		-- A player's first walks can only raise their score (0 turns it off).
+		ProtectedWalks = 10,
 	},
 
 	-- Sparkles (the currency) and Style Pass XP for each thing a player does.

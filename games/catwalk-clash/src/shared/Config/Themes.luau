@@ -343,9 +343,9 @@ local Themes: { Theme } = {
 	{
 		Id = "movie_star",
 		Name = "Movie Star",
-		Hint = "The premiere is tonight.",
-		Tags = { "glam", "formal" },
-		Colors = { "Gold", "Black", "Ruby", "Snow" },
+		Hint = "Old-school silver screen glamour for the premiere.",
+		Tags = { "glam", "retro" },
+		Colors = { "Silver", "Black", "Snow", "Gold" },
 		Words = { "star", "movie", "film", "premiere", "glam" },
 	},
 	{
@@ -416,7 +416,7 @@ local Themes: { Theme } = {
 		Id = "masquerade",
 		Name = "Masquerade",
 		Hint = "Mysterious masks and midnight gowns.",
-		Tags = { "formal", "party", "glam" },
+		Tags = { "formal", "fantasy", "party" },
 		Colors = { "Plum", "Gold", "Black", "Ruby" },
 		Words = { "mask", "masquerade", "gown", "mystery" },
 	},
@@ -455,8 +455,8 @@ local Themes: { Theme } = {
 	{
 		Id = "robot_revolution",
 		Name = "Robot Revolution",
-		Hint = "Beep boop, but make it fashion.",
-		Tags = { "future", "space" },
+		Hint = "Beep boop, but make it fashion. Shiny retro robots welcome.",
+		Tags = { "future", "retro" },
 		Colors = { "Silver", "Aqua", "Slate" },
 		Words = { "robot", "mech", "android", "cyber", "metal" },
 	},
