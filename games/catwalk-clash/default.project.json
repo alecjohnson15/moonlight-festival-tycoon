@@ -1,0 +1,106 @@
+{
+  "name": "catwalk-clash",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "SetLook": {
+          "$className": "RemoteEvent"
+        },
+        "Ready": {
+          "$className": "RemoteEvent"
+        },
+        "ThemeVote": {
+          "$className": "RemoteEvent"
+        },
+        "CastVote": {
+          "$className": "RemoteEvent"
+        },
+        "Show": {
+          "$className": "RemoteEvent"
+        },
+        "Profile": {
+          "$className": "RemoteEvent"
+        },
+        "Notice": {
+          "$className": "RemoteEvent"
+        },
+        "ShopBuy": {
+          "$className": "RemoteEvent"
+        },
+        "RequestPurchase": {
+          "$className": "RemoteEvent"
+        },
+        "CatalogBuy": {
+          "$className": "RemoteEvent"
+        },
+        "Favorite": {
+          "$className": "RemoteEvent"
+        },
+        "Looks": {
+          "$className": "RemoteEvent"
+        },
+        "ClaimTier": {
+          "$className": "RemoteEvent"
+        },
+        "Settings": {
+          "$className": "RemoteEvent"
+        },
+        "Lounge": {
+          "$className": "RemoteEvent"
+        },
+        "CatalogSearch": {
+          "$className": "RemoteFunction"
+        }
+      },
+      "RoundState": {
+        "$className": "Configuration"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CharacterWalkSpeed": 18,
+        "EnableMouseLockOption": false
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "Brightness": 2,
+        "GlobalShadows": true,
+        "Ambient": [
+          0.35,
+          0.28,
+          0.42
+        ],
+        "OutdoorAmbient": [
+          0.55,
+          0.45,
+          0.62
+        ],
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.8,
+        "TimeOfDay": "19:36:00"
+      }
+    },
+    "SoundService": {
+      "$properties": {
+        "RespectFilteringEnabled": true
+      }
+    }
+  }
+}
