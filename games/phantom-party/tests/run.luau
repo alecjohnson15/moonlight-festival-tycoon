@@ -1,0 +1,25 @@
+-- Runs the test suite with Lune, from the games/phantom-party folder:
+-- `lune run tests/run`. Modules load through RobloxLoader, which supplies
+-- Lune's Roblox library and maps script.Parent paths onto src/.
+
+local process = require("@lune/process")
+local TestKit = require("./TestKit")
+
+require("./Rules.spec")
+require("./Saves.spec")
+require("./Config.spec")
+require("./Fairness.spec")
+require("./Evidence.spec")
+require("./Sims.spec")
+require("./Trades.spec")
+require("./Onboarding.spec")
+require("./Recap.spec")
+require("./Telemetry.spec")
+require("./Accessibility.spec")
+require("./Look.spec")
+require("./Maps.spec")
+require("./Compile.spec")
+require("./Publish.spec")
+
+local failures = TestKit.run()
+process.exit(if failures > 0 then 1 else 0)
