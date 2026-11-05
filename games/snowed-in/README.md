@@ -16,17 +16,26 @@ its own `default.project.json`, code, tests, sounds and CI workflow
   team upgrades at the workbench, and cook at the pot.
 - **Dusk** (20 s): the horn sounds and the sky turns.
 - **Night** (2 minutes): waves of cartoon snow monsters come for the hearth.
-  Away from heat everyone gets cold; at zero warmth you freeze in a block of
-  ice until a friend thaws you or you wake up by the hearth.
-- **Radio:** four radio parts are frozen at the sawmill, the ice cave, the
-  lighthouse and the depot. Break them out, carry them to the radio tower,
-  and once all four are fitted the radio calls the train. It comes at the
-  dawn after night 10. Miss it and the nights carry on, harder each time, up
-  to night 15.
-- **Bosses:** the Old Yeti on night 5 and the Elder Yeti on night 10.
+  Each night has a theme (Frostling Crowd, Hound Pack, Brute Siege, Wisp
+  Swarm, Whiteout) that is forecast the morning before with a tip on how to
+  meet it. Away from heat everyone gets cold; at zero warmth you freeze in a
+  block of ice until a friend thaws you or you wake up by the hearth.
+- **Radio:** four radio parts are frozen at four landmarks, each freed its
+  own way: saw the logs at the sawmill, melt the cave ice with a fire tool,
+  light the lighthouse with wood, pry the depot crate with scrap. Carry them
+  to the radio tower; once all four are fitted the radio calls the train. It
+  comes at the dawn after night 10. Miss it and the nights carry on, harder
+  each time, up to night 15. A team behind on the radio gets the missing
+  parts marked and fewer guards on them.
+- **Bosses:** the Old Yeti on night 5 and the Elder Yeti on night 10. They
+  wind up their slams (a red ring shows where), are out of breath after one
+  (double damage), and roar for help as they weaken.
+- **Milestones** (first hearth upgrade, first night, first part...) get a
+  banner, and the results screen shows them with what each player did and
+  their next goal.
 - A run lasts about 52 minutes (`lune run tools/simulate_run` prints it
-  night by night). Win or lose, everyone earns snowflakes and Expedition
-  Pass XP.
+  night by night from a model of the whole run). Win or lose, everyone earns
+  snowflakes and Expedition Pass XP.
 
 ## Roles
 
@@ -45,17 +54,34 @@ gets one of the town's eight cabins for the session and decorates its roof,
 wreath, lantern, yard, flag and glow; the choices are saved and come back
 next time. The Expedition Pass has 13 tiers with a free reward on each, and
 a premium row for the Expedition Pass: Premium game pass. Nothing sold for
-Robux is random, and nothing sold makes a run easier to win.
+Robux is random. The Ranger and Medic role passes are early access to roles
+anyone can earn with 600 snowflakes; those roles help a team a little (about
+5 to 7% on a team of four's hardest night, by the run model), and a team of
+free roles can win without them. Everything else sold is to wear or to put on
+a cabin.
 
 ## Controls
 
 - **Computer:** WASD move, hold **E** to use things, click to swing or shoot,
   **Q** ability, **G** eat, **B** build (click to place, **R** to turn),
+  hold **X** on your own build to take it down for half its cost back,
   **Esc** closes menus.
 - **Phone and tablet:** on-screen buttons for the ability, eating and
   building; hold on things in town to use them.
 - **Controller:** **Y** ability, **X** eat, **R1** place while building,
   **B** closes menus.
+- **Settings** (the gear menu): music on or off, effects volume, and reduce
+  motion (fewer particles, no camera shake). They are saved with the
+  player's progress. The same window shows a diagnostics line (frame rate,
+  ping, monsters, builds, server step time).
+
+## Feature switches
+
+The newer mechanics each have a switch in `src/shared/Config/Features.luau`,
+all on: `NightThemes`, `BossPhases`, `LandmarkTrials`, `RadioCatchUp`,
+`SoloAssist`, `ThawGrace`, `BuildShare` and `Milestones`. Turning one off
+and rebuilding puts that part back the way it was before;
+`docs/AUTONOMOUS_UPGRADE_REPORT.md` says what each changes.
 
 ## Layout
 
@@ -67,22 +93,27 @@ src/
                    Expedition, Catalog (game passes), Sounds, Map
     World/         Code-built models: the town, landmarks, buildings,
                    monsters, gear, wearables, cabin decorations
-    Waves, EnemySim, Combat, Warmth, Stock, Grid, Cycle, Codec, Profile
+    Waves, EnemySim, Combat, Warmth, Stock, Grid, Cycle, Codec, Profile,
+    Radio (the radio part rules), Assist (small-team help), Milestones,
+    Funnel (analytics steps); Config/Features holds the switches
   server/          ServerScriptService.Server
     Services/      GameLoop, World, Gather, Build, Craft, Monster,
                    Objective, Ability, Team, Player, Cabin, Pass, Profile,
                    Data, Results
     Lib/           Net (remote checks), RateLimiter, SessionLock,
-                   ReceiptLedger, Migrations, Heat, RunStats, Sim
+                   ReceiptLedger, Migrations, Heat, RunStats, Sim,
+                   Analytics (Roblox funnels and events), Celebrate
   client/          StarterPlayerScripts.Client: HUD, guide, menus, build
-                   mode, monster view, effects, sky, sounds, markers, pets
+                   mode, monster view, effects, sky, sounds, markers, pets,
+                   settings, diagnostics
 tests/             Lune specs (no Studio needed)
 tools/             make_sounds.py (the sound and music generator),
-                   simulate_run.luau (prints a run's pacing)
+                   RunModel.luau (a deterministic model of a whole run),
+                   simulate_run.luau (prints it for 1 to 8 players)
 assets/audio/      45 generated .ogg files to upload
 assets/marketing/  Pass icons; the store icon and thumbnails go here
 docs/              launch.md, design.md, marketing.md, playtest.md,
-                   rights-register.md
+                   rights-register.md, AUTONOMOUS_UPGRADE_REPORT.md
 ```
 
 The server owns everything that matters: resources, the hearth, building,
@@ -102,7 +133,7 @@ rokit install
 stylua src tests tools        # format
 selene src                    # lint
 lune run tests/run            # tests
-lune run tools/simulate_run   # pacing table
+lune run tools/simulate_run   # the run model: pacing, difficulty, roles, economy
 rojo serve                    # live sync into Studio
 rojo build default.project.json -o snowed-in.rbxl
 python3 tools/make_sounds.py  # rebuild assets/audio (needs numpy and ffmpeg)

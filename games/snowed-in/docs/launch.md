@@ -170,9 +170,11 @@ for each row:
 4. Back in the list, click **⋯** on the pass and **Copy Asset ID**.
 
 Prices are the suggestions in `Config/Catalog.luau`; change them if you like.
-None of them makes a run easier to win: the two roles can also be earned with
-600 snowflakes (about three wins), and everything else is to wear or to put
-on your cabin.
+The two role passes are early access: both roles can also be earned with 600
+snowflakes (about three wins, or three to five runs). They help a team a
+little (the run model puts it at about 5 to 7% on a team of four's hardest
+night), and free roles win without them; say "unlock early" in the store
+text, not "more power". Everything else is to wear or to put on your cabin.
 
 | Id | Name | Description | Robux | Icon |
 | --- | --- | --- | --- | --- |
@@ -198,7 +200,15 @@ then its place, and **Overwrite**. Do the same for every later update.
 Running servers keep the old version until they close; **Restart servers**
 in the game's menu on the Creator Dashboard moves everyone over.
 
-## 8. Soft launch
+## 8. Analytics
+
+Nothing to set up: the game reports its funnels itself. After players have
+been in, open the game on the Creator Dashboard, **Analytics > Funnels**: the
+"Onboarding" funnel shows where new players stop on their first run, and the
+"Run" funnel where runs stop. **Analytics > Custom events** has the run
+results. `docs/design.md` lists every step.
+
+## 9. Soft launch
 
 1. Set the game to **Friends** (or keep it private and invite testers) and
    play a whole run with 3 to 6 people. `docs/playtest.md` has what to watch.
