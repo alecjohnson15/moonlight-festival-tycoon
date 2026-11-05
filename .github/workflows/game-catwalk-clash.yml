@@ -1,0 +1,71 @@
+name: Catwalk Clash
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "games/catwalk-clash/**"
+      - ".github/workflows/game-catwalk-clash.yml"
+  pull_request:
+    paths:
+      - "games/catwalk-clash/**"
+      - ".github/workflows/game-catwalk-clash.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games/catwalk-clash
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same tools and versions as the root ci.yml and this game's
+      # rokit.toml, sharing its cache key.
+      - name: Restore tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/stylua
+            ~/.cargo/bin/selene
+            ~/.cargo/bin/lune
+            ~/.cargo/bin/rojo
+          key: tools-${{ runner.os }}-stylua-2.6.0-luau-selene-0.31.0-lune-0.11.1-rojo-7.7.1
+
+      # StyLua only reads .luau files when built with its luau feature.
+      - name: Install tools
+        if: steps.tools.outputs.cache-hit != 'true'
+        run: |
+          cargo install --locked stylua@2.6.0 --features luau
+          cargo install --locked selene@0.31.0 lune@0.11.1 rojo@7.7.1
+
+      - name: Make sure StyLua reads Luau
+        run: |
+          printf 'local count: number = 1\n' > "$RUNNER_TEMP/tidy.luau"
+          printf 'local  count: number = 1\n' > "$RUNNER_TEMP/untidy.luau"
+          stylua --check "$RUNNER_TEMP/tidy.luau"
+          if stylua --check "$RUNNER_TEMP/untidy.luau" > /dev/null; then
+            echo "::error::StyLua passed an untidy .luau file, so it is not checking Luau"
+            exit 1
+          fi
+
+      - name: Check formatting
+        run: stylua --check src tests tools
+
+      # Selene writes roblox.yml (the Roblox API) here on its first run.
+      - name: Lint
+        run: selene src tests tools
+
+      - name: Test
+        run: lune run tests/run
+
+      - name: Build place
+        run: rojo build default.project.json -o catwalk-clash.rbxl
+
+      - name: Keep the place file
+        uses: actions/upload-artifact@v4
+        with:
+          name: catwalk-clash-place
+          path: games/catwalk-clash/catwalk-clash.rbxl
+          retention-days: 14
