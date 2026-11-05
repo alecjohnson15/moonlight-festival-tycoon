@@ -32,6 +32,14 @@ export type Participant = {
 	TaggedBy: Participant?,
 	-- How they were last knocked down: Swing, Throw, Zap or Misfire.
 	LastHow: string?,
+	-- Left the server mid-round (they are Out too).
+	Left: boolean,
+	-- Zapped an innocent guest this round.
+	Misfired: boolean,
+	-- Blackouts used this round (the Saboteur).
+	BlackoutsUsed: number,
+	-- The mask they wore into the round, for witness glimpses.
+	Mask: string?,
 }
 
 local Match = {}
@@ -43,6 +51,8 @@ Match.EndsAt = 0
 -- Workspace:GetServerTimeNow() time the current state ends, for clients.
 Match.EndsAtServer = 0
 Match.Practice = false
+-- Practice, Duel, Small or Full (Rules/Round.ruleset).
+Match.Ruleset = "Full"
 Match.Map = nil :: Model?
 Match.MapId = nil :: string?
 -- os.clock() time Playing began.
@@ -52,10 +62,18 @@ Match.Participants = {} :: { [any]: Participant }
 local listeners: { [string]: { (...any) -> () } } = {}
 
 -- Runs callback(...) whenever event fires. Events:
---   Down(participant, by): tagged or zapped, now Dazed (guests) or Out.
+--   Down(participant, by, how): tagged or zapped, now Dazed (guests) or Out.
 --   Out(participant): out of the round for good.
 --   Revived(participant, medic)
 --   State(state): the round moved on.
+--   Drawn(participant): the Phantom drew the blade.
+--   ThrowLanded(participant, position, hit): a thrown blade came down.
+--   Shot(participant, result): a blaster was fired; result is Missed,
+--     Caught (the Phantom), Shadow (the Saboteur) or Innocent.
+--   Blackout(participant): the Saboteur cut the lights.
+--   Torn(participant, position): a Shadow tore up a clue page.
+--   Page(participant, position): a guest picked up a clue page.
+--   Rang(): the Truth Bell rang.
 function Match.on(event: string, callback: (...any) -> ())
 	listeners[event] = listeners[event] or {}
 	table.insert(listeners[event], callback)
@@ -89,11 +107,12 @@ function Match.reset()
 	Match.Map = nil
 	Match.MapId = nil
 	Match.Practice = false
+	Match.Ruleset = "Full"
 end
 
 function Match.add(
 	key: any,
-	info: { Player: Player?, UserId: number, Name: string, Character: Model?, Role: string }
+	info: { Player: Player?, UserId: number, Name: string, Character: Model?, Role: string, Mask: string? }
 ): Participant
 	local participant: Participant = {
 		Key = key,
@@ -113,6 +132,10 @@ function Match.add(
 		ShieldUntil = 0,
 		TaggedBy = nil,
 		LastHow = nil,
+		Left = false,
+		Misfired = false,
+		BlackoutsUsed = 0,
+		Mask = info.Mask,
 	}
 	Match.Participants[key] = participant
 	return participant
@@ -154,12 +177,21 @@ function Match.withRole(roleId: string): Participant?
 end
 
 -- What Rules/Round needs: each participant's role and state.
-function Match.entries(): { [any]: { Role: string, State: string } }
+function Match.entries(): { [any]: { Role: string, State: string, Left: boolean? } }
 	local entries = {}
 	for key, participant in Match.Participants do
-		entries[key] = { Role = participant.Role, State = participant.State }
+		entries[key] = { Role = participant.Role, State = participant.State, Left = participant.Left }
 	end
 	return entries
+end
+
+-- How many participants are in the round.
+function Match.count(): number
+	local count = 0
+	for _ in Match.Participants do
+		count += 1
+	end
+	return count
 end
 
 -- Where a player stands for chat (Rules/Chat): Lobby when they're not in a

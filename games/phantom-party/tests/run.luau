@@ -8,6 +8,7 @@ local TestKit = require("./TestKit")
 require("./Rules.spec")
 require("./Saves.spec")
 require("./Config.spec")
+require("./Fairness.spec")
 require("./Look.spec")
 require("./Compile.spec")
 

@@ -1,4 +1,4 @@
--- Proximity chat. In the lobby everyone hears everyone. In a round the
+-- Proximity chat, on every text channel. In the lobby everyone hears everyone. In a round the
 -- living hear only the living close by, so whispers in one room don't reach
 -- the next, and the tagged and the out talk among themselves and the lobby
 -- without giving away who tagged them (Rules/Chat). Bubbles follow the same
@@ -51,6 +51,9 @@ local function guard(channel: TextChannel)
 	end
 end
 
+-- Every channel follows the same rule, including the private ones the
+-- /whisper command opens: otherwise a player who is out could whisper the
+-- Phantom's name to someone still in the round.
 function ChatService.init()
 	task.spawn(function()
 		local channels = TextChatService:WaitForChild("TextChannels", 30)
@@ -58,9 +61,14 @@ function ChatService.init()
 			warn("TextChatService has no channels; is the place using the legacy chat?")
 			return
 		end
-		local general = channels:WaitForChild("RBXGeneral", 30)
-		if general and general:IsA("TextChannel") then
-			guard(general)
+		local function watch(channel: Instance)
+			if channel:IsA("TextChannel") then
+				guard(channel)
+			end
+		end
+		channels.ChildAdded:Connect(watch)
+		for _, channel in channels:GetChildren() do
+			watch(channel)
 		end
 	end)
 end

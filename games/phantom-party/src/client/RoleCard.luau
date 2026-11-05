@@ -51,9 +51,15 @@ local function reveal(message)
 		return
 	end
 	local color = Color3.fromHex(role.Color)
-	local frame = card(400, 250, color)
+	local frame = card(400, 262, color)
 	current = frame
-	Ui.label(frame, if message.Practice then "PRACTICE ROUND" else "YOUR ROLE", {
+	local heading = "YOUR ROLE"
+	if message.Practice then
+		heading = "PRACTICE ROUND"
+	elseif message.Ruleset == "Duel" then
+		heading = "DUEL: YOUR ROLE"
+	end
+	Ui.label(frame, heading, {
 		Position = UDim2.fromOffset(0, 12),
 		Size = UDim2.new(1, 0, 0, 16),
 		TextSize = 13,
@@ -96,13 +102,16 @@ local function reveal(message)
 		end
 		footer = `On your side: {table.concat(names, ", ")}`
 	elseif message.Practice then
-		footer = "Practice with stand-ins. Real rounds start when another guest joins."
+		footer = "Practice: stand-ins don't talk or hide, and it pays nothing. Real rounds start when someone joins."
+	elseif message.Ruleset == "Duel" then
+		footer = "Just two of you, so you both know who's who. Find each other first!"
 	end
 	if footer ~= "" then
 		Ui.label(frame, footer, {
-			Position = UDim2.new(0, 20, 1, -30),
-			Size = UDim2.new(1, -40, 0, 20),
-			TextSize = 13,
+			Position = UDim2.new(0, 20, 1, -40),
+			Size = UDim2.new(1, -40, 0, 32),
+			TextSize = 12,
+			TextWrapped = true,
 			TextColor3 = color,
 		})
 	end
@@ -116,7 +125,9 @@ end
 
 local REASONS = {
 	PhantomOut = "The Phantom was knocked out!",
+	PhantomLeft = "The Phantom left the party.",
 	AllTagged = "Every guest was tagged.",
+	GuestsLeft = "Every guest left the party.",
 	Time = "The guests made it to dawn.",
 }
 

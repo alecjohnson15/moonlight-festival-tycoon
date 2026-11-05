@@ -2,7 +2,7 @@
 -- pass), the round (its state, the clock, the vote), and, during a round,
 -- the player's own secret role and kit. Screens read it and listen for
 -- changes by name: Profile, Round, Vote, Role, Kit, Me, Bell, Census,
--- Results, Pay.
+-- Results, Pay, Hit and Lead.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -56,6 +56,17 @@ function State.request(action: string, ...: any): { [string]: any }
 		return result
 	end
 	return { Ok = false, Error = "Failed" }
+end
+
+-- A setting from the player's save (Music, ReduceMotion, Captions), or
+-- fallback while the profile is loading.
+function State.setting(name: string, fallback: boolean): boolean
+	local profile = State.Profile
+	local settings = profile and profile.Settings
+	if settings and typeof(settings[name]) == "boolean" then
+		return settings[name]
+	end
+	return fallback
 end
 
 -- Whether this player is in the round going on, still standing.
@@ -118,6 +129,16 @@ end
 function handlers.Bell(message)
 	State.Bell = { Value = message.Value, Room = message.Room }
 	State.fire("Bell")
+end
+
+-- How this player's own swing, throw or zap went.
+function handlers.Hit(message)
+	State.fire("Hit", message)
+end
+
+-- A lead for the evidence notebook (client/Leads).
+function handlers.Lead(message)
+	State.fire("Lead", message)
 end
 
 function handlers.Census(message)

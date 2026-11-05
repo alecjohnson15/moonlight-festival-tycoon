@@ -327,10 +327,14 @@ function handlers.Burst(position: Vector3, effectId: string?, how: string?)
 	end
 end
 
-function handlers.Swing(position: Vector3, userId: number)
-	if userId ~= player.UserId then
-		Sounds.play("Swing", position)
-	end
+-- Someone else's swing nearby (the server never says whose).
+function handlers.Swing(position: Vector3)
+	Sounds.play("Swing", position)
+end
+
+-- A blade drawn close by: the warning before a tag.
+function handlers.Draw(position: Vector3)
+	Sounds.play("Draw", position)
 end
 
 function handlers.Revive(position: Vector3)

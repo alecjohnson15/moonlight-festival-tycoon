@@ -153,7 +153,7 @@ describe("a round", function()
 		expect(why).toBe("Time")
 	end)
 
-	it("in practice, ends only on the clock", function()
+	it("without a Phantom dealt, ends only on the clock", function()
 		expect(Round.outcome(entries({ { "Phantom", "Out" } }), 10, true)).toBe(nil)
 		expect(Round.outcome(entries({ { "Phantom", "Out" } }), 0, true)).toBe("Guests")
 	end)

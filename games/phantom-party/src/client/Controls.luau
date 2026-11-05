@@ -1,11 +1,12 @@
--- The player's moves in a round, on keys and on buttons:
---   Phantom:   1 draws or hides the blade, click tags, E throws.
---   Guardian:  1 draws or hides the blaster, click zaps where you aim.
---   Saboteur:  F cuts the lights.
---   Medic:     hold E beside a dazed guest to revive them.
--- On a phone the same moves are buttons beside the jump button, and the
--- blaster aims where the camera looks. Every move is only a request; the
--- server decides what happens.
+-- The player's moves in a round, on keys, buttons and a controller:
+--   Phantom:   1 (Y) draws or hides the blade, click (R2) tags, E (B) throws.
+--   Guardian:  1 (Y) draws or hides the blaster, click (R2) zaps.
+--   Saboteur:  F (L1) cuts the lights.
+--   Medic:     hold E (X) beside a dazed guest to revive them.
+-- On a phone the same moves are buttons beside the jump button. On a phone
+-- or a controller the blaster aims where the camera looks. Every move is
+-- only a request; the server decides what happens, and says how it went (a
+-- word in the middle of the screen: tagged, missed, innocent...).
 --
 -- Also opens the right panel when a lobby shop's prompt is used, and hides
 -- prompts that aren't for this player's role (the dropped blaster from the
@@ -16,6 +17,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -94,14 +96,18 @@ local function root(): BasePart?
 	return if part and part:IsA("BasePart") then part else nil
 end
 
+local function onGamepad(): boolean
+	return UserInputService:GetLastInputType().Name:sub(1, 7) == "Gamepad"
+end
+
 -- Where the player is aiming: the mouse on a computer, the middle of the
--- screen on a phone.
+-- screen on a phone or with a controller.
 local function aimPoint(): Vector3?
 	local camera = Workspace.CurrentCamera
 	if not camera then
 		return nil
 	end
-	if not Ui.isTouch() then
+	if not Ui.isTouch() and not onGamepad() then
 		return mouse.Hit.Position
 	end
 	local ray = camera:ViewportPointToRay(camera.ViewportSize.X / 2, camera.ViewportSize.Y * 0.45)
@@ -189,6 +195,53 @@ local function use()
 	end
 end
 
+-- How a move went, for a moment in the middle of the screen.
+local marker = Ui.label(gui, "", {
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Position = UDim2.fromScale(0.5, 0.4),
+	Size = UDim2.fromOffset(420, 40),
+	Font = Ui.Title,
+	TextSize = 28,
+	TextStrokeTransparency = 0.3,
+	Visible = false,
+})
+local markerScale = Ui.make("UIScale", {}, marker)
+local markerToken = 0
+
+local RESULTS = {
+	Tagged = { Text = "TAGGED!", Color = Color3.fromRGB(255, 77, 109), Sound = "Tag" },
+	Missed = { Text = "Missed", Color = Color3.fromRGB(190, 182, 214), Sound = nil },
+	Caught = { Text = "YOU CAUGHT THE PHANTOM!", Color = Color3.fromRGB(77, 255, 154), Sound = "Fanfare" },
+	Shadow = { Text = "A SHADOW! You caught the Saboteur", Color = Color3.fromRGB(77, 255, 154), Sound = "Zap" },
+	Innocent = { Text = "INNOCENT! You're both down", Color = Color3.fromRGB(255, 120, 60), Sound = "Misfire" },
+}
+
+local function showHit(message)
+	local result = typeof(message) == "table" and RESULTS[message.Result]
+	if not result then
+		return
+	end
+	markerToken += 1
+	local token = markerToken
+	marker.Text = result.Text
+	marker.TextColor3 = result.Color
+	marker.Visible = true
+	if result.Sound then
+		Sounds.play(result.Sound)
+	end
+	if State.setting("ReduceMotion", false) then
+		markerScale.Scale = 1
+	else
+		markerScale.Scale = 1.4
+		TweenService:Create(markerScale, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	end
+	task.delay(if message.Result == "Missed" then 0.7 else 1.6, function()
+		if markerToken == token then
+			marker.Visible = false
+		end
+	end)
+end
+
 slot("Draw", "Draw", "1", Ui.Colors.Accent, 1, toggleDraw)
 slot("Use", "Tag", "Click", Ui.Colors.Bad, 2, use)
 slot("Throw", "Throw", "E", Color3.fromRGB(255, 120, 60), 3, throw)
@@ -205,7 +258,11 @@ local function refresh()
 	slots.Draw.Button.Text = if drawn then "Hide" elseif blade then "Blade" else "Blaster"
 	slots.Use.Button.Visible = playing and drawn ~= nil
 	slots.Use.Button.Text = if drawn == "Blaster" then "Zap" else "Tag"
-	slots.Use.Key.Text = if Ui.isTouch() then "" else "Click"
+	local pad = onGamepad()
+	slots.Use.Key.Text = if Ui.isTouch() then "" elseif pad then "R2" else "Click"
+	slots.Draw.Key.Text = if Ui.isTouch() then "" elseif pad then "Y" else "1"
+	slots.Throw.Key.Text = if Ui.isTouch() then "" elseif pad then "B" else "E"
+	slots.Blackout.Key.Text = if Ui.isTouch() then "" elseif pad then "L1" else "F"
 	slots.Throw.Button.Visible = playing and drawn == "Blade"
 	slots.Blackout.Button.Visible = playing and role == "Saboteur"
 	slots.Blackout.Button.Text = `Lights out x{current.Blackouts or 0}`
@@ -345,18 +402,21 @@ function Controls.start()
 		if processed or not State.playing() then
 			return
 		end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local key = input.KeyCode
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or key == Enum.KeyCode.ButtonR2 then
 			use()
-		elseif input.KeyCode == Enum.KeyCode.One or input.KeyCode == Enum.KeyCode.Q then
+		elseif key == Enum.KeyCode.One or key == Enum.KeyCode.Q or key == Enum.KeyCode.ButtonY then
 			toggleDraw()
-		elseif input.KeyCode == Enum.KeyCode.E then
+		elseif key == Enum.KeyCode.E or key == Enum.KeyCode.ButtonB then
 			if kit().Drawn == "Blade" then
 				throw()
 			end
-		elseif input.KeyCode == Enum.KeyCode.F then
+		elseif key == Enum.KeyCode.F or key == Enum.KeyCode.ButtonL1 then
 			blackout()
 		end
 	end)
+	UserInputService.LastInputTypeChanged:Connect(refresh)
+	State.on("Hit", showHit)
 	local elapsed = 0
 	RunService.Heartbeat:Connect(function(dt)
 		for _, each in slots do

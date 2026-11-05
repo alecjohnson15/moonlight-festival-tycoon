@@ -107,6 +107,64 @@ local function fxAll(...: any)
 	end
 end
 
+-- Whether a player still standing in the round is within range of a spot.
+-- Everyone else (the plaza, the tagged, the out) can't tell the living
+-- anything, so they may see every effect.
+local function within(player: Player, position: Vector3, range: number): boolean
+	local participant = Match.get(player)
+	if not participant or participant.State ~= "Alive" or not Match.live() then
+		return true
+	end
+	local root = Match.root(participant)
+	return root ~= nil and (root.Position - position).Magnitude <= range
+end
+
+-- An effect that happens where the Phantom is, sent only to clients that
+-- could see or hear it, so a far-off client can't learn where (and so who)
+-- the Phantom is. except is left out (the one doing it draws it already).
+local function fxNear(position: Vector3, range: number, except: Player?, ...: any)
+	for _, player in everyone() do
+		if player ~= except and within(player, position, range) then
+			Fx:FireClient(player, ...)
+		end
+	end
+end
+
+-- Whether nothing solid in the map stands between two points.
+local function clear(from: Vector3, to: Vector3): boolean
+	if not CombatConfig.LineOfSight then
+		return true
+	end
+	local map = MapService.current()
+	if not map then
+		return true
+	end
+	local offset = to - from
+	if offset.Magnitude < 1e-3 then
+		return true
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { map }
+	params.RespectCanCollide = true
+	return Workspace:Raycast(from, offset, params) == nil
+end
+
+CombatService.clear = clear
+
+-- Chest height: where sight lines and shots start.
+local function chest(position: Vector3): Vector3
+	return position + Vector3.new(0, 1.5, 0)
+end
+
+-- Tells an attacker how their move went: Tagged, Missed, Caught (the
+-- Phantom), Shadow (the Saboteur) or Innocent.
+local function feedback(participant: Participant, move: string, result: string)
+	if participant.Player then
+		RoundRemote:FireClient(participant.Player, { Kind = "Hit", Move = move, Result = result })
+	end
+end
+
 -- Tells a player what their kit can do right now.
 local function sendKit(participant: Participant)
 	local player = participant.Player
@@ -188,6 +246,25 @@ local function draw(participant: Participant, tool: Tool)
 	tool.Parent = character
 	kit.Drawn = tool
 	kit.DrawnAt = os.clock()
+	if tool == kit.Blade then
+		-- The telegraph: guests close by hear a blade come out.
+		local root = Match.root(participant)
+		if root then
+			for _, other in Match.Participants do
+				local otherRoot = Match.root(other)
+				if
+					other ~= participant
+					and other.Player
+					and other.State == "Alive"
+					and otherRoot
+					and (otherRoot.Position - root.Position).Magnitude <= CombatConfig.DrawWarnRange
+				then
+					Fx:FireClient(other.Player, "Draw", root.Position)
+				end
+			end
+		end
+		Match.fire("Drawn", participant)
+	end
 end
 
 local function giveBlaster(participant: Participant)
@@ -314,10 +391,7 @@ local function dropBlaster(participant: Participant)
 	dropped = model
 	prompt.Triggered:Connect(function(player)
 		local picker = Match.get(player)
-		if not picker or picker.State ~= "Alive" or Match.State ~= "Playing" then
-			return
-		end
-		if Roles.team(picker.Role) ~= "Guests" then
+		if not picker or Match.State ~= "Playing" or not Round.canPickUp(picker.Role, picker.State) then
 			return
 		end
 		if os.clock() - (model:GetAttribute("DroppedAt") or 0) < CombatConfig.Blaster.PickupDelay then
@@ -378,7 +452,9 @@ end
 -- Knocks a participant down: Dazed for a guest, Out for a Shadow. how is
 -- "Swing", "Throw", "Zap" or "Misfire".
 function CombatService.knockDown(target: Participant, by: Participant?, how: string)
-	if target.State ~= "Alive" then
+	-- Nothing lands once the round is decided: a shot or a blade still in
+	-- the air when the clock stops does nothing.
+	if target.State ~= "Alive" or Match.State ~= "Playing" then
 		return
 	end
 	holster(target)
@@ -388,7 +464,7 @@ function CombatService.knockDown(target: Participant, by: Participant?, how: str
 	local root = Match.root(target)
 	if root then
 		local effect = if by then outfitOf(by).Effect else nil
-		fxAll("Burst", root.Position, effect or "fx_poof", how)
+		fxNear(root.Position, CombatConfig.FxRange, nil, "Burst", root.Position, effect or "fx_poof", how)
 	end
 	if Roles.team(target.Role) == "Shadows" then
 		target.State = "Dazed"
@@ -414,12 +490,13 @@ function CombatService.knockDown(target: Participant, by: Participant?, how: str
 	end)
 end
 
--- A participant who left the game or fell out of the world mid-round: out,
--- and any blaster they held drops where they were.
-function CombatService.leave(participant: Participant)
+-- A participant who left the game (left) or fell out of the world mid-round:
+-- out, and any blaster they held drops where they were.
+function CombatService.leave(participant: Participant, left: boolean?)
 	if participant.State == "Out" then
 		return
 	end
+	participant.Left = left == true
 	if kitOf(participant).Blaster and Match.root(participant) then
 		dropBlaster(participant)
 	end
@@ -512,7 +589,8 @@ local function swing(participant: Participant, facing: unknown)
 	task.delay(0.5, function()
 		slash:Destroy()
 	end)
-	fxAll("Swing", root.Position, participant.UserId)
+	-- Who swung is never sent: only where, to those near enough to hear it.
+	fxNear(root.Position, CombatConfig.FxRange, participant.Player, "Swing", root.Position)
 	local targets = {}
 	for _, other in Match.Participants do
 		local otherRoot = Match.root(other)
@@ -526,11 +604,17 @@ local function swing(participant: Participant, facing: unknown)
 		targets,
 		CombatConfig.Blade.Reach,
 		CombatConfig.Blade.Arc,
-		CombatConfig.Blade.Height
+		CombatConfig.Blade.Height,
+		function(from, to)
+			return clear(chest(from), chest(to))
+		end
 	)
 	if hit then
 		local target = hit.Id :: Participant
 		CombatService.knockDown(target, participant, "Swing")
+		feedback(participant, "Swing", "Tagged")
+	else
+		feedback(participant, "Swing", "Missed")
 	end
 end
 
@@ -559,29 +643,73 @@ local function throw(participant: Participant, origin: unknown, aim: unknown)
 	throwCount += 1
 	local id = throwCount
 	local config = CombatConfig.Throw
-	local start = root.Position + Vector3.new(0, 1, 0) + direction * 2
-	fxAll("Throw", id, start, direction, config.Speed, config.Range, blade:GetAttribute("Skin"))
+	-- The blade leaves just in front of the Phantom, unless that spot is
+	-- through a wall they're hugging: then it leaves from their chest.
+	local held = root.Position + Vector3.new(0, 1, 0)
+	local start = held + direction * 2
+	if not clear(held, start) then
+		start = held
+	end
+	-- Each client sees the flight from the point it comes into their view.
+	local viewers: { Player } = {}
+	local flight = { Done = false }
+	local skin = blade:GetAttribute("Skin")
+	for _, player in everyone() do
+		local viewer = Match.get(player)
+		local viewerRoot = viewer and Match.root(viewer)
+		local from: number? = 0
+		if viewer and viewer.State == "Alive" then
+			from = if viewerRoot
+				then CombatRules.pathStart(start, direction, config.Range, viewerRoot.Position, CombatConfig.FxRange)
+				else nil
+		end
+		if from then
+			local shown = start + direction * from
+			task.delay(from / config.Speed, function()
+				-- Landed before it came into view: nothing to see.
+				if player.Parent and (from == 0 or not flight.Done) then
+					table.insert(viewers, player)
+					Fx:FireClient(player, "Throw", id, shown, direction, config.Speed, config.Range - from, skin)
+				end
+			end)
+		end
+	end
 	task.spawn(function()
 		local params = hitFilter(participant)
 		local position = start
 		local travelled = 0
 		local landed = start + direction * config.Range
-		while travelled < config.Range and Match.State == "Playing" do
+		local tagged = false
+		-- A Phantom knocked out mid-throw loses the blade in the air.
+		while travelled < config.Range and Match.State == "Playing" and participant.State == "Alive" do
 			local dt = task.wait(config.Step)
 			local length = math.min(config.Speed * dt, config.Range - travelled)
 			local result = Workspace:Spherecast(position, config.Radius, direction * length, params)
 			if result then
 				landed = result.Position
 				local target = participantHit(result.Instance)
-				if target and canBeTagged(target) and Round.canTag(participant.Role, target.Role) then
+				if
+					target
+					and participant.State == "Alive"
+					and canBeTagged(target)
+					and Round.canTag(participant.Role, target.Role)
+				then
 					CombatService.knockDown(target, participant, "Throw")
+					tagged = target.State ~= "Alive"
 				end
 				break
 			end
 			position += direction * length
 			travelled += length
 		end
-		fxAll("ThrowEnd", id, landed)
+		flight.Done = true
+		feedback(participant, "Throw", if tagged then "Tagged" else "Missed")
+		Match.fire("ThrowLanded", participant, landed, tagged)
+		for _, player in viewers do
+			if player.Parent then
+				Fx:FireClient(player, "ThrowEnd", id, landed)
+			end
+		end
 		task.wait(0.35)
 		kit.Throwing = false
 		if participant.State == "Alive" and kit.Blade == blade and Match.State == "Playing" then
@@ -610,23 +738,34 @@ local function fire(participant: Participant, origin: unknown, aim: unknown)
 	end
 	kit.LastShot = now
 	local config = CombatConfig.Blaster
-	local result =
-		Workspace:Spherecast(origin :: Vector3, config.Radius, direction * config.Range, hitFilter(participant))
-	local landed = if result then result.Position else (origin :: Vector3) + direction * config.Range
+	-- Believe the client's muzzle only if nothing solid is between it and
+	-- the shooter's chest.
+	local start = CombatRules.origin(origin, chest(root.Position), CombatConfig.OriginSlack, clear)
+	local result = Workspace:Spherecast(start, config.Radius, direction * config.Range, hitFilter(participant))
+	local landed = if result then result.Position else start + direction * config.Range
 	local tip = kit.Blaster:FindFirstChild("Tip", true)
-	local from = if tip and tip:IsA("BasePart") then tip.Position else origin :: Vector3
+	local from = if tip and tip:IsA("BasePart") then tip.Position else start
 	fxAll("Beam", from, landed, kit.Blaster:GetAttribute("Skin"))
 	sendKit(participant)
 	local target = result and participantHit(result.Instance)
 	if not target or target.State ~= "Alive" then
+		feedback(participant, "Zap", "Missed")
+		Match.fire("Shot", participant, "Missed")
 		return
 	end
 	local zap = Round.zap(target.Role)
 	if target.Role == "Phantom" then
 		participant.Takedown = true
 	end
+	local outcome = if target.Role == "Phantom"
+		then "Caught"
+		elseif Roles.team(target.Role) == "Shadows" then "Shadow"
+		else "Innocent"
+	feedback(participant, "Zap", outcome)
+	Match.fire("Shot", participant, outcome)
 	CombatService.knockDown(target, participant, "Zap")
 	if zap.Shooter then
+		participant.Misfired = true
 		CombatService.knockDown(participant, nil, "Misfire")
 		if participant.Player then
 			RoundRemote:FireClient(
@@ -651,7 +790,9 @@ local function blackout(participant: Participant)
 	end
 	kit.Blackouts -= 1
 	kit.LastBlackout = now
+	participant.BlackoutsUsed += 1
 	sendKit(participant)
+	Match.fire("Blackout", participant)
 	for _, other in Match.Participants do
 		if other.Player then
 			Fx:FireClient(other.Player, "Blackout", CombatConfig.Blackout.Seconds, other.Role == "Phantom")
@@ -670,7 +811,7 @@ local function revive(medic: Participant, targetId: unknown)
 		return
 	end
 	local target = Match.byUserId(targetId :: number)
-	if not target or target.State ~= "Dazed" then
+	if not target or not Round.canRevive(target.Role, target.State) then
 		return
 	end
 	local a, b = Match.root(medic), Match.root(target)

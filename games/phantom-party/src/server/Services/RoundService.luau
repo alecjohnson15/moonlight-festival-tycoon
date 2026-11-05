@@ -203,6 +203,8 @@ local function setUp(players: { Player }, mapId: string): boolean
 	end
 	local practice = #players < Game.MinPlayers
 	Match.Practice = practice
+	local ruleset = Round.ruleset(#players)
+	Match.Ruleset = ruleset
 
 	local roles: { [any]: string } = {}
 	if practice then
@@ -228,6 +230,7 @@ local function setUp(players: { Player }, mapId: string): boolean
 				Name = player.DisplayName,
 				Character = character,
 				Role = roles[player],
+				Mask = ProfileService.outfit(player).Mask,
 			})
 			character:PivotTo(nextSpawn())
 		end
@@ -252,11 +255,12 @@ local function setUp(players: { Player }, mapId: string): boolean
 				end)
 			end
 			local roleId = left[i] or "Guest"
-			Match.add(model, { Player = nil, UserId = -i, Name = model.Name, Character = model, Role = roleId })
-			OutfitService.dress(model, {
-				Mask = ({ "mask_cat", "mask_fox", "mask_moon", "mask_jester", "mask_ghost" })[i] or "mask_domino",
-				Trail = "trail_none",
-			})
+			local mask = ({ "mask_cat", "mask_fox", "mask_moon", "mask_jester", "mask_ghost" })[i] or "mask_domino"
+			Match.add(
+				model,
+				{ Player = nil, UserId = -i, Name = model.Name, Character = model, Role = roleId, Mask = mask }
+			)
+			OutfitService.dress(model, { Mask = mask, Trail = "trail_none" })
 		end
 	end
 
@@ -288,6 +292,7 @@ local function setUp(players: { Player }, mapId: string): boolean
 				Map = mapId,
 				MapName = MapService.name(mapId),
 				Practice = practice,
+				Ruleset = ruleset,
 				Guests = guests,
 			})
 		end
@@ -518,11 +523,11 @@ local function onOut(participant: Match.Participant)
 	end)
 end
 
-local function forfeit(participant: Match.Participant)
+local function forfeit(participant: Match.Participant, left: boolean)
 	if participant.State == "Out" or not Match.live() then
 		return
 	end
-	CombatService.leave(participant)
+	CombatService.leave(participant, left)
 end
 
 local function watchCharacter(player: Player, character: Model)
@@ -533,7 +538,7 @@ local function watchCharacter(player: Player, character: Model)
 	humanoid.Died:Connect(function()
 		local participant = Match.get(player)
 		if participant and participant.Character == character then
-			forfeit(participant)
+			forfeit(participant, false)
 		end
 	end)
 end
@@ -579,7 +584,7 @@ function RoundService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		local participant = Match.get(player)
 		if participant then
-			forfeit(participant)
+			forfeit(participant, true)
 		end
 		votes[player] = nil
 		sittingOut[player] = nil

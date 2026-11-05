@@ -61,6 +61,21 @@ Combat.Revive = {
 -- standing when they act, allowing for lag.
 Combat.OriginSlack = 10
 
+-- Walls block blade swings, thrown blades and zaps: a swing only tags a
+-- guest the Phantom could see, and a zap or throw can't start on the far
+-- side of a wall. Turn off to go back to reach-and-arc only (rollback).
+Combat.LineOfSight = true
+
+-- Effects that happen where the Phantom stands (a swing, a throw, a
+-- knockout burst) are sent only to players who could see or hear them:
+-- those still standing within this many studs, plus everyone watching from
+-- the plaza. A far-off client never learns where the Phantom is.
+Combat.FxRange = 160
+
+-- Drawing the blade makes a sound guests within this many studs hear, and a
+-- caption for those who read sounds instead: the telegraph before a tag.
+Combat.DrawWarnRange = 45
+
 -- An action that arrives up to this fraction of its cooldown early still
 -- counts, for network jitter.
 Combat.CooldownSlack = 0.1
