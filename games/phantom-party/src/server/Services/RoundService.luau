@@ -257,9 +257,13 @@ local function setUp(players: { Player }, mapId: string): boolean
 		end
 	end
 
-	-- Everyone's names (not roles), so clients can show who's in.
+	-- Everyone's names (not roles), so clients can show who's in, and an id
+	-- on each character for the Medic's revive and spectating.
 	local guests = {}
 	for _, participant in Match.Participants do
+		if participant.Character then
+			participant.Character:SetAttribute("Pid", participant.UserId)
+		end
 		table.insert(guests, { UserId = participant.UserId, Name = participant.Name })
 	end
 	for _, participant in Match.Participants do

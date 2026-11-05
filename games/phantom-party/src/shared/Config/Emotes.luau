@@ -36,8 +36,8 @@ Emotes.List = {
 	{ Id = "suspect", Name = "Suspect...", Target = true },
 	{ Id = "spotlight", Name = "Spotlight", Effect = "spotlight", Pass = true },
 	{ Id = "cannon", Name = "Confetti Cannon", Effect = "cannon", Pass = true },
-	{ Id = "vanish", Name = "Vanish", Effect = "vanish", Pass = true },
-	{ Id = "levitate", Name = "Levitate", Effect = "levitate", Pass = true },
+	{ Id = "puff", Name = "Glitter Puff", Effect = "puff", Pass = true },
+	{ Id = "halo", Name = "Star Halo", Effect = "halo", Pass = true },
 	{ Id = "applause", Name = "Applause", Effect = "applause", Pass = true },
 } :: { Emote }
 
