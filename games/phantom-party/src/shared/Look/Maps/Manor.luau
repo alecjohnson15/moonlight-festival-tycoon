@@ -78,7 +78,15 @@ function Manor.build(origin: CFrame): Model
 	local FACE_E = CFrame.Angles(0, -PI / 2, 0) -- faces +X
 	local FACE_W = CFrame.Angles(0, PI / 2, 0) -- faces -X
 
-	local function floor(x0: number, z0: number, x1: number, z1: number, y: number, color: Color3, material: Enum.Material)
+	local function floor(
+		x0: number,
+		z0: number,
+		x1: number,
+		z1: number,
+		y: number,
+		color: Color3,
+		material: Enum.Material
+	)
 		Kit.slab(
 			structure,
 			at((x0 + x1) / 2, y - 0.5, (z0 + z1) / 2),
@@ -88,10 +96,33 @@ function Manor.build(origin: CFrame): Model
 		)
 	end
 	local function ceiling(x0: number, z0: number, x1: number, z1: number, y: number, color: Color3?)
-		Kit.slab(structure, at((x0 + x1) / 2, y + 0.5, (z0 + z1) / 2), Vector3.new(x1 - x0, 1, z1 - z0), color or hex("#2B2030"))
+		Kit.slab(
+			structure,
+			at((x0 + x1) / 2, y + 0.5, (z0 + z1) / 2),
+			Vector3.new(x1 - x0, 1, z1 - z0),
+			color or hex("#2B2030")
+		)
 	end
-	local function wall(x0: number, z0: number, x1: number, z1: number, y: number, height: number, openings: { any }?, color: Color3?)
-		Kit.wall(structure, point(x0, y, z0), point(x1, y, z1), height, 1, color or WALL, Enum.Material.Plaster, openings)
+	local function wall(
+		x0: number,
+		z0: number,
+		x1: number,
+		z1: number,
+		y: number,
+		height: number,
+		openings: { any }?,
+		color: Color3?
+	)
+		Kit.wall(
+			structure,
+			point(x0, y, z0),
+			point(x1, y, z1),
+			height,
+			1,
+			color or WALL,
+			Enum.Material.Plaster,
+			openings
+		)
 		-- Dark wood panelling along the bottom, on both faces.
 		local length = math.sqrt((x1 - x0) ^ 2 + (z1 - z0) ^ 2)
 		local frame = CFrame.lookAt(point(x0, y, z0), point(x1, y, z1))
@@ -102,8 +133,20 @@ function Manor.build(origin: CFrame): Model
 		end)
 		local function panel(from: number, to: number)
 			if to - from > 0.2 then
-				Kit.block(dressing, frame * CFrame.new(0, 1.75, -(from + to) / 2), Vector3.new(1.3, 3.5, to - from), WAINSCOT, Enum.Material.Wood)
-				Kit.block(dressing, frame * CFrame.new(0, 3.6, -(from + to) / 2), Vector3.new(1.4, 0.25, to - from), TRIM, Enum.Material.Metal)
+				Kit.block(
+					dressing,
+					frame * CFrame.new(0, 1.75, -(from + to) / 2),
+					Vector3.new(1.3, 3.5, to - from),
+					WAINSCOT,
+					Enum.Material.Wood
+				)
+				Kit.block(
+					dressing,
+					frame * CFrame.new(0, 3.6, -(from + to) / 2),
+					Vector3.new(1.4, 0.25, to - from),
+					TRIM,
+					Enum.Material.Metal
+				)
 			end
 		end
 		for _, hole in holes do
@@ -119,12 +162,34 @@ function Manor.build(origin: CFrame): Model
 	local function doorFrame(x0: number, z0: number, x1: number, z1: number, y: number, along: number, width: number)
 		local frame = CFrame.lookAt(point(x0, y, z0), point(x1, y, z1))
 		for _, side in { -1, 1 } do
-			Kit.block(dressing, frame * CFrame.new(0, 5, -(along + side * (width / 2 + 0.3))), Vector3.new(1.5, 10, 0.6), WAINSCOT, Enum.Material.Wood)
+			Kit.block(
+				dressing,
+				frame * CFrame.new(0, 5, -(along + side * (width / 2 + 0.3))),
+				Vector3.new(1.5, 10, 0.6),
+				WAINSCOT,
+				Enum.Material.Wood
+			)
 		end
-		Kit.block(dressing, frame * CFrame.new(0, 10.3, -along), Vector3.new(1.5, 0.6, width + 1.2), WAINSCOT, Enum.Material.Wood)
+		Kit.block(
+			dressing,
+			frame * CFrame.new(0, 10.3, -along),
+			Vector3.new(1.5, 0.6, width + 1.2),
+			WAINSCOT,
+			Enum.Material.Wood
+		)
 	end
 	-- Glass in a window opening, with a frame cross, letting moonlight in.
-	local function window(x0: number, z0: number, x1: number, z1: number, y: number, along: number, width: number, bottom: number, height: number)
+	local function window(
+		x0: number,
+		z0: number,
+		x1: number,
+		z1: number,
+		y: number,
+		along: number,
+		width: number,
+		bottom: number,
+		height: number
+	)
 		local frame = CFrame.lookAt(point(x0, y, z0), point(x1, y, z1))
 		local centre = frame * CFrame.new(0, bottom + height / 2, -along)
 		local glass = Kit.slab(structure, centre, Vector3.new(0.3, height, width), hex("#2C3558"), Enum.Material.Glass)
@@ -132,7 +197,13 @@ function Manor.build(origin: CFrame): Model
 		glass.CastShadow = false
 		Kit.block(dressing, centre, Vector3.new(0.5, height, 0.25), WAINSCOT, Enum.Material.Wood)
 		Kit.block(dressing, centre, Vector3.new(0.5, 0.25, width), WAINSCOT, Enum.Material.Wood)
-		Kit.block(dressing, centre * CFrame.new(0, -height / 2 - 0.2, 0), Vector3.new(1.6, 0.4, width + 0.6), TRIM, Enum.Material.Wood)
+		Kit.block(
+			dressing,
+			centre * CFrame.new(0, -height / 2 - 0.2, 0),
+			Vector3.new(1.6, 0.4, width + 0.6),
+			TRIM,
+			Enum.Material.Wood
+		)
 	end
 	local function room(name: string, x0: number, z0: number, x1: number, z1: number, y0: number, y1: number)
 		local box = Kit.marker(rooms, name, at((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2))
@@ -263,14 +334,16 @@ function Manor.build(origin: CFrame): Model
 	doorFrame(20, 18, 72, 18, 0, 26, 8)
 	doorFrame(20, -22, 72, -22, 0, 36, 8)
 	-- Glass in the windows.
-	for _, spec in {
-		{ -72, 58, -20, 58, 10 },
-		{ -72, 58, -20, 58, 26 },
-		{ -72, 58, -20, 58, 42 },
-		{ 20, 58, 72, 58, 10 },
-		{ 20, 58, 72, 58, 26 },
-		{ 20, 58, 72, 58, 42 },
-	} do
+	for _, spec in
+		{
+			{ -72, 58, -20, 58, 10 },
+			{ -72, 58, -20, 58, 26 },
+			{ -72, 58, -20, 58, 42 },
+			{ 20, 58, 72, 58, 10 },
+			{ 20, 58, 72, 58, 26 },
+			{ 20, 58, 72, 58, 42 },
+		}
+	do
 		window(spec[1], spec[2], spec[3], spec[4], 0, spec[5], 5, 5, 6)
 	end
 	for _, along in { 76, 96 } do
@@ -299,8 +372,24 @@ function Manor.build(origin: CFrame): Model
 	for _, side in { -1, 1 } do
 		Kit.stairs(structure, at(side * 7, 0, 46), 6, 15, 22, hex("#6E1F2E"), Enum.Material.Fabric)
 		-- Banisters both sides of each flight, and newel posts.
-		Kit.span(dressing, point(side * 3.8, 3.5, 46), point(side * 3.8, 18.5, 24), 0.4, 0.4, WAINSCOT, Enum.Material.Wood)
-		Kit.span(dressing, point(side * 10.2, 3.5, 46), point(side * 10.2, 18.5, 24), 0.4, 0.4, WAINSCOT, Enum.Material.Wood)
+		Kit.span(
+			dressing,
+			point(side * 3.8, 3.5, 46),
+			point(side * 3.8, 18.5, 24),
+			0.4,
+			0.4,
+			WAINSCOT,
+			Enum.Material.Wood
+		)
+		Kit.span(
+			dressing,
+			point(side * 10.2, 3.5, 46),
+			point(side * 10.2, 18.5, 24),
+			0.4,
+			0.4,
+			WAINSCOT,
+			Enum.Material.Wood
+		)
 		for _, x in { side * 3.8, side * 10.2 } do
 			Kit.solid(Kit.post(dressing, at(x, 2, 46.5), 4, 0.9, WAINSCOT, Enum.Material.Wood))
 			Kit.ball(dressing, at(x, 4.3, 46.5), Vector3.new(1, 1, 1), TRIM, Enum.Material.Metal)
@@ -325,15 +414,29 @@ function Manor.build(origin: CFrame): Model
 	for _, side in { -1, 1 } do
 		Pieces.armor(dressing, at(side * 15, 0, 44))
 		Pieces.plant(dressing, at(side * 18, 0, 55), 11 + side, nil)
-		Pieces.painting(dressing, at(side * 19.4, 21, 40) * (if side < 0 then FACE_E else FACE_W), Vector2.new(6, 8), TRIM, {
-			hex("#2C2A4A"),
-			hex("#E2C9A6"),
-			hex("#6E1F2E"),
-		}, true)
+		Pieces.painting(
+			dressing,
+			at(side * 19.4, 21, 40) * (if side < 0 then FACE_E else FACE_W),
+			Vector2.new(6, 8),
+			TRIM,
+			{
+				hex("#2C2A4A"),
+				hex("#E2C9A6"),
+				hex("#6E1F2E"),
+			},
+			true
+		)
 		Pieces.sconce(dressing, at(side * 19.3, 8, 30) * (if side < 0 then FACE_E else FACE_W), WARM, side < 0)
 		Pieces.sconce(dressing, at(side * 19.3, 8, 50) * (if side < 0 then FACE_E else FACE_W), WARM, false)
 	end
-	Pieces.painting(dressing, at(0, 24, 14.6) * FACE_N, Vector2.new(9, 7), TRIM, { hex("#1B1F4A"), hex("#F2D27A"), hex("#4A2E6B") }, true)
+	Pieces.painting(
+		dressing,
+		at(0, 24, 14.6) * FACE_N,
+		Vector2.new(9, 7),
+		TRIM,
+		{ hex("#1B1F4A"), hex("#F2D27A"), hex("#4A2E6B") },
+		true
+	)
 	Pieces.clock(dressing, at(-18.6, 0, 18) * FACE_E)
 	Pieces.chair(dressing, at(-6, 15, 16) * FACE_N)
 	Pieces.chair(dressing, at(6, 15, 16) * FACE_N)
@@ -374,7 +477,13 @@ function Manor.build(origin: CFrame): Model
 		Pieces.candelabra(dressing, at(spot[1], 3, spot[2]), false)
 	end
 	Pieces.fireplace(dressing, at(-46, 0, 56.8) * CFrame.Angles(0, 0, 0))
-	Pieces.painting(dressing, at(-46, 11, 57.4), Vector2.new(10, 4), TRIM, { hex("#1B1F4A"), hex("#3A4A7A"), hex("#C9A44C"), hex("#2B4A2E") })
+	Pieces.painting(
+		dressing,
+		at(-46, 11, 57.4),
+		Vector2.new(10, 4),
+		TRIM,
+		{ hex("#1B1F4A"), hex("#3A4A7A"), hex("#C9A44C"), hex("#2B4A2E") }
+	)
 	spawnAt(-44, 0, 28)
 	spawnAt(-36, 0, 44)
 	spawnAt(-64, 1.5, 36)
@@ -438,7 +547,13 @@ function Manor.build(origin: CFrame): Model
 	Pieces.armor(dressing, at(-16, 0, -18) * FACE_N)
 	Pieces.plant(dressing, at(16, 0, -18), 21)
 	Pieces.table(dressing, at(16, 0, 8), Vector3.new(3, 3, 5), nil, hex("#4A2E6B"))
-	Pieces.painting(dressing, at(-19.4, 7.5, -4) * FACE_E, Vector2.new(5, 3.5), TRIM, { hex("#0F1A3A"), hex("#C0C8FF"), hex("#1E2A20") })
+	Pieces.painting(
+		dressing,
+		at(-19.4, 7.5, -4) * FACE_E,
+		Vector2.new(5, 3.5),
+		TRIM,
+		{ hex("#0F1A3A"), hex("#C0C8FF"), hex("#1E2A20") }
+	)
 	spawnAt(0, 0, -10)
 	coinAt(-8, 0, -14)
 	coinAt(8, 0, 2)
@@ -472,7 +587,9 @@ function Manor.build(origin: CFrame): Model
 		Kit.ball(statue, at(0, 6.2, -40), Vector3.new(2.2, 2.2, 2.2), hex("#D9D2C6"), Enum.Material.Marble)
 		Kit.block(statue, at(0, 6.4, -41.1), Vector3.new(2, 0.6, 0.3), hex("#1E1B26"))
 	end
-	for i, spot in { { -16, -26 }, { 16, -26 }, { -16, -54 }, { 16, -54 }, { -16, -40 }, { 16, -40 }, { -8, -54 }, { 8, -26 } } do
+	for i, spot in
+		{ { -16, -26 }, { 16, -26 }, { -16, -54 }, { 16, -54 }, { -16, -40 }, { 16, -40 }, { -8, -54 }, { 8, -26 } }
+	do
 		Pieces.plant(dressing, at(spot[1], 0, spot[2]), 30 + i, hex(if i % 2 == 0 then "#2F6B3A" else "#3E7B35"))
 	end
 	for _, spot in { { -9, -33 }, { 9, -47 } } do
@@ -509,7 +626,13 @@ function Manor.build(origin: CFrame): Model
 	Pieces.chandelier(dressing, at(54, 16, 38), 3.5, WARM, 5)
 	Pieces.fireplace(dressing, at(70.8, 0, 38) * FACE_W)
 	Pieces.counter(dressing, at(46, 0, 56.4) * FACE_N, 14, hex("#3B2416"), hex("#5A3A22"))
-	Pieces.painting(dressing, at(46, 10, 57.4), Vector2.new(12, 4), TRIM, { hex("#2B4A2E"), hex("#E2C9A6"), hex("#8C6A2E") })
+	Pieces.painting(
+		dressing,
+		at(46, 10, 57.4),
+		Vector2.new(12, 4),
+		TRIM,
+		{ hex("#2B4A2E"), hex("#E2C9A6"), hex("#8C6A2E") }
+	)
 	spawnAt(30, 0, 26)
 	spawnAt(62, 0, 50)
 	for _, spot in { { 28, 38 }, { 64, 38 }, { 46, 28 }, { 46, 48 }, { 36, 52 }, { 60, 24 } } do
@@ -538,11 +661,19 @@ function Manor.build(origin: CFrame): Model
 	-- The pantry: a cupboard with a passage behind it.
 	do
 		local pantry = Kit.model(dressing, "Pantry")
-		Kit.solid(Kit.block(pantry, at(70.6, 5, -10), Vector3.new(1.4, 10, 7), hex("#5A3A22"), Enum.Material.WoodPlanks))
+		Kit.solid(
+			Kit.block(pantry, at(70.6, 5, -10), Vector3.new(1.4, 10, 7), hex("#5A3A22"), Enum.Material.WoodPlanks)
+		)
 		for y = 2, 8, 2 do
 			Kit.block(pantry, at(69.8, y, -10), Vector3.new(0.4, 0.2, 6.6), hex("#3B2416"))
 			for j = -2, 2 do
-				Kit.post(pantry, at(69.6, y + 0.6, -10 + j * 1.2), 1, 0.7, hex(({ "#B5651D", "#E2C9A6", "#5E8C4A" })[(j % 3) + 1]))
+				Kit.post(
+					pantry,
+					at(69.6, y + 0.6, -10 + j * 1.2),
+					1,
+					0.7,
+					hex(({ "#B5651D", "#E2C9A6", "#5E8C4A" })[(j % 3) + 1])
+				)
 			end
 		end
 		Kit.glow(pantry, at(69.8, 9.2, -10), Vector3.new(0.3, 0.5, 2), hex("#B067FF"))
@@ -575,7 +706,14 @@ function Manor.build(origin: CFrame): Model
 	Pieces.wardrobe(dressing, at(24, 0, -30) * FACE_E)
 	Pieces.clock(dressing, at(66, 0, -23.4))
 	-- A portrait that swings open onto a passage.
-	Pieces.painting(dressing, at(71.4, 7, -40) * FACE_W, Vector2.new(5, 7), TRIM, { hex("#3A2F55"), hex("#E2C9A6"), hex("#1F4E5F") }, true)
+	Pieces.painting(
+		dressing,
+		at(71.4, 7, -40) * FACE_W,
+		Vector2.new(5, 7),
+		TRIM,
+		{ hex("#3A2F55"), hex("#E2C9A6"), hex("#1F4E5F") },
+		true
+	)
 	Kit.glow(dressing, at(71.2, 11.2, -40), Vector3.new(0.3, 0.3, 4.5), hex("#B067FF"))
 	local studyEnd = at(67, 3, -40) * FACE_W
 	Pieces.chandelier(dressing, at(46, 16, -36), 3, WARM, 4)
@@ -609,7 +747,14 @@ function Manor.build(origin: CFrame): Model
 		end
 		Kit.post(gazebo, centre * CFrame.new(0, 11.3, 0), 1, 19, hex("#E8E2D6"), Enum.Material.Marble)
 		for i = 1, 4 do
-			Kit.post(gazebo, centre * CFrame.new(0, 11.5 + i * 0.9, 0), 0.9, 19 - i * 4, hex("#3A4A7A"), Enum.Material.Slate)
+			Kit.post(
+				gazebo,
+				centre * CFrame.new(0, 11.5 + i * 0.9, 0),
+				0.9,
+				19 - i * 4,
+				hex("#3A4A7A"),
+				Enum.Material.Slate
+			)
 		end
 		local lantern = Kit.glow(gazebo, centre * CFrame.new(0, 9, 0), Vector3.new(1.4, 1.8, 1.4), WARM)
 		Kit.light(lantern, WARM, 26, 1.4, true)
@@ -618,18 +763,20 @@ function Manor.build(origin: CFrame): Model
 		Pieces.bench(gazebo, centre * CFrame.new(4, 1, 0) * CFrame.Angles(0, PI / 2, 0))
 	end
 	-- Hedges in short runs, so there's always a way round.
-	for _, run in {
-		{ -60, -66, -30, -66 },
-		{ 30, -66, 60, -66 },
-		{ -50, -78, -50, -96 },
-		{ 50, -78, 50, -96 },
-		{ -36, -80, -20, -80 },
-		{ 20, -80, 36, -80 },
-		{ -36, -96, -16, -96 },
-		{ 16, -96, 36, -96 },
-		{ -66, -86, -58, -86 },
-		{ 58, -86, 66, -86 },
-	} do
+	for _, run in
+		{
+			{ -60, -66, -30, -66 },
+			{ 30, -66, 60, -66 },
+			{ -50, -78, -50, -96 },
+			{ 50, -78, 50, -96 },
+			{ -36, -80, -20, -80 },
+			{ 20, -80, 36, -80 },
+			{ -36, -96, -16, -96 },
+			{ 16, -96, 36, -96 },
+			{ -66, -86, -58, -86 },
+			{ 58, -86, 66, -86 },
+		}
+	do
 		Pieces.hedge(structure, point(run[1], 0, run[2]), point(run[3], 0, run[4]), 7)
 	end
 	-- The family plot: graves inside a little fence.
@@ -644,7 +791,9 @@ function Manor.build(origin: CFrame): Model
 	end
 	spawnAt(-26, 0, -88)
 	spawnAt(26, 0, -88)
-	for _, spot in { { -40, -72 }, { 40, -72 }, { -60, -96 }, { 60, -96 }, { 0, -96 }, { -24, -88 }, { 24, -88 }, { 0, -76 } } do
+	for _, spot in
+		{ { -40, -72 }, { 40, -72 }, { -60, -96 }, { 60, -96 }, { 0, -96 }, { -24, -88 }, { 24, -88 }, { 0, -76 } }
+	do
 		coinAt(spot[1], 0, spot[2])
 	end
 	clueAt(-62, 0, -78)

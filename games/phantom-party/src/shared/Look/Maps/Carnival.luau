@@ -101,13 +101,15 @@ function Carnival.build(origin: CFrame): Model
 	Kit.slab(structure, at(0, 0.05, -18), Vector3.new(150, 0.1, 12), DIRT, Enum.Material.Ground)
 	Kit.slab(structure, at(-48, 0.05, 2), Vector3.new(12, 0.1, 60), DIRT, Enum.Material.Ground)
 	Kit.slab(structure, at(48, 0.05, 2), Vector3.new(12, 0.1, 60), DIRT, Enum.Material.Ground)
-	for _, edge in {
-		{ -90, -90, 90, -90 },
-		{ -90, 90, -12, 90 },
-		{ 12, 90, 90, 90 },
-		{ -90, -90, -90, 90 },
-		{ 90, -90, 90, 90 },
-	} do
+	for _, edge in
+		{
+			{ -90, -90, 90, -90 },
+			{ -90, 90, -12, 90 },
+			{ 12, 90, 90, 90 },
+			{ -90, -90, -90, 90 },
+			{ 90, -90, 90, 90 },
+		}
+	do
 		Pieces.fence(dressing, point(edge[1], 0, edge[2]), point(edge[3], 0, edge[4]), 7, hex("#2A2A36"))
 	end
 	-- The gate itself is locked for the night.
@@ -134,7 +136,14 @@ function Carnival.build(origin: CFrame): Model
 		end
 		Kit.block(arch, at(0, 17, 88), Vector3.new(26, 4, 1.2), NAVY)
 		Kit.sign(arch, at(0, 17, 87.3), Vector3.new(22, 3, 0.2), NAVY, "STARLIGHT CARNIVAL", GOLD)
-		Kit.sign(arch, at(0, 17, 88.7) * CFrame.Angles(0, PI, 0), Vector3.new(22, 3, 0.2), NAVY, "STARLIGHT CARNIVAL", GOLD)
+		Kit.sign(
+			arch,
+			at(0, 17, 88.7) * CFrame.Angles(0, PI, 0),
+			Vector3.new(22, 3, 0.2),
+			NAVY,
+			"STARLIGHT CARNIVAL",
+			GOLD
+		)
 		for i = -5, 5 do
 			Kit.glow(arch, at(i * 2.2, 19.3, 87.4), Vector3.new(0.6, 0.6, 0.6), BULBS[(i + 6) % #BULBS + 1], true)
 		end
@@ -144,7 +153,13 @@ function Carnival.build(origin: CFrame): Model
 		for _, side in { -1, 1 } do
 			local booth = at(side * 19, 0, 82)
 			Kit.solid(Kit.block(arch, booth * CFrame.new(0, 4, 0), Vector3.new(6, 8, 6), RED, Enum.Material.WoodPlanks))
-			local glass = Kit.block(arch, booth * CFrame.new(0, 5, -3.05), Vector3.new(4, 2.6, 0.1), hex("#9FB8D6"), Enum.Material.Glass)
+			local glass = Kit.block(
+				arch,
+				booth * CFrame.new(0, 5, -3.05),
+				Vector3.new(4, 2.6, 0.1),
+				hex("#9FB8D6"),
+				Enum.Material.Glass
+			)
 			glass.Transparency = 0.4
 			Kit.wedge(arch, booth * CFrame.new(0, 9, 0) * CFrame.Angles(0, PI / 2, 0), Vector3.new(7, 2, 7), GOLD)
 			Kit.sign(arch, booth * CFrame.new(0, 7.2, -3.1), Vector3.new(4.6, 1, 0.1), CREAM, "TICKETS", RED)
@@ -158,19 +173,46 @@ function Carnival.build(origin: CFrame): Model
 
 	-- The midway: game booths either side of the main path ---------------
 	room("Midway", -24, -10, 24, 66)
-	local boothNames = { "RING TOSS", "DUCK POND", "BALLOON POP", "HOOP SHOT", "COIN TOSS", "BOTTLE BOWL", "HIGH STRIKER", "LUCKY WHEEL" }
+	local boothNames = {
+		"RING TOSS",
+		"DUCK POND",
+		"BALLOON POP",
+		"HOOP SHOT",
+		"COIN TOSS",
+		"BOTTLE BOWL",
+		"HIGH STRIKER",
+		"LUCKY WHEEL",
+	}
 	local boothColors = { RED, TEAL, PURPLE, hex("#FF8C1A"), hex("#3A86FF"), hex("#FF5D8F"), hex("#2E9E5B"), GOLD }
 	local function booth(base: CFrame, index: number)
 		local model = Kit.model(dressing, "Booth")
 		local color = boothColors[index]
 		local random = Kit.random(700 + index)
 		-- Back and sides, the counter and the posts.
-		Kit.solid(Kit.block(model, base * CFrame.new(0, 4.5, 3), Vector3.new(10, 9, 0.6), color, Enum.Material.WoodPlanks))
+		Kit.solid(
+			Kit.block(model, base * CFrame.new(0, 4.5, 3), Vector3.new(10, 9, 0.6), color, Enum.Material.WoodPlanks)
+		)
 		for _, side in { -1, 1 } do
-			Kit.solid(Kit.block(model, base * CFrame.new(side * 4.8, 4.5, 0.4), Vector3.new(0.4, 9, 5.8), CREAM, Enum.Material.WoodPlanks))
+			Kit.solid(
+				Kit.block(
+					model,
+					base * CFrame.new(side * 4.8, 4.5, 0.4),
+					Vector3.new(0.4, 9, 5.8),
+					CREAM,
+					Enum.Material.WoodPlanks
+				)
+			)
 			Kit.post(model, base * CFrame.new(side * 4.8, 5, -3), 10, 0.5, CREAM)
 		end
-		Kit.solid(Kit.block(model, base * CFrame.new(0, 1.8, -2.4), Vector3.new(9.2, 3.6, 1.2), color, Enum.Material.WoodPlanks))
+		Kit.solid(
+			Kit.block(
+				model,
+				base * CFrame.new(0, 1.8, -2.4),
+				Vector3.new(9.2, 3.6, 1.2),
+				color,
+				Enum.Material.WoodPlanks
+			)
+		)
 		Kit.block(model, base * CFrame.new(0, 3.7, -2.5), Vector3.new(9.8, 0.25, 1.6), WOOD, Enum.Material.Wood)
 		-- A striped awning sloping out over the counter.
 		for stripe = 0, 4 do
@@ -213,7 +255,13 @@ function Carnival.build(origin: CFrame): Model
 			Kit.light(bulb, hex("#FFE7A3"), 18, 1.2)
 		end
 		for i = -4, 4, 2 do
-			Kit.glow(model, base * CFrame.new(i, 8.2, -3.2), Vector3.new(0.4, 0.4, 0.4), BULBS[(i + 5) % #BULBS + 1], true)
+			Kit.glow(
+				model,
+				base * CFrame.new(i, 8.2, -3.2),
+				Vector3.new(0.4, 0.4, 0.4),
+				BULBS[(i + 5) % #BULBS + 1],
+				true
+			)
 		end
 		return model
 	end
@@ -272,7 +320,14 @@ function Carnival.build(origin: CFrame): Model
 			Kit.glow(ride, at(spot[1], 11.3, spot[2]), Vector3.new(0.5, 0.5, 0.5), BULBS[i % #BULBS + 1], true)
 		end
 		for tier = 0, 4 do
-			Kit.post(ride, at(cx, 13.8 + tier * 1.1, cz), 1.1, radius * 2 + 1 - tier * 5.5, if tier % 2 == 0 then RED else CREAM, Enum.Material.Fabric)
+			Kit.post(
+				ride,
+				at(cx, 13.8 + tier * 1.1, cz),
+				1.1,
+				radius * 2 + 1 - tier * 5.5,
+				if tier % 2 == 0 then RED else CREAM,
+				Enum.Material.Fabric
+			)
 		end
 		Kit.post(ride, at(cx, 20, cz), 2, 1, GOLD, Enum.Material.Metal)
 		local top = Kit.ball(ride, at(cx, 21.5, cz), Vector3.new(2.4, 2.4, 2.4), GOLD, Enum.Material.Metal)
@@ -285,10 +340,27 @@ function Carnival.build(origin: CFrame): Model
 			Kit.post(ride, horse * CFrame.new(0, 7, 0), 12, 0.3, GOLD, Enum.Material.Metal)
 			local coat = coats[(i - 1) % #coats + 1]
 			Kit.ball(ride, horse * CFrame.new(0, height, 0), Vector3.new(1.5, 1.6, 3.6), coat)
-			Kit.block(ride, horse * CFrame.new(0, height + 1.2, -1.7) * CFrame.Angles(-0.5, 0, 0), Vector3.new(1, 1.8, 1), coat)
+			Kit.block(
+				ride,
+				horse * CFrame.new(0, height + 1.2, -1.7) * CFrame.Angles(-0.5, 0, 0),
+				Vector3.new(1, 1.8, 1),
+				coat
+			)
 			Kit.block(ride, horse * CFrame.new(0, height + 1.8, -2.4), Vector3.new(0.9, 0.9, 1.4), coat)
-			Kit.block(ride, horse * CFrame.new(0, height + 1.9, -1.4), Vector3.new(0.3, 1.4, 1), hex("#D7263D"), Enum.Material.Fabric)
-			Kit.block(ride, horse * CFrame.new(0, height + 0.8, 0), Vector3.new(1.6, 0.3, 1.4), PURPLE, Enum.Material.Fabric)
+			Kit.block(
+				ride,
+				horse * CFrame.new(0, height + 1.9, -1.4),
+				Vector3.new(0.3, 1.4, 1),
+				hex("#D7263D"),
+				Enum.Material.Fabric
+			)
+			Kit.block(
+				ride,
+				horse * CFrame.new(0, height + 0.8, 0),
+				Vector3.new(1.6, 0.3, 1.4),
+				PURPLE,
+				Enum.Material.Fabric
+			)
 			for _, leg in { { 0.5, -1.2, -0.6 }, { -0.5, -1.2, 0.6 }, { 0.5, 1.2, 0.5 }, { -0.5, 1.2, -0.4 } } do
 				Kit.block(
 					ride,
@@ -303,7 +375,14 @@ function Carnival.build(origin: CFrame): Model
 		local organ = Kit.model(dressing, "Organ")
 		Kit.solid(Kit.block(organ, at(cx + 16, 2.5, cz - 6), Vector3.new(3, 5, 6), RED, Enum.Material.WoodPlanks))
 		for i = -2, 2 do
-			Kit.post(organ, at(cx + 14.4, 3 + math.abs(i) * -0.3, cz - 6 + i * 1), 3 - math.abs(i) * 0.4, 0.6, GOLD, Enum.Material.Metal)
+			Kit.post(
+				organ,
+				at(cx + 14.4, 3 + math.abs(i) * -0.3, cz - 6 + i * 1),
+				3 - math.abs(i) * 0.4,
+				0.6,
+				GOLD,
+				Enum.Material.Metal
+			)
 		end
 		spawnAt(cx, 1.2, cz - 11)
 		spawnAt(cx + 16, 0, cz + 10)
@@ -321,24 +400,74 @@ function Carnival.build(origin: CFrame): Model
 		local fun = Kit.model(structure, "Funhouse")
 		local x0, z0, x1, z1 = 34, 18, 62, 42
 		local wallColor = hex("#3A86FF")
-		Kit.slab(fun, at((x0 + x1) / 2, 0.25, (z0 + z1) / 2), Vector3.new(x1 - x0, 0.5, z1 - z0), hex("#2A2244"), Enum.Material.SmoothPlastic)
+		Kit.slab(
+			fun,
+			at((x0 + x1) / 2, 0.25, (z0 + z1) / 2),
+			Vector3.new(x1 - x0, 0.5, z1 - z0),
+			hex("#2A2244"),
+			Enum.Material.SmoothPlastic
+		)
 		Kit.slab(fun, at((x0 + x1) / 2, 14.5, (z0 + z1) / 2), Vector3.new(x1 - x0 + 2, 1, z1 - z0 + 2), hex("#FF5D8F"))
-		Kit.wall(fun, point(x0, 0, z0), point(x0, 0, z1), 14, 1, wallColor, Enum.Material.SmoothPlastic, { { At = 12, Width = 7, Height = 9 } })
-		Kit.wall(fun, point(x1, 0, z0), point(x1, 0, z1), 14, 1, wallColor, Enum.Material.SmoothPlastic, { { At = 6, Width = 6, Height = 9 } })
-		Kit.wall(fun, point(x0, 0, z0), point(x1, 0, z0), 14, 1, wallColor, Enum.Material.SmoothPlastic, { { At = 22, Width = 6, Height = 9 } })
+		Kit.wall(
+			fun,
+			point(x0, 0, z0),
+			point(x0, 0, z1),
+			14,
+			1,
+			wallColor,
+			Enum.Material.SmoothPlastic,
+			{ { At = 12, Width = 7, Height = 9 } }
+		)
+		Kit.wall(
+			fun,
+			point(x1, 0, z0),
+			point(x1, 0, z1),
+			14,
+			1,
+			wallColor,
+			Enum.Material.SmoothPlastic,
+			{ { At = 6, Width = 6, Height = 9 } }
+		)
+		Kit.wall(
+			fun,
+			point(x0, 0, z0),
+			point(x1, 0, z0),
+			14,
+			1,
+			wallColor,
+			Enum.Material.SmoothPlastic,
+			{ { At = 22, Width = 6, Height = 9 } }
+		)
 		Kit.wall(fun, point(x0, 0, z1), point(x1, 0, z1), 14, 1, wallColor, Enum.Material.SmoothPlastic)
 		-- Polka dots and a grinning moon over the door.
 		local deco = Kit.model(dressing, "FunhouseFace")
 		for i = 0, 9 do
-			Kit.ball(deco, at(x0 - 0.55, 2 + (i % 3) * 4, z0 + 2 + i * 2.3), Vector3.new(0.1, 1.6, 1.6), BULBS[i % #BULBS + 1])
+			Kit.ball(
+				deco,
+				at(x0 - 0.55, 2 + (i % 3) * 4, z0 + 2 + i * 2.3),
+				Vector3.new(0.1, 1.6, 1.6),
+				BULBS[i % #BULBS + 1]
+			)
 		end
 		Kit.ball(deco, at(x0 - 1, 18, 30), Vector3.new(2, 9, 9), hex("#FFE066"))
 		Kit.ball(deco, at(x0 - 2, 19.5, 28.4), Vector3.new(0.4, 1.2, 1), hex("#1A1A1A"))
 		Kit.ball(deco, at(x0 - 2, 19.5, 31.6), Vector3.new(0.4, 1.2, 1), hex("#1A1A1A"))
 		for i = -2, 2 do
-			Kit.block(deco, at(x0 - 2, 16.4 + math.abs(i) * 0.35, 30 + i * 0.9), Vector3.new(0.4, 0.5, 1), hex("#1A1A1A"))
+			Kit.block(
+				deco,
+				at(x0 - 2, 16.4 + math.abs(i) * 0.35, 30 + i * 0.9),
+				Vector3.new(0.4, 0.5, 1),
+				hex("#1A1A1A")
+			)
 		end
-		Kit.sign(deco, at(x0 - 0.7, 11.5, 30) * CFrame.Angles(0, PI / 2, 0), Vector3.new(10, 2, 0.2), NAVY, "FUN HOUSE", hex("#FFE066"))
+		Kit.sign(
+			deco,
+			at(x0 - 0.7, 11.5, 30) * CFrame.Angles(0, PI / 2, 0),
+			Vector3.new(10, 2, 0.2),
+			NAVY,
+			"FUN HOUSE",
+			hex("#FFE066")
+		)
 		-- The mirror maze: glass walls on a grid of 4-stud cells.
 		local maze = Kit.model(structure, "Mirrors")
 		local runs = {
@@ -355,14 +484,28 @@ function Carnival.build(origin: CFrame): Model
 		}
 		for _, run in runs do
 			local a, b = point(run[1], 0, run[2]), point(run[3], 0, run[4])
-			local mirror = Kit.span(maze, a + Vector3.new(0, 5, 0), b + Vector3.new(0, 5, 0), 0.4, 10, hex("#C9D6E8"), Enum.Material.Glass)
+			local mirror = Kit.span(
+				maze,
+				a + Vector3.new(0, 5, 0),
+				b + Vector3.new(0, 5, 0),
+				0.4,
+				10,
+				hex("#C9D6E8"),
+				Enum.Material.Glass
+			)
 			mirror.Reflectance = 0.6
 			mirror.Transparency = 0.15
 			Kit.solid(mirror)
 			mirror.CastShadow = false
 		end
 		for _, spot in { { 40, 20 }, { 48, 32 }, { 56, 40 }, { 60, 22 } } do
-			local lamp = Kit.glow(dressing, at(spot[1], 13.6, spot[2]), Vector3.new(1, 0.4, 1), BULBS[(spot[1] // 4) % #BULBS + 1], true)
+			local lamp = Kit.glow(
+				dressing,
+				at(spot[1], 13.6, spot[2]),
+				Vector3.new(1, 0.4, 1),
+				BULBS[(spot[1] // 4) % #BULBS + 1],
+				true
+			)
 			if spot[1] == 48 then
 				Kit.light(lamp, hex("#FF8FE0"), 26, 1.2)
 			end
@@ -431,7 +574,8 @@ function Carnival.build(origin: CFrame): Model
 					local r = 15 + step * 2
 					Kit.slab(
 						tent,
-						at(cx + math.cos(angle) * r, 0.75 + step * 1.5, cz + math.sin(angle) * r) * CFrame.Angles(0, -angle + PI / 2, 0),
+						at(cx + math.cos(angle) * r, 0.75 + step * 1.5, cz + math.sin(angle) * r)
+							* CFrame.Angles(0, -angle + PI / 2, 0),
 						Vector3.new(2 * PI * r / 14 + 0.4, 1.5 + step * 3, 2),
 						if step % 2 == 0 then NAVY else hex("#2A2F6A"),
 						Enum.Material.WoodPlanks
@@ -465,7 +609,15 @@ function Carnival.build(origin: CFrame): Model
 		Kit.slab(stand, at(cx, 0.5, cz), Vector3.new(16, 1, 30), hex("#3A3F55"), Enum.Material.DiamondPlate)
 		for _, side in { -1, 1 } do
 			for _, lean in { -1, 1 } do
-				Kit.span(stand, point(cx + side * 4, 0.5, cz + lean * 12), point(cx + side * 2, height, cz), 1.2, 1.2, hex("#E8E2D6"), Enum.Material.Metal)
+				Kit.span(
+					stand,
+					point(cx + side * 4, 0.5, cz + lean * 12),
+					point(cx + side * 2, height, cz),
+					1.2,
+					1.2,
+					hex("#E8E2D6"),
+					Enum.Material.Metal
+				)
 			end
 		end
 		Kit.solid(Kit.block(stand, at(cx, 3, cz + 13), Vector3.new(6, 6, 3), RED, Enum.Material.WoodPlanks))
@@ -481,13 +633,35 @@ function Carnival.build(origin: CFrame): Model
 			local rimPoint = (hub * CFrame.new(0, math.sin(angle) * radius, math.cos(angle) * radius)).Position
 			if i < spokes then
 				for _, side in { -1.2, 1.2 } do
-					Kit.span(rim, (hub * CFrame.new(side, 0, 0)).Position, rimPoint + (hub.RightVector * side), 0.3, 0.3, hex("#E8E2D6"), Enum.Material.Metal)
+					Kit.span(
+						rim,
+						(hub * CFrame.new(side, 0, 0)).Position,
+						rimPoint + (hub.RightVector * side),
+						0.3,
+						0.3,
+						hex("#E8E2D6"),
+						Enum.Material.Metal
+					)
 				end
-				Kit.glow(rim, CFrame.new(rimPoint + hub.RightVector * 1.4), Vector3.new(0.7, 0.7, 0.7), BULBS[i % #BULBS + 1], true)
+				Kit.glow(
+					rim,
+					CFrame.new(rimPoint + hub.RightVector * 1.4),
+					Vector3.new(0.7, 0.7, 0.7),
+					BULBS[i % #BULBS + 1],
+					true
+				)
 			end
 			if lastPoint then
 				for _, side in { -1.2, 1.2 } do
-					Kit.span(rim, lastPoint + hub.RightVector * side, rimPoint + hub.RightVector * side, 0.5, 0.5, hex("#E8E2D6"), Enum.Material.Metal)
+					Kit.span(
+						rim,
+						lastPoint + hub.RightVector * side,
+						rimPoint + hub.RightVector * side,
+						0.5,
+						0.5,
+						hex("#E8E2D6"),
+						Enum.Material.Metal
+					)
 				end
 			end
 			lastPoint = rimPoint
@@ -506,7 +680,14 @@ function Carnival.build(origin: CFrame): Model
 		wheel.WorldPivot = hub
 		wheel:SetAttribute("SpinSeconds", 40)
 		wheel:AddTag("Wheel")
-		local sign = Kit.sign(dressing, at(cx - 3.1, 7.5, cz + 13) * CFrame.Angles(0, PI / 2, 0), Vector3.new(5.6, 1.4, 0.1), NAVY, "SKY WHEEL", GOLD)
+		local sign = Kit.sign(
+			dressing,
+			at(cx - 3.1, 7.5, cz + 13) * CFrame.Angles(0, PI / 2, 0),
+			Vector3.new(5.6, 1.4, 0.1),
+			NAVY,
+			"SKY WHEEL",
+			GOLD
+		)
 		sign.Name = "WheelSign"
 		local glow = Kit.glow(dressing, at(cx, height, cz - 3), Vector3.new(1, 1, 1), hex("#FFE7A3"), true)
 		Kit.light(glow, hex("#FFE7A3"), 40, 1.6)
@@ -528,10 +709,16 @@ function Carnival.build(origin: CFrame): Model
 		for i = -1, 1 do
 			Kit.block(food, pop * CFrame.new(i * 2, 2, -2.05), Vector3.new(0.6, 4, 0.1), CREAM)
 		end
-		local case = Kit.block(food, pop * CFrame.new(0, 5.5, 0), Vector3.new(5, 3, 3.4), hex("#CFE8FF"), Enum.Material.Glass)
+		local case =
+			Kit.block(food, pop * CFrame.new(0, 5.5, 0), Vector3.new(5, 3, 3.4), hex("#CFE8FF"), Enum.Material.Glass)
 		case.Transparency = 0.5
 		for i = 0, 11 do
-			Kit.ball(food, pop * CFrame.new(-1.8 + (i % 4) * 1.2, 4.5 + (i // 4) * 0.5, -0.6 + (i % 3) * 0.6), Vector3.new(0.9, 0.8, 0.9), hex("#FFF2B3"))
+			Kit.ball(
+				food,
+				pop * CFrame.new(-1.8 + (i % 4) * 1.2, 4.5 + (i // 4) * 0.5, -0.6 + (i % 3) * 0.6),
+				Vector3.new(0.9, 0.8, 0.9),
+				hex("#FFF2B3")
+			)
 		end
 		Kit.wedge(food, pop * CFrame.new(0, 7.6, 0) * CFrame.Angles(0, PI / 2, 0), Vector3.new(4.4, 1.2, 6.4), RED)
 		Kit.sign(food, pop * CFrame.new(0, 8.8, -1.3), Vector3.new(5, 1.2, 0.1), CREAM, "POPCORN", RED)
@@ -543,28 +730,64 @@ function Carnival.build(origin: CFrame): Model
 		end
 		Kit.post(food, floss * CFrame.new(0, 3.8, 0), 0.6, 2.6, hex("#CFE8FF"), Enum.Material.Metal)
 		for i = 0, 4 do
-			Kit.ball(food, floss * CFrame.new(-1.4 + i * 0.7, 4.8 + (i % 2) * 0.3, 0), Vector3.new(1.2, 1.4, 1.2), hex(if i % 2 == 0 then "#FFB3D9" else "#B3E5FF"), Enum.Material.Fabric)
+			Kit.ball(
+				food,
+				floss * CFrame.new(-1.4 + i * 0.7, 4.8 + (i % 2) * 0.3, 0),
+				Vector3.new(1.2, 1.4, 1.2),
+				hex(if i % 2 == 0 then "#FFB3D9" else "#B3E5FF"),
+				Enum.Material.Fabric
+			)
 		end
 		Kit.post(food, floss * CFrame.new(0, 7, 0), 0.4, 6, hex("#FF5D8F"), Enum.Material.Fabric)
 		Kit.post(food, floss * CFrame.new(0, 5.2, 0), 4, 0.2, CREAM)
 		-- Candy apples.
 		local apples = at(-68, 0, -24)
-		Kit.solid(Kit.block(food, apples * CFrame.new(0, 2, 0), Vector3.new(4, 4, 6), hex("#7A1F2B"), Enum.Material.WoodPlanks))
+		Kit.solid(
+			Kit.block(
+				food,
+				apples * CFrame.new(0, 2, 0),
+				Vector3.new(4, 4, 6),
+				hex("#7A1F2B"),
+				Enum.Material.WoodPlanks
+			)
+		)
 		for i = 0, 5 do
 			local spot = apples * CFrame.new(-0.8 + (i % 2) * 1.6, 4.5, -2 + (i // 2) * 2)
 			Kit.ball(food, spot, Vector3.new(1, 1, 1), hex("#D7263D"))
 			Kit.post(food, spot * CFrame.new(0, 0.8, 0), 0.8, 0.1, hex("#C9A66B"))
 		end
-		Kit.sign(food, apples * CFrame.new(2.05, 3, 0) * CFrame.Angles(0, -PI / 2, 0), Vector3.new(4.4, 1, 0.1), CREAM, "CANDY APPLES", hex("#7A1F2B"))
+		Kit.sign(
+			food,
+			apples * CFrame.new(2.05, 3, 0) * CFrame.Angles(0, -PI / 2, 0),
+			Vector3.new(4.4, 1, 0.1),
+			CREAM,
+			"CANDY APPLES",
+			hex("#7A1F2B")
+		)
 		-- Picnic tables with umbrellas.
 		for i, spot in { { -60, -22 }, { -46, -26 }, { -36, -18 }, { -52, -32 } } do
 			Pieces.table(food, at(spot[1], 0, spot[2]), Vector3.new(6, 3, 3), WOOD, nil)
 			for _, side in { -1, 1 } do
-				Kit.solid(Kit.block(food, at(spot[1], 1.6, spot[2] + side * 2.8), Vector3.new(6, 0.4, 1.2), WOOD, Enum.Material.Wood))
+				Kit.solid(
+					Kit.block(
+						food,
+						at(spot[1], 1.6, spot[2] + side * 2.8),
+						Vector3.new(6, 0.4, 1.2),
+						WOOD,
+						Enum.Material.Wood
+					)
+				)
 			end
 			Kit.post(food, at(spot[1], 5, spot[2]), 6, 0.3, hex("#E8E2D6"))
 			for tier = 0, 1 do
-				Kit.post(food, at(spot[1], 7.6 + tier * 0.5, spot[2]), 0.5, 7 - tier * 3, if (i + tier) % 2 == 0 then TEAL else CREAM, Enum.Material.Fabric)
+				Kit.post(
+					food,
+					at(spot[1], 7.6 + tier * 0.5, spot[2]),
+					0.5,
+					7 - tier * 3,
+					if (i + tier) % 2 == 0 then TEAL else CREAM,
+					Enum.Material.Fabric
+				)
 			end
 		end
 		Pieces.stringLights(dressing, point(-72, 10, -2), point(-30, 10, -2), BULBS, 2)
@@ -587,17 +810,55 @@ function Carnival.build(origin: CFrame): Model
 		local x0, x1, z0, z1 = -80, -64, -82, -46
 		local wallColor = hex("#2B2238")
 		Kit.slab(tunnel, at((x0 + x1) / 2, 0.25, (z0 + z1) / 2), Vector3.new(x1 - x0, 0.5, z1 - z0), hex("#1A1622"))
-		Kit.slab(tunnel, at((x0 + x1) / 2, 12.5, (z0 + z1) / 2), Vector3.new(x1 - x0 + 2, 1, z1 - z0 + 2), hex("#1A1622"))
+		Kit.slab(
+			tunnel,
+			at((x0 + x1) / 2, 12.5, (z0 + z1) / 2),
+			Vector3.new(x1 - x0 + 2, 1, z1 - z0 + 2),
+			hex("#1A1622")
+		)
 		Kit.wall(tunnel, point(x0, 0, z0), point(x0, 0, z1), 12, 1, wallColor, Enum.Material.Slate)
-		Kit.wall(tunnel, point(x1, 0, z0), point(x1, 0, z1), 12, 1, wallColor, Enum.Material.Slate, { { At = 18, Width = 7, Height = 9 } })
-		Kit.wall(tunnel, point(x0, 0, z1), point(x1, 0, z1), 12, 1, wallColor, Enum.Material.Slate, { { At = 8, Width = 8, Height = 9 } })
-		Kit.wall(tunnel, point(x0, 0, z0), point(x1, 0, z0), 12, 1, wallColor, Enum.Material.Slate, { { At = 8, Width = 8, Height = 9 } })
+		Kit.wall(
+			tunnel,
+			point(x1, 0, z0),
+			point(x1, 0, z1),
+			12,
+			1,
+			wallColor,
+			Enum.Material.Slate,
+			{ { At = 18, Width = 7, Height = 9 } }
+		)
+		Kit.wall(
+			tunnel,
+			point(x0, 0, z1),
+			point(x1, 0, z1),
+			12,
+			1,
+			wallColor,
+			Enum.Material.Slate,
+			{ { At = 8, Width = 8, Height = 9 } }
+		)
+		Kit.wall(
+			tunnel,
+			point(x0, 0, z0),
+			point(x1, 0, z0),
+			12,
+			1,
+			wallColor,
+			Enum.Material.Slate,
+			{ { At = 8, Width = 8, Height = 9 } }
+		)
 		-- An inner wall makes the ride a loop.
 		Kit.wall(tunnel, point(-72, 0, -76), point(-72, 0, -52), 12, 1, wallColor, Enum.Material.Slate)
 		-- Rails along the loop.
 		for _, x in { -76, -68 } do
 			for _, offset in { -1, 1 } do
-				Kit.block(dressing, at(x + offset, 0.6, -64), Vector3.new(0.3, 0.2, 34), hex("#5A5A66"), Enum.Material.Metal)
+				Kit.block(
+					dressing,
+					at(x + offset, 0.6, -64),
+					Vector3.new(0.3, 0.2, 34),
+					hex("#5A5A66"),
+					Enum.Material.Metal
+				)
 			end
 		end
 		-- The front: a huge ghost face over the entrance.
@@ -606,7 +867,14 @@ function Carnival.build(origin: CFrame): Model
 		Kit.ball(face, at(-75, 15, -43.8), Vector3.new(2.4, 3.6, 1), hex("#1C1C28"))
 		Kit.ball(face, at(-69, 15, -43.8), Vector3.new(2.4, 3.6, 1), hex("#1C1C28"))
 		Kit.ball(face, at(-72, 10.5, -43.8), Vector3.new(4, 3, 1), hex("#1C1C28"))
-		Kit.sign(face, at(-72, 21.5, -45) * CFrame.Angles(0, PI, 0), Vector3.new(12, 2, 0.2), PURPLE, "GHOST TRAIN", hex("#B9FFB0"))
+		Kit.sign(
+			face,
+			at(-72, 21.5, -45) * CFrame.Angles(0, PI, 0),
+			Vector3.new(12, 2, 0.2),
+			PURPLE,
+			"GHOST TRAIN",
+			hex("#B9FFB0")
+		)
 		-- Glowing eyes peering from the walls inside.
 		for i = 0, 7 do
 			local x = if i % 2 == 0 then -79.3 else -64.7
@@ -636,12 +904,24 @@ function Carnival.build(origin: CFrame): Model
 			Kit.solid(Kit.block(lot, base * CFrame.new(0, 5, 0), Vector3.new(9, 8, 22), color))
 			Kit.block(lot, base * CFrame.new(0, 9.2, 0), Vector3.new(9.4, 0.4, 22.4), CREAM)
 			for _, z in { -7, 0, 7 } do
-				local window = Kit.block(lot, base * CFrame.new(-4.55, 6, z), Vector3.new(0.1, 2, 3), hex("#FFE7A3"), Enum.Material.Neon)
+				local window = Kit.block(
+					lot,
+					base * CFrame.new(-4.55, 6, z),
+					Vector3.new(0.1, 2, 3),
+					hex("#FFE7A3"),
+					Enum.Material.Neon
+				)
 				window.Transparency = 0.2
 			end
 			for _, z in { -6, 6 } do
 				for _, side in { -1, 1 } do
-					Kit.post(lot, base * CFrame.new(side * 4.6, 1, z) * CFrame.Angles(0, PI / 2, 0) * CFrame.Angles(0, 0, PI / 2), 0.8, 2, hex("#1A1A1A"))
+					Kit.post(
+						lot,
+						base * CFrame.new(side * 4.6, 1, z) * CFrame.Angles(0, PI / 2, 0) * CFrame.Angles(0, 0, PI / 2),
+						0.8,
+						2,
+						hex("#1A1A1A")
+					)
 				end
 			end
 		end
@@ -659,7 +939,15 @@ function Carnival.build(origin: CFrame): Model
 		end
 		-- Hay bales stacked by the fence.
 		for i = 0, 5 do
-			Kit.solid(Kit.block(dressing, at(84, 1.2 + (i // 3) * 2.4, -20 + (i % 3) * 5), Vector3.new(3.6, 2.4, 4.8), hex("#D9B65A"), Enum.Material.Fabric))
+			Kit.solid(
+				Kit.block(
+					dressing,
+					at(84, 1.2 + (i // 3) * 2.4, -20 + (i % 3) * 5),
+					Vector3.new(3.6, 2.4, 4.8),
+					hex("#D9B65A"),
+					Enum.Material.Fabric
+				)
+			)
 		end
 		-- The bandstand.
 		local band = Kit.model(dressing, "Bandstand")
@@ -670,7 +958,13 @@ function Carnival.build(origin: CFrame): Model
 			Kit.solid(Kit.post(band, bc * CFrame.new(corner[1], 6, corner[2]), 8, 0.8, CREAM))
 		end
 		for stripe = 0, 8 do
-			Kit.wedge(band, bc * CFrame.new(-8 + stripe * 2, 11, 0) * CFrame.Angles(0, 0, 0), Vector3.new(2, 2, 15), if stripe % 2 == 0 then RED else CREAM, Enum.Material.Fabric)
+			Kit.wedge(
+				band,
+				bc * CFrame.new(-8 + stripe * 2, 11, 0) * CFrame.Angles(0, 0, 0),
+				Vector3.new(2, 2, 15),
+				if stripe % 2 == 0 then RED else CREAM,
+				Enum.Material.Fabric
+			)
 		end
 		Kit.ball(band, bc * CFrame.new(-4, 3.5, 3), Vector3.new(2.6, 2.6, 1.4), hex("#D7263D"))
 		Kit.post(band, bc * CFrame.new(3, 3, 3), 1.8, 0.2, hex("#2A2A30"))
@@ -679,7 +973,19 @@ function Carnival.build(origin: CFrame): Model
 		Kit.light(stageLight, hex("#FF8FE0"), 22, 1.2)
 		spawnAt(64, 0, 40)
 		spawnAt(-64, 2, 74)
-		for _, spot in { { 50, 8 }, { 70, -14 }, { 84, 6 }, { 60, 56 }, { 82, 80 }, { 40, 80 }, { -64, 2, 70 }, { -48, 80 }, { -80, 60 } } do
+		for _, spot in
+			{
+				{ 50, 8 },
+				{ 70, -14 },
+				{ 84, 6 },
+				{ 60, 56 },
+				{ 82, 80 },
+				{ 40, 80 },
+				{ -64, 2, 70 },
+				{ -48, 80 },
+				{ -80, 60 },
+			}
+		do
 			if #spot == 3 then
 				coinAt(spot[1], spot[2], spot[3])
 			else
@@ -703,7 +1009,14 @@ function Carnival.build(origin: CFrame): Model
 		end
 		local ride = Kit.model(dressing, "SwingRide")
 		for tier = 0, 3 do
-			Kit.post(ride, at(cx, 16 + tier * 0.8, cz), 0.8, 18 - tier * 4, if tier % 2 == 0 then TEAL else CREAM, Enum.Material.Fabric)
+			Kit.post(
+				ride,
+				at(cx, 16 + tier * 0.8, cz),
+				0.8,
+				18 - tier * 4,
+				if tier % 2 == 0 then TEAL else CREAM,
+				Enum.Material.Fabric
+			)
 		end
 		local top = Kit.ball(ride, at(cx, 19.6, cz), Vector3.new(2, 2, 2), GOLD, Enum.Material.Metal)
 		Kit.light(top, hex("#9FFFF2"), 26, 1.2)
@@ -713,7 +1026,12 @@ function Carnival.build(origin: CFrame): Model
 			local hang = point(spot[1], 15.6, spot[2])
 			Kit.span(ride, hang, seat + Vector3.new(0, 1, 0), 0.12, 0.12, hex("#C9C9D1"), Enum.Material.Metal)
 			local tilt = Kit.facing(hang, seat)
-			Kit.block(ride, CFrame.new(seat) * (tilt - tilt.Position) * CFrame.Angles(PI / 2, 0, 0), Vector3.new(1.4, 0.3, 1.4), BULBS[i % #BULBS + 1])
+			Kit.block(
+				ride,
+				CFrame.new(seat) * (tilt - tilt.Position) * CFrame.Angles(PI / 2, 0, 0),
+				Vector3.new(1.4, 0.3, 1.4),
+				BULBS[i % #BULBS + 1]
+			)
 			Kit.glow(ride, at(spot[1], 15.6, spot[2]), Vector3.new(0.4, 0.4, 0.4), BULBS[(i + 2) % #BULBS + 1], true)
 		end
 		Kit.spin(ride, at(cx, 0, cz), 14)
@@ -749,17 +1067,19 @@ function Carnival.build(origin: CFrame): Model
 				end
 			end
 		end
-		for _, run in {
-			{ 66, 18, 88, 18 },
-			{ 66, 44, 82, 44 },
-			{ 66, 18, 66, 30 },
-			{ 88, 18, 88, 44 },
-			{ 72, 24, 72, 38 },
-			{ 72, 24, 82, 24 },
-			{ 78, 30, 78, 44 },
-			{ 82, 30, 88, 30 },
-			{ 66, 36, 72, 36 },
-		} do
+		for _, run in
+			{
+				{ 66, 18, 88, 18 },
+				{ 66, 44, 82, 44 },
+				{ 66, 18, 66, 30 },
+				{ 88, 18, 88, 44 },
+				{ 72, 24, 72, 38 },
+				{ 72, 24, 82, 24 },
+				{ 78, 30, 78, 44 },
+				{ 82, 30, 88, 30 },
+				{ 66, 36, 72, 36 },
+			}
+		do
 			bales(run[1], run[2], run[3], run[4])
 		end
 		-- The scarecrow keeping watch in the middle.
@@ -787,16 +1107,47 @@ function Carnival.build(origin: CFrame): Model
 	do
 		local striker = Kit.model(dressing, "Striker")
 		local base = at(32, 0, -66)
-		Kit.solid(Kit.block(striker, base * CFrame.new(0, 0.6, 0), Vector3.new(4, 1.2, 4), RED, Enum.Material.WoodPlanks))
-		Kit.solid(Kit.block(striker, base * CFrame.new(0, 10, 0.8), Vector3.new(1.4, 18, 0.6), CREAM, Enum.Material.WoodPlanks))
+		Kit.solid(
+			Kit.block(striker, base * CFrame.new(0, 0.6, 0), Vector3.new(4, 1.2, 4), RED, Enum.Material.WoodPlanks)
+		)
+		Kit.solid(
+			Kit.block(
+				striker,
+				base * CFrame.new(0, 10, 0.8),
+				Vector3.new(1.4, 18, 0.6),
+				CREAM,
+				Enum.Material.WoodPlanks
+			)
+		)
 		for i = 0, 7 do
-			Kit.glow(striker, base * CFrame.new(0, 3 + i * 2, 0.4), Vector3.new(0.8, 0.5, 0.2), BULBS[i % #BULBS + 1], false)
+			Kit.glow(
+				striker,
+				base * CFrame.new(0, 3 + i * 2, 0.4),
+				Vector3.new(0.8, 0.5, 0.2),
+				BULBS[i % #BULBS + 1],
+				false
+			)
 		end
 		local bell = Kit.ball(striker, base * CFrame.new(0, 19.6, 0.8), Vector3.new(2, 2, 2), GOLD, Enum.Material.Metal)
 		Kit.light(bell, GOLD, 14, 1)
-		Kit.block(striker, base * CFrame.new(0, 1.4, -0.8), Vector3.new(1.6, 0.4, 1.6), hex("#3A3A3A"), Enum.Material.Metal)
+		Kit.block(
+			striker,
+			base * CFrame.new(0, 1.4, -0.8),
+			Vector3.new(1.6, 0.4, 1.6),
+			hex("#3A3A3A"),
+			Enum.Material.Metal
+		)
 		Kit.sign(striker, base * CFrame.new(0, 7, 0.45), Vector3.new(1.3, 5, 0.1), NAVY, "TEST", GOLD)
-		for _, spot in { { 30, -40, 0 }, { 24, 0, PI / 2 }, { -24, 0, -PI / 2 }, { -30, -40, 0 }, { 10, 70, PI / 2 }, { -10, 70, -PI / 2 } } do
+		for _, spot in
+			{
+				{ 30, -40, 0 },
+				{ 24, 0, PI / 2 },
+				{ -24, 0, -PI / 2 },
+				{ -30, -40, 0 },
+				{ 10, 70, PI / 2 },
+				{ -10, 70, -PI / 2 },
+			}
+		do
 			Pieces.bench(dressing, at(spot[1], 0, spot[2]) * CFrame.Angles(0, spot[3], 0), WOOD)
 		end
 		coinAt(32, 0, -60)
@@ -812,7 +1163,9 @@ function Carnival.build(origin: CFrame): Model
 			if i ~= 6 then
 				Kit.slab(
 					tent,
-					base * CFrame.new(math.cos(angle) * 5, 4, math.sin(angle) * 5) * CFrame.Angles(0, -angle + PI / 2, 0),
+					base
+						* CFrame.new(math.cos(angle) * 5, 4, math.sin(angle) * 5)
+						* CFrame.Angles(0, -angle + PI / 2, 0),
 					Vector3.new(4.4, 8, 0.4),
 					if i % 2 == 0 then PURPLE else NAVY,
 					Enum.Material.Fabric
@@ -823,17 +1176,41 @@ function Carnival.build(origin: CFrame): Model
 		Kit.post(tent, base * CFrame.new(0, 9.2, 0), 0.8, 7, GOLD, Enum.Material.Fabric)
 		Kit.post(tent, base * CFrame.new(0, 10, 0), 0.8, 3, PURPLE, Enum.Material.Fabric)
 		Kit.solid(Kit.block(tent, base * CFrame.new(0, 1.5, 1.5), Vector3.new(3, 3, 2), NAVY, Enum.Material.Fabric))
-		local ball = Kit.ball(tent, base * CFrame.new(0, 3.6, 1.5), Vector3.new(1.4, 1.4, 1.4), hex("#B9A6FF"), Enum.Material.Glass)
+		local ball = Kit.ball(
+			tent,
+			base * CFrame.new(0, 3.6, 1.5),
+			Vector3.new(1.4, 1.4, 1.4),
+			hex("#B9A6FF"),
+			Enum.Material.Glass
+		)
 		ball.Transparency = 0.2
 		Kit.light(ball, hex("#B067FF"), 12, 1, true)
 		Kit.sign(tent, base * CFrame.new(0, 9, -5.6), Vector3.new(5, 1, 0.1), NAVY, "MADAME LUNA", GOLD)
 		local manhole = Kit.model(dressing, "Manhole")
-		Kit.post(manhole, at(36, 0.1, -38) * CFrame.Angles(0, 0, PI / 2), 0.2, 3.4, hex("#3A3A44"), Enum.Material.DiamondPlate)
+		Kit.post(
+			manhole,
+			at(36, 0.1, -38) * CFrame.Angles(0, 0, PI / 2),
+			0.2,
+			3.4,
+			hex("#3A3A44"),
+			Enum.Material.DiamondPlate
+		)
 		Kit.glow(manhole, at(36, 0.25, -38), Vector3.new(0.3, 0.1, 2), hex("#B067FF"))
 		local manhole2 = Kit.model(dressing, "Manhole")
-		Kit.post(manhole2, at(-84, 0.1, 10) * CFrame.Angles(0, 0, PI / 2), 0.2, 3.4, hex("#3A3A44"), Enum.Material.DiamondPlate)
+		Kit.post(
+			manhole2,
+			at(-84, 0.1, 10) * CFrame.Angles(0, 0, PI / 2),
+			0.2,
+			3.4,
+			hex("#3A3A44"),
+			Enum.Material.DiamondPlate
+		)
 		Kit.glow(manhole2, at(-84, 0.25, 10), Vector3.new(0.3, 0.1, 2), hex("#B067FF"))
-		passage(base * CFrame.new(0, 3, -1.5) * CFrame.Angles(0, PI, 0), at(64, 3, 74) * CFrame.Angles(0, PI / 2, 0), "Behind the curtain")
+		passage(
+			base * CFrame.new(0, 3, -1.5) * CFrame.Angles(0, PI, 0),
+			at(64, 3, 74) * CFrame.Angles(0, PI / 2, 0),
+			"Behind the curtain"
+		)
 		passage(at(36, 3, -34), at(-84, 3, 14), "Manhole")
 	end
 

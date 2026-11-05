@@ -95,7 +95,13 @@ local function hilt(model: Model, look: { [string]: any }, guardWidth: number)
 		"Grip"
 	Kit.ball(model, CFrame.new(0, -0.62, 0), Vector3.new(0.42, 0.42, 0.42), hex(look.Guard), Enum.Material.Metal)
 	if guardWidth > 0 then
-		Kit.block(model, CFrame.new(0, 0.62, 0), Vector3.new(0.3, 0.18, guardWidth), hex(look.Guard), Enum.Material.Metal)
+		Kit.block(
+			model,
+			CFrame.new(0, 0.62, 0),
+			Vector3.new(0.3, 0.18, guardWidth),
+			hex(look.Guard),
+			Enum.Material.Metal
+		)
 		Kit.ball(model, CFrame.new(0, 0.62, guardWidth / 2), Vector3.new(0.24, 0.24, 0.24), hex(look.Guard))
 		Kit.ball(model, CFrame.new(0, 0.62, -guardWidth / 2), Vector3.new(0.24, 0.24, 0.24), hex(look.Guard))
 	end
@@ -308,18 +314,8 @@ function bladeShapes.rose(model: Model, look: { [string]: any }): BasePart
 		)
 	end
 	-- Two leaves and the bloom.
-	Kit.ball(
-		model,
-		CFrame.new(0, 1.2, -0.3) * CFrame.Angles(0.6, 0, 0),
-		Vector3.new(0.1, 0.7, 0.35),
-		hex(look.Blade)
-	)
-	Kit.ball(
-		model,
-		CFrame.new(0, 2.1, 0.3) * CFrame.Angles(-0.6, 0, 0),
-		Vector3.new(0.1, 0.7, 0.35),
-		hex(look.Blade)
-	)
+	Kit.ball(model, CFrame.new(0, 1.2, -0.3) * CFrame.Angles(0.6, 0, 0), Vector3.new(0.1, 0.7, 0.35), hex(look.Blade))
+	Kit.ball(model, CFrame.new(0, 2.1, 0.3) * CFrame.Angles(-0.6, 0, 0), Vector3.new(0.1, 0.7, 0.35), hex(look.Blade))
 	for i = 0, 5 do
 		local angle = i / 6 * PI * 2
 		Kit.ball(
@@ -377,14 +373,7 @@ local blasterShapes = {}
 function blasterShapes.ray(model: Model, look: { [string]: any }): BasePart
 	blasterGrip(model, look)
 	local mat = material(look)
-	local body = Kit.log(
-		model,
-		CFrame.new(0, 0.62, -0.45) * CFrame.Angles(0, PI / 2, 0),
-		1.6,
-		0.6,
-		hex(look.Body),
-		mat
-	)
+	local body = Kit.log(model, CFrame.new(0, 0.62, -0.45) * CFrame.Angles(0, PI / 2, 0), 1.6, 0.6, hex(look.Body), mat)
 	body.Name = "Body"
 	if look.Paper then
 		-- Folded paper: flat faces at angles instead of round ones.
@@ -412,7 +401,8 @@ function blasterShapes.bulb(model: Model, look: { [string]: any }): BasePart
 	blasterGrip(model, look)
 	local body = Kit.block(model, CFrame.new(0, 0.55, -0.55), Vector3.new(0.45, 0.4, 1.4), hex(look.Trim))
 	body.Name = "Body"
-	local tank = Kit.ball(model, CFrame.new(0, 1.05, -0.35), Vector3.new(0.75, 0.75, 0.75), hex(look.Body), material(look))
+	local tank =
+		Kit.ball(model, CFrame.new(0, 1.05, -0.35), Vector3.new(0.75, 0.75, 0.75), hex(look.Body), material(look))
 	if look.Glass then
 		tank.Transparency = 0.35
 		Kit.glow(model, CFrame.new(0, 1.05, -0.35), Vector3.new(0.35, 0.35, 0.35), hex(look.Beam), true)
@@ -606,10 +596,22 @@ function maskShapes.feather(model: Model, look: { [string]: any })
 			Enum.Material.Fabric
 		)
 		if look.Glow and i == 2 then
-			Kit.glow(model, feather.CFrame * CFrame.new(0, 0.28, -0.02), Vector3.new(0.12, 0.12, 0.04), hex(look.Glow), true)
+			Kit.glow(
+				model,
+				feather.CFrame * CFrame.new(0, 0.28, -0.02),
+				Vector3.new(0.12, 0.12, 0.04),
+				hex(look.Glow),
+				true
+			)
 		end
 	end
-	Kit.ball(model, CFrame.new(0.55, EYE_Y + 0.25, Z - 0.03), Vector3.new(0.2, 0.2, 0.1), hex(look.Trim), Enum.Material.Metal)
+	Kit.ball(
+		model,
+		CFrame.new(0.55, EYE_Y + 0.25, Z - 0.03),
+		Vector3.new(0.2, 0.2, 0.1),
+		hex(look.Trim),
+		Enum.Material.Metal
+	)
 end
 
 function maskShapes.cat(model: Model, look: { [string]: any })
@@ -691,7 +693,13 @@ function maskShapes.skull(model: Model, look: { [string]: any })
 	facePlate(model, hex(look.Base), Enum.Material.SmoothPlastic, EYE_Y + 0.42, EYE_Y - 0.62)
 	for _, side in { -1, 1 } do
 		Kit.ball(model, CFrame.new(side * 0.3, EYE_Y, Z - 0.03), Vector3.new(0.4, 0.34, 0.03), hex(look.Trim))
-		Kit.glow(model, CFrame.new(side * 0.3, EYE_Y + 0.25, Z - 0.05), Vector3.new(0.1, 0.1, 0.03), hex(look.Glow), true)
+		Kit.glow(
+			model,
+			CFrame.new(side * 0.3, EYE_Y + 0.25, Z - 0.05),
+			Vector3.new(0.1, 0.1, 0.03),
+			hex(look.Glow),
+			true
+		)
 	end
 	Kit.wedge(model, CFrame.new(0, EYE_Y - 0.26, Z - 0.04), Vector3.new(0.14, 0.14, 0.03), hex("#2A2A2A"))
 	for i = -2, 2 do
@@ -743,7 +751,13 @@ function maskShapes.jester(model: Model, look: { [string]: any })
 				Enum.Material.Fabric
 			)
 		end
-		Kit.ball(model, CFrame.new(side * 0.8, EYE_Y + 0.98, Z + 0.05), Vector3.new(0.16, 0.16, 0.16), hex(look.Bells), Enum.Material.Metal)
+		Kit.ball(
+			model,
+			CFrame.new(side * 0.8, EYE_Y + 0.98, Z + 0.05),
+			Vector3.new(0.16, 0.16, 0.16),
+			hex(look.Bells),
+			Enum.Material.Metal
+		)
 	end
 	-- A painted grin under the mask.
 	Kit.block(model, CFrame.new(0, EYE_Y - 0.48, Z - 0.02), Vector3.new(0.5, 0.05, 0.03), hex(look.Trim))
@@ -751,7 +765,13 @@ end
 
 function maskShapes.ghost(model: Model, look: { [string]: any })
 	-- A pale veil over the whole head, with dark eye holes.
-	local veil = Kit.ball(model, CFrame.new(0, EYE_Y + 0.05, Z + 0.62), Vector3.new(1.45, 1.55, 1.45), hex(look.Base), Enum.Material.Fabric)
+	local veil = Kit.ball(
+		model,
+		CFrame.new(0, EYE_Y + 0.05, Z + 0.62),
+		Vector3.new(1.45, 1.55, 1.45),
+		hex(look.Base),
+		Enum.Material.Fabric
+	)
 	veil.Transparency = 0.15
 	for _, side in { -1, 1 } do
 		Kit.ball(model, CFrame.new(side * 0.25, EYE_Y, Z - 0.1), Vector3.new(0.26, 0.36, 0.05), hex("#1C1C28"))
@@ -783,19 +803,37 @@ function maskShapes.sun(model: Model, look: { [string]: any })
 end
 
 function maskShapes.visor(model: Model, look: { [string]: any })
-	local band = Kit.block(model, CFrame.new(0, EYE_Y, Z - 0.02), Vector3.new(1.35, 0.34, 0.1), hex(look.Base), Enum.Material.Glass)
+	local band = Kit.block(
+		model,
+		CFrame.new(0, EYE_Y, Z - 0.02),
+		Vector3.new(1.35, 0.34, 0.1),
+		hex(look.Base),
+		Enum.Material.Glass
+	)
 	band.Transparency = 0.15
 	Kit.glow(model, CFrame.new(0, EYE_Y, Z - 0.08), Vector3.new(1.1, 0.06, 0.02), hex(look.Glow))
 	trimLine(model, hex(look.Trim), 1.4, EYE_Y + 0.18)
 	trimLine(model, hex(look.Trim), 1.4, EYE_Y - 0.18)
 	for i = -2, 2 do
-		Kit.glow(model, CFrame.new(i * 0.24, EYE_Y + 0.08 * ((i % 2) * 2 - 1), Z - 0.09), Vector3.new(0.05, 0.05, 0.02), hex(look.Sparkle), true)
+		Kit.glow(
+			model,
+			CFrame.new(i * 0.24, EYE_Y + 0.08 * ((i % 2) * 2 - 1), Z - 0.09),
+			Vector3.new(0.05, 0.05, 0.02),
+			hex(look.Sparkle),
+			true
+		)
 	end
 end
 
 function maskShapes.sack(model: Model, look: { [string]: any })
 	-- A burlap sack over the head, tied at the top, with a stitched smile.
-	local sack = Kit.ball(model, CFrame.new(0, EYE_Y, Z + 0.6), Vector3.new(1.4, 1.45, 1.4), hex(look.Base), Enum.Material.Fabric)
+	local sack = Kit.ball(
+		model,
+		CFrame.new(0, EYE_Y, Z + 0.6),
+		Vector3.new(1.4, 1.45, 1.4),
+		hex(look.Base),
+		Enum.Material.Fabric
+	)
 	sack.Name = "Sack"
 	for _, side in { -1, 1 } do
 		Kit.ball(model, CFrame.new(side * 0.26, EYE_Y + 0.05, Z - 0.05), Vector3.new(0.2, 0.2, 0.05), hex(look.Trim))
@@ -808,12 +846,19 @@ function maskShapes.sack(model: Model, look: { [string]: any })
 			hex(look.Trim)
 		)
 	end
-	Kit.block(model, CFrame.new(0, EYE_Y + 0.68, Z + 0.6), Vector3.new(0.5, 0.12, 0.5), hex(look.Trim), Enum.Material.Fabric)
+	Kit.block(
+		model,
+		CFrame.new(0, EYE_Y + 0.68, Z + 0.6),
+		Vector3.new(0.5, 0.12, 0.5),
+		hex(look.Trim),
+		Enum.Material.Fabric
+	)
 	for i = 0, 5 do
 		local angle = i / 6 * PI * 2
 		Kit.wedge(
 			model,
-			CFrame.new(math.cos(angle) * 0.15, EYE_Y + 0.88, Z + 0.6 + math.sin(angle) * 0.15) * CFrame.Angles(0, angle, 0),
+			CFrame.new(math.cos(angle) * 0.15, EYE_Y + 0.88, Z + 0.6 + math.sin(angle) * 0.15)
+				* CFrame.Angles(0, angle, 0),
 			Vector3.new(0.06, 0.32, 0.12),
 			hex(look.Straw),
 			Enum.Material.Fabric
@@ -823,8 +868,13 @@ end
 
 function maskShapes.lantern(model: Model, look: { [string]: any })
 	-- A carved pumpkin over the head, glowing from inside.
-	local pumpkin =
-		Kit.ball(model, CFrame.new(0, EYE_Y, Z + 0.6), Vector3.new(1.6, 1.4, 1.5), hex(look.Base), Enum.Material.SmoothPlastic)
+	local pumpkin = Kit.ball(
+		model,
+		CFrame.new(0, EYE_Y, Z + 0.6),
+		Vector3.new(1.6, 1.4, 1.5),
+		hex(look.Base),
+		Enum.Material.SmoothPlastic
+	)
 	pumpkin.Name = "Pumpkin"
 	for i = -1, 1, 2 do
 		Kit.ball(model, CFrame.new(i * 0.45, EYE_Y, Z + 0.6), Vector3.new(0.75, 1.42, 1.3), hex(look.Base))
@@ -1019,13 +1069,25 @@ function Gear.burstPiece(style: string, colors: { string }, number: number): Mod
 			)
 		end
 		Kit.glow(model, CFrame.new(0.07, 0.05, -0.18), Vector3.new(0.06, 0.06, 0.04), hex(colors[2] or colors[1]), true)
-		Kit.glow(model, CFrame.new(-0.07, 0.05, -0.18), Vector3.new(0.06, 0.06, 0.04), hex(colors[2] or colors[1]), true)
+		Kit.glow(
+			model,
+			CFrame.new(-0.07, 0.05, -0.18),
+			Vector3.new(0.06, 0.06, 0.04),
+			hex(colors[2] or colors[1]),
+			true
+		)
 	elseif style == "stars" or style == "sparkle" then
 		Kit.glow(model, CFrame.new(), Vector3.new(0.12, 0.5, 0.12), color)
 		Kit.glow(model, CFrame.new(), Vector3.new(0.5, 0.12, 0.12), color)
 	elseif style == "ghosts" then
 		Kit.ball(model, CFrame.new(0, 0.2, 0), Vector3.new(0.6, 0.6, 0.6), color, Enum.Material.Neon).Transparency = 0.3
-		Kit.wedge(model, CFrame.new(0, -0.25, 0) * CFrame.Angles(0, 0, PI), Vector3.new(0.55, 0.4, 0.5), color, Enum.Material.Neon).Transparency =
+		Kit.wedge(
+			model,
+			CFrame.new(0, -0.25, 0) * CFrame.Angles(0, 0, PI),
+			Vector3.new(0.55, 0.4, 0.5),
+			color,
+			Enum.Material.Neon
+		).Transparency =
 			0.3
 		Kit.ball(model, CFrame.new(0.12, 0.3, -0.28), Vector3.new(0.1, 0.14, 0.05), hex("#1C1C28"))
 		Kit.ball(model, CFrame.new(-0.12, 0.3, -0.28), Vector3.new(0.1, 0.14, 0.05), hex("#1C1C28"))
@@ -1050,7 +1112,10 @@ local function effectPreview(itemId: string): Model
 	for i = 1, 9 do
 		local angle = i / 9 * PI * 2
 		local piece = Gear.burstPiece(look.Style, look.Colors, i)
-		Kit.place(piece, CFrame.new(math.cos(angle) * 1.1, math.sin(angle) * 1.1, 0) * CFrame.Angles(angle, angle * 2, 0))
+		Kit.place(
+			piece,
+			CFrame.new(math.cos(angle) * 1.1, math.sin(angle) * 1.1, 0) * CFrame.Angles(angle, angle * 2, 0)
+		)
 		for _, child in piece:GetChildren() do
 			child.Parent = model
 		end

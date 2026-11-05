@@ -89,7 +89,13 @@ function Lobby.build(origin: CFrame): Model
 	-- A ring of pale stone round the fountain, and paths out to each shop.
 	Kit.post(structure, at(0, 0.25, 0), 0.1, 44, STONE, Enum.Material.Slate)
 	for _, angle in { 0, PI / 2, PI, -PI / 2 } do
-		Kit.slab(structure, at(0, 0.22, 0) * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, -45), Vector3.new(10, 0.05, 50), STONE, Enum.Material.Slate)
+		Kit.slab(
+			structure,
+			at(0, 0.22, 0) * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, -45),
+			Vector3.new(10, 0.05, 50),
+			STONE,
+			Enum.Material.Slate
+		)
 	end
 	for _, edge in { { -75, -75, 75, -75 }, { -75, 75, 75, 75 }, { -75, -75, -75, 75 }, { 75, -75, 75, 75 } } do
 		Pieces.hedge(dressing, point(edge[1], 0, edge[2]), point(edge[3], 0, edge[4]), 6, LEAVES)
@@ -124,9 +130,20 @@ function Lobby.build(origin: CFrame): Model
 		for _, side in { -1, 1 } do
 			local lobe = centre * CFrame.new(side * 2.7, 0, 0) * CFrame.Angles(0, 0, side * 0.18)
 			Kit.ball(statue, lobe, Vector3.new(6.2, 3.8, 1.4), hex("#5B1A6E"))
-			Kit.ball(statue, lobe * CFrame.new(side * 0.1, 0.05, 0), Vector3.new(6.9, 4.5, 0.9), GOLD, Enum.Material.Metal)
+			Kit.ball(
+				statue,
+				lobe * CFrame.new(side * 0.1, 0.05, 0),
+				Vector3.new(6.9, 4.5, 0.9),
+				GOLD,
+				Enum.Material.Metal
+			)
 			for _, face in { -1, 1 } do
-				Kit.ball(statue, lobe * CFrame.new(side * 0.2, 0.1, face * 0.45), Vector3.new(2.8, 1.5, 0.7), hex("#120A1C"))
+				Kit.ball(
+					statue,
+					lobe * CFrame.new(side * 0.2, 0.1, face * 0.45),
+					Vector3.new(2.8, 1.5, 0.7),
+					hex("#120A1C")
+				)
 			end
 			Kit.ball(statue, lobe * CFrame.new(side * 3.2, 1.2, 0), Vector3.new(1, 1, 1), GOLD, Enum.Material.Metal)
 		end
@@ -148,7 +165,11 @@ function Lobby.build(origin: CFrame): Model
 		-- Twelve spawns round the fountain.
 		for i = 0, 11 do
 			local angle = i / 12 * PI * 2
-			Kit.marker(spawns, "Spawn", at(math.cos(angle) * 17, 3, math.sin(angle) * 17) * CFrame.Angles(0, -angle - PI / 2, 0))
+			Kit.marker(
+				spawns,
+				"Spawn",
+				at(math.cos(angle) * 17, 3, math.sin(angle) * 17) * CFrame.Angles(0, -angle - PI / 2, 0)
+			)
 		end
 		-- Lamps round the ring.
 		for i = 0, 7 do
@@ -166,7 +187,14 @@ function Lobby.build(origin: CFrame): Model
 		end
 		Kit.solid(Kit.block(gate, at(0, 22, -60), Vector3.new(28, 3, 3), CREAM, Enum.Material.Marble))
 		Kit.block(gate, at(0, 23.7, -60), Vector3.new(29, 0.4, 3.4), GOLD, Enum.Material.Metal)
-		Kit.sign(gate, at(0, 22, -58.4) * CFrame.Angles(0, PI, 0), Vector3.new(24, 2.4, 0.2), PLUM, "PHANTOM PARTY", GOLD)
+		Kit.sign(
+			gate,
+			at(0, 22, -58.4) * CFrame.Angles(0, PI, 0),
+			Vector3.new(24, 2.4, 0.2),
+			PLUM,
+			"PHANTOM PARTY",
+			GOLD
+		)
 		-- Iron doors stand shut: rounds start by teleport, not by walking in.
 		for _, side in { -1, 1 } do
 			for bar = 0, 9 do
@@ -183,7 +211,14 @@ function Lobby.build(origin: CFrame): Model
 		for _, side in { -1, 1 } do
 			Kit.post(board, at(side * 6, 1.25, -52), 2.5, 0.6, hex("#2A2A36"), Enum.Material.Metal)
 		end
-		local sign = Kit.sign(lobby, at(0, 7, -51.45) * CFrame.Angles(0, PI, 0), Vector3.new(15, 8, 0.1), NAVY, "Waiting for players...", CREAM)
+		local sign = Kit.sign(
+			lobby,
+			at(0, 7, -51.45) * CFrame.Angles(0, PI, 0),
+			Vector3.new(15, 8, 0.1),
+			NAVY,
+			"Waiting for players...",
+			CREAM
+		)
 		sign.Name = "MapBoard"
 		Pieces.stringLights(dressing, point(-12, 21, -60), point(-24, 12, -40), BULBS, 1.5)
 		Pieces.stringLights(dressing, point(12, 21, -60), point(24, 12, -40), BULBS, 1.5)
@@ -194,7 +229,13 @@ function Lobby.build(origin: CFrame): Model
 		local shop = Kit.model(structure, "Boutique")
 		local x0, x1, z0, z1 = -66, -44, -22, 4
 		local walls = hex("#3B2B5C")
-		Kit.slab(shop, at((x0 + x1) / 2, 0.3, (z0 + z1) / 2), Vector3.new(x1 - x0, 0.6, z1 - z0), hex("#6B3E7A"), Enum.Material.WoodPlanks)
+		Kit.slab(
+			shop,
+			at((x0 + x1) / 2, 0.3, (z0 + z1) / 2),
+			Vector3.new(x1 - x0, 0.6, z1 - z0),
+			hex("#6B3E7A"),
+			Enum.Material.WoodPlanks
+		)
 		Kit.wall(shop, point(x0, 0, z0), point(x0, 0, z1), 14, 1, walls, Enum.Material.Plaster)
 		Kit.wall(shop, point(x0, 0, z0), point(x1, 0, z0), 14, 1, walls, Enum.Material.Plaster)
 		Kit.wall(shop, point(x0, 0, z1), point(x1, 0, z1), 14, 1, walls, Enum.Material.Plaster)
@@ -214,7 +255,14 @@ function Lobby.build(origin: CFrame): Model
 				Enum.Material.Fabric
 			)
 		end
-		Kit.sign(shop, at(x1 + 0.6, 16.6, (z0 + z1) / 2) * CFrame.Angles(0, -PI / 2, 0), Vector3.new(16, 3, 0.2), PLUM, "MASK BOUTIQUE", GOLD)
+		Kit.sign(
+			shop,
+			at(x1 + 0.6, 16.6, (z0 + z1) / 2) * CFrame.Angles(0, -PI / 2, 0),
+			Vector3.new(16, 3, 0.2),
+			PLUM,
+			"MASK BOUTIQUE",
+			GOLD
+		)
 		Kit.block(shop, at(x1 + 0.5, 16.6, (z0 + z1) / 2), Vector3.new(0.2, 3.6, 16.8), GOLD, Enum.Material.Metal)
 		-- Inside: a counter, a mirror and masks on stands round the walls.
 		Pieces.counter(dressing, at(-61, 0, -9) * CFrame.Angles(0, PI / 2, 0), 10, GOLD, VELVET)
@@ -229,7 +277,12 @@ function Lobby.build(origin: CFrame): Model
 			Kit.post(dressing, stand * CFrame.new(0, 4.3, 0), 0.6, 0.3, GOLD, Enum.Material.Metal)
 			Kit.ball(dressing, stand * CFrame.new(0, 5.4, 0), Vector3.new(1.4, 1.8, 1.4), hex("#2A2A36"))
 			local ok = pcall(function()
-				showcase(dressing, Gear.maskModel(id), stand * CFrame.new(0, 5.5, -0.7) * CFrame.Angles(0, -PI / 2, 0), 1.4)
+				showcase(
+					dressing,
+					Gear.maskModel(id),
+					stand * CFrame.new(0, 5.5, -0.7) * CFrame.Angles(0, -PI / 2, 0),
+					1.4
+				)
 			end)
 			if not ok then
 				Kit.ball(dressing, stand * CFrame.new(0, 5.5, -0.7), Vector3.new(1.6, 0.8, 0.3), GOLD)
@@ -247,24 +300,66 @@ function Lobby.build(origin: CFrame): Model
 		local vault = Kit.model(structure, "Vault")
 		local x0, x1, z0, z1 = 44, 66, -22, 4
 		local stone = hex("#4A4D63")
-		Kit.slab(vault, at((x0 + x1) / 2, 0.3, (z0 + z1) / 2), Vector3.new(x1 - x0, 0.6, z1 - z0), hex("#2E3044"), Enum.Material.Slate)
+		Kit.slab(
+			vault,
+			at((x0 + x1) / 2, 0.3, (z0 + z1) / 2),
+			Vector3.new(x1 - x0, 0.6, z1 - z0),
+			hex("#2E3044"),
+			Enum.Material.Slate
+		)
 		Kit.wall(vault, point(x1, 0, z0), point(x1, 0, z1), 16, 1.6, stone, Enum.Material.Slate)
 		Kit.wall(vault, point(x0, 0, z0), point(x1, 0, z0), 16, 1.6, stone, Enum.Material.Slate)
 		Kit.wall(vault, point(x0, 0, z1), point(x1, 0, z1), 16, 1.6, stone, Enum.Material.Slate)
-		Kit.wall(vault, point(x0, 0, z0), point(x0, 0, z1), 16, 1.6, stone, Enum.Material.Slate, { { At = 13, Width = 10, Height = 11 } })
-		Kit.slab(vault, at((x0 + x1) / 2, 16.5, (z0 + z1) / 2), Vector3.new(x1 - x0 + 2, 1, z1 - z0 + 2), hex("#2A2C3C"), Enum.Material.Slate)
+		Kit.wall(
+			vault,
+			point(x0, 0, z0),
+			point(x0, 0, z1),
+			16,
+			1.6,
+			stone,
+			Enum.Material.Slate,
+			{ { At = 13, Width = 10, Height = 11 } }
+		)
+		Kit.slab(
+			vault,
+			at((x0 + x1) / 2, 16.5, (z0 + z1) / 2),
+			Vector3.new(x1 - x0 + 2, 1, z1 - z0 + 2),
+			hex("#2A2C3C"),
+			Enum.Material.Slate
+		)
 		-- The round vault door, swung open beside the entrance.
 		local door = Kit.model(dressing, "VaultDoor")
 		local hinge = at(x0 - 1.2, 6, -14)
-		local disc = Kit.post(door, hinge * CFrame.new(-0.5, 0, -1) * CFrame.Angles(PI / 2, 0, 0), 1.2, 11, hex("#B8B9C9"), Enum.Material.DiamondPlate)
+		local disc = Kit.post(
+			door,
+			hinge * CFrame.new(-0.5, 0, -1) * CFrame.Angles(PI / 2, 0, 0),
+			1.2,
+			11,
+			hex("#B8B9C9"),
+			Enum.Material.DiamondPlate
+		)
 		disc.CFrame = hinge * CFrame.new(-5, 0, -1) * CFrame.Angles(0, 0, PI / 2) * CFrame.Angles(0, PI / 2, 0)
 		for i = 0, 5 do
 			local angle = i / 6 * PI * 2
-			Kit.block(door, hinge * CFrame.new(-5.7, math.sin(angle) * 2.4, -1 + math.cos(angle) * 2.4), Vector3.new(0.4, 0.4, 2.2), GOLD, Enum.Material.Metal)
+			Kit.block(
+				door,
+				hinge * CFrame.new(-5.7, math.sin(angle) * 2.4, -1 + math.cos(angle) * 2.4),
+				Vector3.new(0.4, 0.4, 2.2),
+				GOLD,
+				Enum.Material.Metal
+			)
 		end
-		Kit.sign(dressing, at(x0 - 0.9, 14, -9) * CFrame.Angles(0, PI / 2, 0), Vector3.new(14, 2.6, 0.2), NAVY, "CRATE VAULT", GOLD)
+		Kit.sign(
+			dressing,
+			at(x0 - 0.9, 14, -9) * CFrame.Angles(0, PI / 2, 0),
+			Vector3.new(14, 2.6, 0.2),
+			NAVY,
+			"CRATE VAULT",
+			GOLD
+		)
 		-- Two great crates on glowing pedestals, one per kind.
-		local crates = { { "masquerade", hex("#7B2CBF"), hex("#E0B3FF"), -16 }, { "harvest", hex("#D9661A"), hex("#FFD08A"), -2 } }
+		local crates =
+			{ { "masquerade", hex("#7B2CBF"), hex("#E0B3FF"), -16 }, { "harvest", hex("#D9661A"), hex("#FFD08A"), -2 } }
 		for _, info in crates do
 			local base = at(58, 0, info[4])
 			Kit.solid(Kit.post(dressing, base * CFrame.new(0, 1, 0), 2, 7, hex("#2A2C3C"), Enum.Material.Marble))
@@ -275,7 +370,13 @@ function Lobby.build(origin: CFrame): Model
 			local body = base * CFrame.new(0, 5, 0)
 			Kit.block(crate, body, Vector3.new(4.4, 4.4, 4.4), info[2], Enum.Material.WoodPlanks)
 			for _, edge in { { 0, 2.1, 0 }, { 0, -2.1, 0 } } do
-				Kit.block(crate, body * CFrame.new(edge[1], edge[2], edge[3]), Vector3.new(4.7, 0.5, 4.7), GOLD, Enum.Material.Metal)
+				Kit.block(
+					crate,
+					body * CFrame.new(edge[1], edge[2], edge[3]),
+					Vector3.new(4.7, 0.5, 4.7),
+					GOLD,
+					Enum.Material.Metal
+				)
 			end
 			Kit.block(crate, body, Vector3.new(4.7, 4.7, 0.6), GOLD, Enum.Material.Metal)
 			Kit.block(crate, body, Vector3.new(0.6, 4.7, 4.7), GOLD, Enum.Material.Metal)
@@ -293,22 +394,48 @@ function Lobby.build(origin: CFrame): Model
 		local hall = Kit.model(structure, "TradingHall")
 		local cx, cz = -44, 44
 		Kit.slab(hall, at(cx, 0.6, cz), Vector3.new(30, 1.2, 26), hex("#D8D1BE"), Enum.Material.Marble)
-		Kit.stairs(structure, at(cx + 15.6, 0, cz) * CFrame.Angles(0, PI / 2, 0), 8, 1.2, 1.6, hex("#D8D1BE"), Enum.Material.Marble)
+		Kit.stairs(
+			structure,
+			at(cx + 15.6, 0, cz) * CFrame.Angles(0, PI / 2, 0),
+			8,
+			1.2,
+			1.6,
+			hex("#D8D1BE"),
+			Enum.Material.Marble
+		)
 		Kit.stairs(structure, at(cx, 0, cz - 13.6), 8, 1.2, 1.6, hex("#D8D1BE"), Enum.Material.Marble)
 		for _, corner in { { -13, -11 }, { 13, -11 }, { -13, 11 }, { 13, 11 }, { 0, -11 }, { 0, 11 } } do
 			Pieces.column(hall, at(cx + corner[1], 1.2, cz + corner[2]), 12, CREAM)
 		end
 		Kit.slab(hall, at(cx, 13.8, cz), Vector3.new(32, 1.2, 28), CREAM, Enum.Material.Marble)
-		Kit.wedge(hall, at(cx, 15.9, cz - 7) * CFrame.Angles(0, PI, 0), Vector3.new(32, 3, 14), hex("#2E6E6A"), Enum.Material.Slate)
+		Kit.wedge(
+			hall,
+			at(cx, 15.9, cz - 7) * CFrame.Angles(0, PI, 0),
+			Vector3.new(32, 3, 14),
+			hex("#2E6E6A"),
+			Enum.Material.Slate
+		)
 		Kit.wedge(hall, at(cx, 15.9, cz + 7), Vector3.new(32, 3, 14), hex("#2E6E6A"), Enum.Material.Slate)
 		Kit.sign(hall, at(cx, 13.8, cz - 14.05), Vector3.new(16, 1.1, 0.1), CREAM, "TRADING HALL", hex("#2E6E6A"))
 		for i, spot in { { -6, -4 }, { 6, -4 }, { -6, 5 }, { 6, 5 } } do
 			local base = at(cx + spot[1], 1.2, cz + spot[2])
-			Pieces.table(dressing, base, Vector3.new(5, 3, 3), hex("#6B4426"), if i % 2 == 0 then hex("#2E6E6A") else VELVET)
+			Pieces.table(
+				dressing,
+				base,
+				Vector3.new(5, 3, 3),
+				hex("#6B4426"),
+				if i % 2 == 0 then hex("#2E6E6A") else VELVET
+			)
 			for _, side in { -1, 1 } do
-				Pieces.chair(dressing, base * CFrame.new(0, 0, side * 2.6) * CFrame.Angles(0, if side > 0 then 0 else PI, 0), hex("#6B4426"), GOLD)
+				Pieces.chair(
+					dressing,
+					base * CFrame.new(0, 0, side * 2.6) * CFrame.Angles(0, if side > 0 then 0 else PI, 0),
+					hex("#6B4426"),
+					GOLD
+				)
 			end
-			local lamp = Kit.glow(dressing, base * CFrame.new(0, 3.3, 0), Vector3.new(0.6, 0.8, 0.6), hex("#FFE7A3"), true)
+			local lamp =
+				Kit.glow(dressing, base * CFrame.new(0, 3.3, 0), Vector3.new(0.6, 0.8, 0.6), hex("#FFE7A3"), true)
 			if i % 2 == 1 then
 				Kit.light(lamp, hex("#FFE7A3"), 12, 0.9)
 			end
@@ -376,7 +503,8 @@ function Lobby.build(origin: CFrame): Model
 		-- Spotlights on poles, aimed at the middle.
 		for i, spot in { { -14, -12 }, { 14, -12 } } do
 			Kit.post(dressing, at(cx + spot[1], 6, cz + spot[2]), 12, 0.6, hex("#2A2A36"), Enum.Material.Metal)
-			local lamp = Kit.glow(dressing, at(cx + spot[1], 12.5, cz + spot[2]), Vector3.new(1.6, 1.6, 1.6), BULBS[i + 1], true)
+			local lamp =
+				Kit.glow(dressing, at(cx + spot[1], 12.5, cz + spot[2]), Vector3.new(1.6, 1.6, 1.6), BULBS[i + 1], true)
 			local beam = Kit.new("SpotLight", lamp, {
 				Color = BULBS[i + 1],
 				Range = 30,
@@ -399,8 +527,20 @@ function Lobby.build(origin: CFrame): Model
 	do
 		local vip = Kit.model(structure, "VipBalcony")
 		local x0, x1, z0, z1, floorY = 40, 70, -70, -42, 8
-		Kit.slab(vip, at((x0 + x1) / 2, floorY - 0.5, (z0 + z1) / 2), Vector3.new(x1 - x0, 1, z1 - z0), hex("#2A1E40"), Enum.Material.Marble)
-		Kit.slab(vip, at((x0 + x1) / 2, floorY + 0.02, (z0 + z1) / 2), Vector3.new(x1 - x0 - 2, 0.05, z1 - z0 - 2), VELVET, Enum.Material.Fabric)
+		Kit.slab(
+			vip,
+			at((x0 + x1) / 2, floorY - 0.5, (z0 + z1) / 2),
+			Vector3.new(x1 - x0, 1, z1 - z0),
+			hex("#2A1E40"),
+			Enum.Material.Marble
+		)
+		Kit.slab(
+			vip,
+			at((x0 + x1) / 2, floorY + 0.02, (z0 + z1) / 2),
+			Vector3.new(x1 - x0 - 2, 0.05, z1 - z0 - 2),
+			VELVET,
+			Enum.Material.Fabric
+		)
 		for _, x in { x0 + 1, x1 - 1 } do
 			for _, z in { z0 + 1, z1 - 1, (z0 + z1) / 2 } do
 				Pieces.column(vip, at(x, 0, z), floorY - 1, CREAM)
@@ -413,20 +553,46 @@ function Lobby.build(origin: CFrame): Model
 			Kit.post(rope, at(40.5, floorY + 1.6, z), 3.2, 0.4, GOLD, Enum.Material.Metal)
 			Kit.ball(rope, at(40.5, floorY + 3.3, z), Vector3.new(0.6, 0.6, 0.6), GOLD, Enum.Material.Metal)
 		end
-		Kit.span(rope, point(40.5, floorY + 2.6, -49), point(40.5, floorY + 2.6, -43), 0.3, 0.3, VELVET, Enum.Material.Fabric)
+		Kit.span(
+			rope,
+			point(40.5, floorY + 2.6, -49),
+			point(40.5, floorY + 2.6, -43),
+			0.3,
+			0.3,
+			VELVET,
+			Enum.Material.Fabric
+		)
 		local gate = Kit.barrier(lobby, at(40.5, floorY + 6, -46), Vector3.new(1, 12, 6.4))
 		gate.Name = "VipGate"
-		Kit.sign(dressing, at(40.2, floorY + 6.4, -46) * CFrame.Angles(0, PI / 2, 0), Vector3.new(5, 1.2, 0.1), PLUM, "VIP", GOLD)
+		Kit.sign(
+			dressing,
+			at(40.2, floorY + 6.4, -46) * CFrame.Angles(0, PI / 2, 0),
+			Vector3.new(5, 1.2, 0.1),
+			PLUM,
+			"VIP",
+			GOLD
+		)
 		-- Railings round the open sides.
 		for _, edge in { { x0, z1, x1, z1 }, { x0, z0, x0, -49.5 }, { x0, -42.5, x0, z1 } } do
 			local a, b = point(edge[1], floorY, edge[2]), point(edge[3], floorY, edge[4])
 			Kit.span(vip, a + Vector3.new(0, 3, 0), b + Vector3.new(0, 3, 0), 0.4, 0.4, GOLD, Enum.Material.Metal)
 			local length = (b - a).Magnitude
 			for i = 0, math.floor(length / 2) do
-				Kit.post(vip, CFrame.new(a:Lerp(b, i / math.max(1, math.floor(length / 2))) + Vector3.new(0, 1.5, 0)), 3, 0.2, GOLD, Enum.Material.Metal)
+				Kit.post(
+					vip,
+					CFrame.new(a:Lerp(b, i / math.max(1, math.floor(length / 2))) + Vector3.new(0, 1.5, 0)),
+					3,
+					0.2,
+					GOLD,
+					Enum.Material.Metal
+				)
 			end
 			local mid = (a + b) / 2
-			Kit.barrier(vip, CFrame.new(mid + Vector3.new(0, 5, 0)), Vector3.new(math.max(0.5, math.abs(b.X - a.X)), 10, math.max(0.5, math.abs(b.Z - a.Z))))
+			Kit.barrier(
+				vip,
+				CFrame.new(mid + Vector3.new(0, 5, 0)),
+				Vector3.new(math.max(0.5, math.abs(b.X - a.X)), 10, math.max(0.5, math.abs(b.Z - a.Z)))
+			)
 		end
 		Kit.wall(vip, point(x0, floorY, z0), point(x1, floorY, z0), 12, 1, hex("#3B2B5C"), Enum.Material.Plaster)
 		Kit.wall(vip, point(x1, floorY, z0), point(x1, floorY, z1), 12, 1, hex("#3B2B5C"), Enum.Material.Plaster)
@@ -434,22 +600,36 @@ function Lobby.build(origin: CFrame): Model
 		Pieces.fireplace(dressing, at(55, floorY, z0 + 1.7) * CFrame.Angles(0, PI, 0), hex("#B9B4CC"), hex("#FF9A3C"))
 		for _, spot in { { 48, -58, PI / 2 }, { 62, -58, -PI / 2 }, { 55, -50, PI } } do
 			local base = at(spot[1], floorY, spot[2]) * CFrame.Angles(0, spot[3], 0)
-			Kit.solid(Kit.block(dressing, base * CFrame.new(0, 1, 0), Vector3.new(7, 2, 3), VELVET, Enum.Material.Fabric))
+			Kit.solid(
+				Kit.block(dressing, base * CFrame.new(0, 1, 0), Vector3.new(7, 2, 3), VELVET, Enum.Material.Fabric)
+			)
 			Kit.block(dressing, base * CFrame.new(0, 2.6, 1.2), Vector3.new(7, 2.4, 0.8), VELVET, Enum.Material.Fabric)
 			for _, side in { -1, 1 } do
-				Kit.block(dressing, base * CFrame.new(side * 3.3, 2.1, 0), Vector3.new(0.8, 1.6, 3), hex("#6E1530"), Enum.Material.Fabric)
+				Kit.block(
+					dressing,
+					base * CFrame.new(side * 3.3, 2.1, 0),
+					Vector3.new(0.8, 1.6, 3),
+					hex("#6E1530"),
+					Enum.Material.Fabric
+				)
 			end
 		end
 		Pieces.table(dressing, at(55, floorY, -57), Vector3.new(4, 2, 3), GOLD, nil)
 		Pieces.chandelier(dressing, at(55, floorY + 12, -56), 3, GOLD, 3)
-		local trophy = showcase(dressing, Gear.bladeModel("blade_gala"), at(55, floorY + 3.4, -57) * CFrame.Angles(0, PI / 4, 0), 1.4)
+		local trophy = showcase(
+			dressing,
+			Gear.bladeModel("blade_gala"),
+			at(55, floorY + 3.4, -57) * CFrame.Angles(0, PI / 4, 0),
+			1.4
+		)
 		trophy.Name = "Trophy"
 		Kit.marker(lobby, "VipSpawn", at(55, floorY + 3, -52))
 	end
 
 	-- Leaderboards (north-west) -------------------------------------------
 	do
-		local stats = { { "Wins", "MOST WINS", -60 }, { "Takedowns", "TOP GUARDIANS", -44 }, { "CoinsEarned", "RICHEST", -28 } }
+		local stats =
+			{ { "Wins", "MOST WINS", -60 }, { "Takedowns", "TOP GUARDIANS", -44 }, { "CoinsEarned", "RICHEST", -28 } }
 		for _, info in stats do
 			local board = Kit.model(boards, `Board_{info[1]}`)
 			board:SetAttribute("Stat", info[1])
@@ -459,7 +639,14 @@ function Lobby.build(origin: CFrame): Model
 			for _, side in { -1, 1 } do
 				Kit.post(board, base * CFrame.new(side * 5, 0.6, 0), 1.2, 1.4, hex("#2A2A36"), Enum.Material.Metal)
 			end
-			Kit.sign(board, base * CFrame.new(0, 15.6, 0.55) * CFrame.Angles(0, PI, 0), Vector3.new(11, 1.8, 0.1), NAVY, info[2], GOLD)
+			Kit.sign(
+				board,
+				base * CFrame.new(0, 15.6, 0.55) * CFrame.Angles(0, PI, 0),
+				Vector3.new(11, 1.8, 0.1),
+				NAVY,
+				info[2],
+				GOLD
+			)
 			local screen = Kit.block(board, base * CFrame.new(0, 7.6, 0.55), Vector3.new(11, 12, 0.1), hex("#141633"))
 			screen.Name = "Screen"
 			local cap = Kit.glow(board, base * CFrame.new(0, 17.8, 0.2), Vector3.new(1.4, 1.4, 1.4), GOLD, true)
@@ -469,26 +656,47 @@ function Lobby.build(origin: CFrame): Model
 
 	-- Benches, string lights, pumpkins and lanterns -----------------------
 	do
-		for _, spot in {
-			{ -28, -10, PI / 2 },
-			{ -28, 10, PI / 2 },
-			{ 28, -10, -PI / 2 },
-			{ 28, 10, -PI / 2 },
-			{ -12, 30, PI },
-			{ 12, 30, PI },
-			{ -14, -36, 0 },
-			{ 14, -36, 0 },
-		} do
+		for _, spot in
+			{
+				{ -28, -10, PI / 2 },
+				{ -28, 10, PI / 2 },
+				{ 28, -10, -PI / 2 },
+				{ 28, 10, -PI / 2 },
+				{ -12, 30, PI },
+				{ 12, 30, PI },
+				{ -14, -36, 0 },
+				{ 14, -36, 0 },
+			}
+		do
 			Pieces.bench(dressing, at(spot[1], 0.2, spot[2]) * CFrame.Angles(0, spot[3], 0), hex("#6B4426"))
 		end
 		local poles = { { -30, -30 }, { 30, -30 }, { 30, 30 }, { -30, 30 } }
 		for i, pole in poles do
 			Pieces.lamp(dressing, at(pole[1], 0, pole[2]), hex("#FFE7A3"), 14)
 			local nextPole = poles[i % #poles + 1]
-			Pieces.stringLights(dressing, point(pole[1], 13.5, pole[2]), point(nextPole[1], 13.5, nextPole[2]), BULBS, 3)
+			Pieces.stringLights(
+				dressing,
+				point(pole[1], 13.5, pole[2]),
+				point(nextPole[1], 13.5, nextPole[2]),
+				BULBS,
+				3
+			)
 			Pieces.stringLights(dressing, point(pole[1], 13.5, pole[2]), point(0, 16, 0), BULBS, 1.5, 7)
 		end
-		for i, spot in { { -40, -30 }, { 40, -30 }, { -24, 64 }, { 24, 64 }, { -70, 20 }, { 70, 20 }, { -70, -40 }, { 70, -30 }, { 20, -68 }, { -20, -68 } } do
+		for i, spot in
+			{
+				{ -40, -30 },
+				{ 40, -30 },
+				{ -24, 64 },
+				{ 24, 64 },
+				{ -70, 20 },
+				{ 70, 20 },
+				{ -70, -40 },
+				{ 70, -30 },
+				{ 20, -68 },
+				{ -20, -68 },
+			}
+		do
 			Pieces.pumpkin(dressing, at(spot[1], 0.2, spot[2]), 1.6 + (i % 3) * 0.6, i % 2 == 0)
 		end
 		for i, spot in { { -70, -70 }, { 70, 70 }, { -70, 70 }, { -20, 70 }, { 20, 70 } } do

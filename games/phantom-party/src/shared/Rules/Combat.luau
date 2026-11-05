@@ -60,12 +60,12 @@ end
 
 -- A direction worth using: not zero, and not wild. Returns it as a unit
 -- vector, or nil.
-function Combat.aim(direction: Vector3): Vector3?
-	local length = direction.Magnitude
+function Combat.aim(wanted: Vector3): Vector3?
+	local length = wanted.Magnitude
 	if length ~= length or length < 1e-3 or length == math.huge then
 		return nil
 	end
-	return direction / length
+	return wanted / length
 end
 
 return Combat

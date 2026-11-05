@@ -31,7 +31,6 @@ export type Save = {
 		CratesOpened: number,
 		Trades: number,
 	},
-	Receipts: { Ids: { [string]: number }, Order: { string } },
 	-- The last trades, newest last, for answering "where did my item go?".
 	TradeLog: { { With: number, Gave: { string }, Got: { string }, Time: number } },
 	Settings: { Music: boolean },
@@ -73,7 +72,6 @@ local function template(): Save
 			CratesOpened = 0,
 			Trades = 0,
 		},
-		Receipts = { Ids = {}, Order = {} },
 		TradeLog = {},
 		Settings = { Music = true },
 		Onboarding = 0,
