@@ -8,12 +8,13 @@
 --
 -- Roles are dealt by Rules/Deal with tickets, so everyone gets their turn.
 -- Each player is told only their own role (the Shadows also learn each
--- other). In Studio a lone tester gets a practice round against dummies
--- instead, taking each role in turn.
+-- other). A player alone on a server (or a lone tester in Studio) gets a
+-- practice round against dummies instead, taking each role in turn, so
+-- nobody waits in an empty plaza; the first real round starts as soon as a
+-- second guest is in.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
@@ -106,12 +107,8 @@ local function eligible(): { Player }
 	return list
 end
 
-local function practiceAllowed(): boolean
-	return RunService:IsStudio()
-end
-
 local function enough(count: number): boolean
-	return count >= Game.MinPlayers or (count == 1 and practiceAllowed())
+	return count >= 1
 end
 
 -- Waiting ----------------------------------------------------------------
@@ -123,7 +120,7 @@ local function waitForPlayers()
 		if enough(count) then
 			return
 		end
-		LobbyService.setBoard(`Waiting for party guests\n{count} of {Game.MinPlayers}`)
+		LobbyService.setBoard("Waiting for party guests")
 		task.wait(1)
 	end
 end
@@ -204,7 +201,7 @@ local function setUp(players: { Player }, mapId: string): boolean
 		warn(`Map {mapId} has no spawns`)
 		return false
 	end
-	local practice = #players == 1 and practiceAllowed()
+	local practice = #players < Game.MinPlayers
 	Match.Practice = practice
 
 	local roles: { [any]: string } = {}
@@ -248,6 +245,12 @@ local function setUp(players: { Player }, mapId: string): boolean
 		for i = 1, PRACTICE_DUMMIES do
 			local model = Dummy.new(i, nextSpawn())
 			model.Parent = map
+			local dummyRoot = model:FindFirstChild("HumanoidRootPart")
+			if dummyRoot and dummyRoot:IsA("BasePart") then
+				pcall(function()
+					dummyRoot:SetNetworkOwner(nil)
+				end)
+			end
 			local roleId = left[i] or "Guest"
 			Match.add(model, { Player = nil, UserId = -i, Name = model.Name, Character = model, Role = roleId })
 			OutfitService.dress(model, {
@@ -305,6 +308,57 @@ local function sendCensus()
 	return census
 end
 
+-- In practice, a dummy Phantom now and then tags a dummy guest near it, so
+-- a Medic has someone to revive and a Guardian has someone to catch. It
+-- never tags the player practising.
+local function practicePhantom()
+	local phantom: Match.Participant? = nil
+	for _, participant in Match.Participants do
+		if participant.Player == nil and participant.Role == "Phantom" then
+			phantom = participant
+		end
+	end
+	if not phantom then
+		return
+	end
+	task.spawn(function()
+		task.wait(Game.Seconds.Grace + 6)
+		while Match.State == "Playing" and phantom.State == "Alive" do
+			local root = Match.root(phantom)
+			local best: Match.Participant? = nil
+			local bestDistance = 40
+			for _, other in Match.Participants do
+				local otherRoot = Match.root(other)
+				if
+					root
+					and otherRoot
+					and other.Player == nil
+					and other ~= phantom
+					and other.State == "Alive"
+					and Round.canTag("Phantom", other.Role)
+				then
+					local distance = (otherRoot.Position - root.Position).Magnitude
+					if distance < bestDistance then
+						best, bestDistance = other, distance
+					end
+				end
+			end
+			if best then
+				CombatService.knockDown(best, phantom, "Swing")
+			end
+			task.wait(random:NextNumber(14, 22))
+		end
+	end)
+end
+
+local function wander(participant: Match.Participant)
+	if participant.Player == nil and participant.Character then
+		Dummy.wander(participant.Character, MapService.markers("Spawns"), function()
+			return Match.State == "Playing" and participant.State == "Alive"
+		end)
+	end
+end
+
 local function play(): (string, string)
 	local count = 0
 	for _ in Match.Participants do
@@ -315,14 +369,13 @@ local function play(): (string, string)
 	setState("Playing", length)
 	for _, participant in Match.Participants do
 		CombatService.setMoving(participant, true)
-		if participant.Player == nil and participant.Character then
-			Dummy.wander(participant.Character, MapService.markers("Spawns"), function()
-				return Match.State == "Playing" and participant.State == "Alive"
-			end)
-		end
+		wander(participant)
 	end
 	CombatService.begin()
 	PickupService.begin()
+	if Match.Practice then
+		practicePhantom()
+	end
 	local finalSent = false
 	local lastCensus = 0
 	local mapName = MapService.name(Match.MapId or "")
@@ -488,6 +541,12 @@ end
 function RoundService.init()
 	VoteRemote.OnServerEvent:Connect(onVote)
 	Match.on("Out", onOut)
+	-- A revived dummy gets back up and wanders again.
+	Match.on("Revived", function(participant: Match.Participant)
+		if Match.State == "Playing" then
+			wander(participant)
+		end
+	end)
 	ProfileService.handle("SitOut", function(player, value)
 		if typeof(value) ~= "boolean" then
 			return { Ok = false }

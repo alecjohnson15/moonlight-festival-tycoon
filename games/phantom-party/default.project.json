@@ -61,6 +61,13 @@
       "$properties": {
         "Technology": "Future"
       }
+    },
+    "TextChatService": {
+      "$properties": {
+        "ChatVersion": "TextChatService",
+        "CreateDefaultTextChannels": true,
+        "CreateDefaultCommands": true
+      }
     }
   }
 }

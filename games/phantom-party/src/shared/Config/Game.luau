@@ -11,8 +11,8 @@ Game.Tagline = "One Phantom. One Guardian. Who's behind the mask?"
 -- A full server. Twelve is the format's sweet spot: enough guests to hide
 -- among, few enough that every round has a story.
 Game.MaxPlayers = 12
--- The fewest players a live round starts with. In Studio a lone tester gets
--- a practice round instead (see Game.Practice).
+-- The fewest players a real round starts with. With fewer, the round is
+-- practice against dummies (see Game.Practice).
 Game.MinPlayers = 2
 
 Game.Seconds = {
@@ -38,9 +38,9 @@ Game.Seconds = {
 	Final = 30,
 }
 
--- In Studio, with only one player, rounds still run so every role can be
--- tried: the tester takes each role in turn and the round lasts until its
--- clock runs out. Live servers never do this.
+-- With only one player on a server, rounds still run as practice against
+-- dummies, so every role can be tried while waiting for guests: the player
+-- takes each role in turn and the round is shorter. Practice pays nothing.
 Game.Practice = {
 	Order = { "Phantom", "Guardian", "Medic", "Saboteur", "Guest" },
 	Round = 90,

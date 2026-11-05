@@ -96,7 +96,7 @@ local function reveal(message)
 		end
 		footer = `On your side: {table.concat(names, ", ")}`
 	elseif message.Practice then
-		footer = "The dummies are stand-ins. Try out your moves!"
+		footer = "Practice with stand-ins. Real rounds start when another guest joins."
 	end
 	if footer ~= "" then
 		Ui.label(frame, footer, {
