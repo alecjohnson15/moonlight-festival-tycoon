@@ -17,6 +17,7 @@ require("./Recap.spec")
 require("./Telemetry.spec")
 require("./Accessibility.spec")
 require("./Look.spec")
+require("./Maps.spec")
 require("./Compile.spec")
 
 local failures = TestKit.run()

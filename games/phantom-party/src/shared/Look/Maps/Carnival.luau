@@ -596,9 +596,12 @@ function Carnival.build(origin: CFrame): Model
 		for _, spot in around(cx, cz, 12.5, 8, 0.5) do
 			coinAt(spot[1], 0.3, spot[2])
 		end
-		coinAt(cx, 2.3, cz)
+		-- On the pedestal beside the king pole (not inside it), and a page
+		-- on the middle row of the bleachers, away from the doors.
+		coinAt(cx + 1.5, 2.3, cz)
 		clueAt(cx, 0.3, cz + 21)
-		clueAt(cx - 19, 4.8, cz - 8)
+		local seat = (9 + 0.5) / 14 * PI * 2
+		clueAt(cx + math.cos(seat) * 17, 4.5, cz + math.sin(seat) * 17)
 	end
 
 	-- The ferris wheel ---------------------------------------------------

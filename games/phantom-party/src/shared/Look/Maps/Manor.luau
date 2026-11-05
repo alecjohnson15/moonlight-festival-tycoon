@@ -600,7 +600,8 @@ function Manor.build(origin: CFrame): Model
 	Kit.light(moonlight, MOON, 30, 0.9)
 	spawnAt(-10, 0, -40)
 	spawnAt(10, 0, -32)
-	for _, spot in { { 0, -28 }, { -12, -48 }, { 12, -50 }, { -6, -40 }, { 10, -40 } } do
+	-- (The fifth coin sat inside the fountain's rim; it's just outside now.)
+	for _, spot in { { 0, -28 }, { -12, -48 }, { 12, -50 }, { -6, -46 }, { 10, -40 } } do
 		coinAt(spot[1], 0, spot[2])
 	end
 	clueAt(-18, 0, -30)
