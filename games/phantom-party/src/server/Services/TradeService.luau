@@ -2,17 +2,21 @@
 -- the lobby. One player asks, the other says yes, and both put up to eight
 -- items on the table. When both accept, a short countdown runs; any change
 -- to either side stops it, so nobody can swap an item out at the last
--- second. Then the server checks every item again and moves them all at
--- once, or none of them, and saves both players straight away.
+-- second. Then the server checks every item again and settles the trade
+-- through the trade journal (Lib/TradeJournal): both saves are marked, one
+-- journal write decides, then the items move and both saves are written. A
+-- crash at any point settles the same way for both players the next time
+-- they load, so nothing is duplicated or lost.
 --
 -- Only items from crates and the coin shop can be traded. Moon Pass and
 -- Robux items stay with the account that earned or bought them, and
 -- nothing can be traded for Robux or coins: items for items only.
 --
--- One known gap: the two saves are separate, so if the server crashed in
--- the instant between them, one side could keep an old copy. The trade log
--- in each save records every trade, so support can put that right.
+-- It isn't instant: the two saves change a moment apart, and if the server
+-- stops mid-trade a player sees the result when they next join. The trade
+-- log in each save still records every trade.
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -21,6 +25,7 @@ local Shared = ReplicatedStorage.Shared
 local TradeRules = require(Shared.Rules.Trade)
 local Match = require(script.Parent.Parent.Lib.Match)
 local RateLimiter = require(script.Parent.Parent.Lib.RateLimiter)
+local TradeJournal = require(script.Parent.Parent.Lib.TradeJournal)
 local AnalyticsService = require(script.Parent.AnalyticsService)
 local DataService = require(script.Parent.DataService)
 local ProfileService = require(script.Parent.ProfileService)
@@ -37,9 +42,11 @@ local requests: { [Player]: { [Player]: number } } = {}
 local requestLimiter = RateLimiter.new(2)
 local changeLimiter = RateLimiter.new(0.2)
 
--- Whether a player can trade now: loaded, and not in a live round.
+-- Whether a player can trade now: loaded, not in a live round, and with
+-- no earlier trade still waiting to settle.
 local function free(player: Player): boolean
-	if not DataService.get(player) then
+	local data = DataService.get(player)
+	if not data or next(data.PendingTrades) ~= nil then
 		return false
 	end
 	if Match.live() then
@@ -88,6 +95,10 @@ local function update(session: TradeRules.Session)
 end
 
 local function close(session: TradeRules.Session, reason: string)
+	if session.State == "Settling" then
+		-- Settling finishes on its own and tells both players.
+		return
+	end
 	TradeRules.cancel(session)
 	for _, side in { session.A, session.B } do
 		local player = side.Id :: Player
@@ -122,28 +133,59 @@ local function complete(session: TradeRules.Session)
 		close(session, "Someone left")
 		return
 	end
-	local aGives = itemsOf(dataA, session.A.Offer)
-	local bGives = itemsOf(dataB, session.B.Offer)
-	local ok, err = TradeRules.execute(session, dataA, dataB)
-	if not ok then
-		close(session, if err == "Missing" then "An item is gone" else "Trade failed")
+	if not TradeRules.check(session, dataA, dataB) then
+		close(session, "An item is gone")
 		return
 	end
-	log(dataA, b.UserId, aGives, bGives)
-	log(dataB, a.UserId, bGives, aGives)
-	dataA.Stats.Trades += 1
-	dataB.Stats.Trades += 1
+	-- From here nothing can change or cancel the trade.
+	TradeRules.settle(session)
+	update(session)
+	local aGives, bGives = {}, {}
+	for _, uid in session.A.Offer do
+		aGives[uid] = dataA.Items[uid]
+	end
+	for _, uid in session.B.Offer do
+		bGives[uid] = dataB.Items[uid]
+	end
+	local record = TradeJournal.record(HttpService:GenerateGUID(false), a.UserId, b.UserId, aGives, bGives, os.time())
+	local ok, why = TradeJournal.run(DataService.journal(), record, dataA, dataB, {
+		save = function(side)
+			return DataService.saveNow(if side == "A" then a else b)
+		end,
+	})
 	sessions[a] = nil
 	sessions[b] = nil
-	DataService.saveNow(a)
-	DataService.saveNow(b)
-	TradeRemote:FireClient(a, "Done", { Gave = aGives, Got = bGives, With = b.DisplayName })
-	TradeRemote:FireClient(b, "Done", { Gave = bGives, Got = aGives, With = a.DisplayName })
-	for _, player in { a, b } do
-		ProfileService.push(player)
-		ProfileService.refreshOutfit(player)
+	if not ok then
+		session.State = "Cancelled"
+		local reason = if why == "Unsettled"
+			then "The trade is still being checked. Rejoin in a minute to see it."
+			else "The trade couldn't be saved, so nothing moved. Try again."
+		for _, player in { a, b } do
+			if player.Parent then
+				TradeRemote:FireClient(player, "Closed", reason)
+			end
+		end
+		return
 	end
-	AnalyticsService.traded(a, #aGives, #bGives)
+	session.State = "Done"
+	local aList, bList = itemsOf({ Items = aGives }, session.A.Offer), itemsOf({ Items = bGives }, session.B.Offer)
+	log(dataA, b.UserId, aList, bList)
+	log(dataB, a.UserId, bList, aList)
+	dataA.Stats.Trades += 1
+	dataB.Stats.Trades += 1
+	if a.Parent then
+		TradeRemote:FireClient(a, "Done", { Gave = aList, Got = bList, With = b.DisplayName })
+	end
+	if b.Parent then
+		TradeRemote:FireClient(b, "Done", { Gave = bList, Got = aList, With = a.DisplayName })
+	end
+	for _, player in { a, b } do
+		if player.Parent then
+			ProfileService.push(player)
+			ProfileService.refreshOutfit(player)
+		end
+	end
+	AnalyticsService.traded(a, #aList, #bList)
 end
 
 local function open(a: Player, b: Player)
@@ -237,7 +279,9 @@ local function onTrade(player: Player, action: unknown, ...: any)
 			TradeRules.unaccept(session, player)
 			update(session)
 		elseif action == "Cancel" then
-			close(session, `{player.DisplayName} closed the trade.`)
+			if session.State ~= "Settling" then
+				close(session, `{player.DisplayName} closed the trade.`)
+			end
 		end
 	end
 end
@@ -278,7 +322,9 @@ function TradeService.start()
 			if not seen[session] then
 				seen[session] = true
 				if TradeRules.due(session, os.clock()) then
-					complete(session)
+					-- Settling waits on DataStores, so it runs on its own; it
+					-- locks the session before its first wait.
+					task.spawn(complete, session)
 				end
 			end
 		end

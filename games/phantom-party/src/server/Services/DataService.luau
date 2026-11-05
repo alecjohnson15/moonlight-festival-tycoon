@@ -1,6 +1,10 @@
 -- Loads and saves each player's progress. A session lock stored next to the
 -- save stops two servers writing the same player at once, and saveNow lets a
 -- purchase be confirmed only after its grant is written.
+--
+-- Trades settle through a journal in its own DataStore (Lib/TradeJournal).
+-- When a player loads, any trade their save is still marked for is settled
+-- from that journal before anything else sees the save.
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
@@ -9,8 +13,10 @@ local RunService = game:GetService("RunService")
 local Lib = script.Parent.Parent.Lib
 local Migrations = require(Lib.Migrations)
 local SessionLock = require(Lib.SessionLock)
+local TradeJournal = require(Lib.TradeJournal)
 
 local STORE_NAME = "PhantomPartySaves"
+local JOURNAL_NAME = "PhantomPartyTrades"
 local AUTOSAVE_SECONDS = 60
 local LOAD_ATTEMPTS = 6
 local LOAD_RETRY_SECONDS = 5
@@ -34,6 +40,7 @@ local DataService = {}
 
 -- nil only in Studio without API access, where progress lives in memory.
 local store: DataStore? = nil
+local journal: TradeJournal.Store = TradeJournal.memory()
 local sessions: { [Player]: Session } = {}
 local loadedCallbacks: { (Player, Migrations.Save) -> () } = {}
 local leavingCallbacks: { (Player, Migrations.Save) -> () } = {}
@@ -173,6 +180,10 @@ local function onPlayerAdded(player: Player)
 	end
 
 	local session: Session = { Key = keyFor(player), Data = data, Released = false }
+	-- Settle any trade a crash left half done before the save is used.
+	if next(data.PendingTrades) ~= nil and TradeJournal.recover(journal, data, player.UserId) then
+		save(player, session, false)
+	end
 	if not player.Parent then
 		-- Left while the save was loading: hand the lock straight back.
 		session.Released = true
@@ -223,6 +234,43 @@ function DataService.onLeaving(callback: (Player, Migrations.Save) -> ())
 	table.insert(leavingCallbacks, callback)
 end
 
+-- The trade journal: a DataStore of its own, or memory in Studio without
+-- API access.
+function DataService.journal(): TradeJournal.Store
+	return journal
+end
+
+local function journalFor(dataStore: DataStore): TradeJournal.Store
+	return {
+		update = function(key, transform)
+			for attempt = 1, WRITE_ATTEMPTS do
+				local result = nil
+				local ok, err = pcall(function()
+					result = dataStore:UpdateAsync(key, transform)
+				end)
+				if ok then
+					return true, result
+				end
+				warn(`Trade journal update for {key} failed (attempt {attempt}): {err}`)
+				if attempt < WRITE_ATTEMPTS then
+					task.wait(2 ^ attempt)
+				end
+			end
+			return false, nil
+		end,
+		read = function(key)
+			local ok, result = pcall(function()
+				-- Straight from the store: a cached copy could be a few
+				-- seconds old.
+				local options = Instance.new("DataStoreGetOptions")
+				options.UseCache = false
+				return dataStore:GetAsync(key, options)
+			end)
+			return ok, if ok then result else nil
+		end,
+	}
+end
+
 -- Saves immediately. Returns true only if the write succeeded.
 function DataService.saveNow(player: Player): boolean
 	local session = sessions[player]
@@ -244,6 +292,14 @@ function DataService.init()
 
 	if ok then
 		store = result
+		local journalOk, journalStore = pcall(function()
+			return DataStoreService:GetDataStore(JOURNAL_NAME)
+		end)
+		if journalOk then
+			journal = journalFor(journalStore)
+		else
+			warn(`Could not open the {JOURNAL_NAME} DataStore; trades settle in memory: {journalStore}`)
+		end
 	elseif RunService:IsStudio() then
 		warn(
 			"DataStores are unavailable in Studio, so progress won't be saved this session. "

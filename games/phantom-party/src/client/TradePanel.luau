@@ -321,6 +321,9 @@ local function drawTrade(view: { [string]: any })
 	if view.State == "Countdown" then
 		status.TextColor3 = Ui.Colors.Gold
 		countdown = status
+	elseif view.State == "Settling" then
+		status.Text = "Saving the swap for both of you..."
+		status.TextColor3 = Ui.Colors.Gold
 	elseif view.MineAccepted then
 		status.Text = `Waiting for {view.With.Name} to accept...`
 		status.TextColor3 = Ui.Colors.Dim

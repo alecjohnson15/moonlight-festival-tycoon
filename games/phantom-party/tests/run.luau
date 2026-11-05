@@ -11,6 +11,7 @@ require("./Config.spec")
 require("./Fairness.spec")
 require("./Evidence.spec")
 require("./Sims.spec")
+require("./Trades.spec")
 require("./Look.spec")
 require("./Compile.spec")
 

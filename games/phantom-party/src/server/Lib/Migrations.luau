@@ -30,23 +30,54 @@ export type Save = {
 		CoinsEarned: number,
 		CratesOpened: number,
 		Trades: number,
+		-- Plaza wisps caught while out of a round (no reward; a count).
+		Wisps: number,
 	},
 	-- The last trades, newest last, for answering "where did my item go?".
 	TradeLog: { { With: number, Gave: { string }, Got: { string }, Time: number } },
-	Settings: { Music: boolean },
+	Settings: { Music: boolean, ReduceMotion: boolean, Captions: boolean },
 	-- Analytics: the last onboarding funnel step logged, and sessions played.
 	Onboarding: number,
 	Sessions: number,
+	-- First-time tips already shown, by tip id (Config/Tips).
+	Tips: { [string]: boolean },
+	-- Role mastery goals met, by goal id: how many times (Config/Mastery).
+	Mastery: { [string]: number },
+	-- Trades this save is marked for and hasn't settled, and the last ones
+	-- it settled (server/Lib/TradeJournal).
+	PendingTrades: { [string]: boolean },
+	AppliedTrades: { string },
 }
 
 type Step = (data: any) -> ()
 
 local Migrations = {}
 
-Migrations.CURRENT_VERSION = 1
+Migrations.CURRENT_VERSION = 2
 
 -- STEPS[n] upgrades a save from version n to version n + 1.
-local STEPS: { Step } = {}
+local STEPS: { Step } = {
+	-- 1 to 2: first-time tips, mastery goals, the trade journal's marks, the
+	-- reduce-motion and captions settings and the wisp count. Nothing old
+	-- changes: coins, items, the pass and stats stay exactly as they were.
+	function(data)
+		data.Tips = if type(data.Tips) == "table" then data.Tips else {}
+		data.Mastery = if type(data.Mastery) == "table" then data.Mastery else {}
+		data.PendingTrades = if type(data.PendingTrades) == "table" then data.PendingTrades else {}
+		data.AppliedTrades = if type(data.AppliedTrades) == "table" then data.AppliedTrades else {}
+		data.Settings = if type(data.Settings) == "table" then data.Settings else {}
+		if type(data.Settings.ReduceMotion) ~= "boolean" then
+			data.Settings.ReduceMotion = false
+		end
+		if type(data.Settings.Captions) ~= "boolean" then
+			data.Settings.Captions = false
+		end
+		data.Stats = if type(data.Stats) == "table" then data.Stats else {}
+		if type(data.Stats.Wisps) ~= "number" then
+			data.Stats.Wisps = 0
+		end
+	end,
+}
 
 local function template(): Save
 	return {
@@ -71,11 +102,16 @@ local function template(): Save
 			CoinsEarned = 0,
 			CratesOpened = 0,
 			Trades = 0,
+			Wisps = 0,
 		},
 		TradeLog = {},
-		Settings = { Music = true },
+		Settings = { Music = true, ReduceMotion = false, Captions = false },
 		Onboarding = 0,
 		Sessions = 0,
+		Tips = {},
+		Mastery = {},
+		PendingTrades = {},
+		AppliedTrades = {},
 	}
 end
 

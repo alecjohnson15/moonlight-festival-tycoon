@@ -3,7 +3,11 @@
 -- copies on the table. When both accept, a countdown runs; any change to
 -- either offer cancels both accepts, so nobody can swap an item out at the
 -- last second. When the countdown ends the server checks everything again
--- and moves the copies in one go, or not at all.
+-- and the trade is Settling: nothing can change or cancel it while the
+-- trade journal (server/Lib/TradeJournal) moves the copies in both saves.
+--
+-- States: Open -> Countdown -> Settling -> Done, or Cancelled from Open or
+-- Countdown.
 
 local Inventory = require(script.Parent.Inventory)
 
@@ -51,7 +55,7 @@ end
 -- Replaces who's offer with uids, all from holder (who's inventory).
 function Trade.setOffer(session: Session, who: any, uids: { string }, holder: Inventory.Holder): (boolean, string?)
 	local side = Trade.side(session, who)
-	if not side or session.State == "Done" or session.State == "Cancelled" then
+	if not side or (session.State ~= "Open" and session.State ~= "Countdown") then
 		return false, "Closed"
 	end
 	if #uids > Trade.MAX_ITEMS then
@@ -74,8 +78,12 @@ end
 
 function Trade.accept(session: Session, who: any, now: number): (boolean, string?)
 	local side = Trade.side(session, who)
-	if not side or session.State == "Done" or session.State == "Cancelled" then
+	if not side or (session.State ~= "Open" and session.State ~= "Countdown") then
 		return false, "Closed"
+	end
+	if session.State == "Countdown" then
+		-- Already counting down: accepting again doesn't restart it.
+		return true, nil
 	end
 	if #session.A.Offer == 0 and #session.B.Offer == 0 then
 		return false, "Empty"
@@ -98,10 +106,37 @@ function Trade.unaccept(session: Session, who: any)
 	end
 end
 
-function Trade.cancel(session: Session)
-	if session.State ~= "Done" then
+-- Calls the trade off, unless it's already settling or done.
+function Trade.cancel(session: Session): boolean
+	if session.State == "Open" or session.State == "Countdown" then
 		session.State = "Cancelled"
+		return true
 	end
+	return false
+end
+
+-- Locks a trade whose countdown has run out while it settles.
+function Trade.settle(session: Session): boolean
+	if session.State ~= "Countdown" then
+		return false
+	end
+	session.State = "Settling"
+	return true
+end
+
+-- Whether every offered copy is still with its owner and tradeable.
+function Trade.check(session: Session, holderA: Inventory.Holder, holderB: Inventory.Holder): boolean
+	for _, uid in session.A.Offer do
+		if not Inventory.canTrade(holderA, uid) then
+			return false
+		end
+	end
+	for _, uid in session.B.Offer do
+		if not Inventory.canTrade(holderB, uid) then
+			return false
+		end
+	end
+	return true
 end
 
 -- Whether the countdown has run out and the trade should go through.
