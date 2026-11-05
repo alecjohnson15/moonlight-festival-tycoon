@@ -96,7 +96,14 @@ end
 
 -- A light in a small glowing housing, pointing along the CFrame's look
 -- vector.
-function Kit.spot(parent: Instance, cframe: CFrame, color: Color3, range: number, angle: number, brightness: number): BasePart
+function Kit.spot(
+	parent: Instance,
+	cframe: CFrame,
+	color: Color3,
+	range: number,
+	angle: number,
+	brightness: number
+): BasePart
 	local housing = Kit.part(parent, {
 		Name = "Spot",
 		Size = Vector3.new(0.8, 0.8, 0.8),

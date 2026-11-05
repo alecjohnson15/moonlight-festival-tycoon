@@ -47,7 +47,14 @@ local function finishFor(shape: { [any]: any }, paints: Paints): Palette.Finish
 	return Palette.finish("Satin")
 end
 
-local function newPart(className: string, size: Vector3, cframe: CFrame, color: Color3, finish: Palette.Finish, transparency: number?): BasePart
+local function newPart(
+	className: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	finish: Palette.Finish,
+	transparency: number?
+): BasePart
 	local part = Instance.new(className) :: BasePart
 	part.Size = size
 	part.CFrame = cframe
@@ -66,7 +73,13 @@ local function newPart(className: string, size: Vector3, cframe: CFrame, color: 
 	return part
 end
 
-local function ellipsoid(size: Vector3, cframe: CFrame, color: Color3, finish: Palette.Finish, transparency: number?): BasePart
+local function ellipsoid(
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	finish: Palette.Finish,
+	transparency: number?
+): BasePart
 	local part = newPart("Part", size, cframe, color, finish, transparency)
 	local mesh = Instance.new("SpecialMesh")
 	mesh.MeshType = Enum.MeshType.Sphere
@@ -74,15 +87,27 @@ local function ellipsoid(size: Vector3, cframe: CFrame, color: Color3, finish: P
 	return part
 end
 
-local function ball(diameter: number, cframe: CFrame, color: Color3, finish: Palette.Finish, transparency: number?): BasePart
-	local part = newPart("Part", Vector3.new(diameter, diameter, diameter), cframe, color, finish, transparency)
-	;(part :: Part).Shape = Enum.PartType.Ball
+local function ball(
+	diameter: number,
+	cframe: CFrame,
+	color: Color3,
+	finish: Palette.Finish,
+	transparency: number?
+): BasePart
+	local part = newPart("Part", Vector3.new(diameter, diameter, diameter), cframe, color, finish, transparency);
+	(part :: Part).Shape = Enum.PartType.Ball
 	return part
 end
 
-local function cylinder(size: Vector3, cframe: CFrame, color: Color3, finish: Palette.Finish, transparency: number?): BasePart
-	local part = newPart("Part", size, cframe, color, finish, transparency)
-	;(part :: Part).Shape = Enum.PartType.Cylinder
+local function cylinder(
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	finish: Palette.Finish,
+	transparency: number?
+): BasePart
+	local part = newPart("Part", size, cframe, color, finish, transparency);
+	(part :: Part).Shape = Enum.PartType.Cylinder
 	return part
 end
 
@@ -160,9 +185,7 @@ end
 local function emitter(parent: Instance, effect: { [string]: any }, paints: Paints)
 	local texture = Wardrobe.Textures[effect.Texture or "Sparkle"] or Wardrobe.Textures.Sparkle
 	local colorName = effect.Color or "Main"
-	local color = if colorName == "Rainbow"
-		then RAINBOW
-		else ColorSequence.new(paintColor(colorName, paints))
+	local color = if colorName == "Rainbow" then RAINBOW else ColorSequence.new(paintColor(colorName, paints))
 	local kind = effect.Kind
 	local particles = Instance.new("ParticleEmitter")
 	particles.Texture = texture
@@ -249,7 +272,14 @@ local function buildAccessory(piece: Wardrobe.Piece, paints: Paints, attachName:
 	if #effects > 0 then
 		local volume = handle
 		if piece.Slot == "Aura" then
-			volume = newPart("Part", Vector3.new(2.6, 5, 1.8), CFrame.new(0, -1.2, 0.5), paints.Main, Palette.finish("Satin"), 1)
+			volume = newPart(
+				"Part",
+				Vector3.new(2.6, 5, 1.8),
+				CFrame.new(0, -1.2, 0.5),
+				paints.Main,
+				Palette.finish("Satin"),
+				1
+			)
 			volume.Name = "AuraVolume"
 			volume.Parent = accessory
 			weld(handle, volume)

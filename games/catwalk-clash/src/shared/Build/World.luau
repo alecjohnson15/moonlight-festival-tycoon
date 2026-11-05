@@ -56,7 +56,13 @@ export type Refs = {
 }
 
 -- An upright disc (a cylinder standing on its end).
-local function disc(parent: Instance, centre: Vector3, radius: number, height: number, props: { [string]: any }): BasePart
+local function disc(
+	parent: Instance,
+	centre: Vector3,
+	radius: number,
+	height: number,
+	props: { [string]: any }
+): BasePart
 	local values = {
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(height, radius * 2, radius * 2),
@@ -82,7 +88,14 @@ local function ball(parent: Instance, centre: Vector3, diameter: number, props: 
 end
 
 -- A row of glowing bulbs hanging between two points.
-local function stringLights(parent: Instance, from: Vector3, to: Vector3, count: number, sag: number, colors: { Color3 })
+local function stringLights(
+	parent: Instance,
+	from: Vector3,
+	to: Vector3,
+	count: number,
+	sag: number,
+	colors: { Color3 }
+)
 	for index = 0, count do
 		local alpha = index / count
 		local position = from:Lerp(to, alpha) - Vector3.new(0, math.sin(alpha * math.pi) * sag, 0)
@@ -165,20 +178,33 @@ local function lightTree(parent: Instance, base: Vector3, color: Color3)
 		local offset = Vector3.new(math.sin(angle) * 1.8, 9 + (index % 2) * 1.2, math.cos(angle) * 1.8)
 		ball(parent, base + offset, 1.6, { Color = color, Material = NEON, CastShadow = false })
 	end
-	local top = ball(parent, base + Vector3.new(0, 11, 0), 2.2, { Color = C.Cream, Material = NEON, CastShadow = false })
+	local top =
+		ball(parent, base + Vector3.new(0, 11, 0), 2.2, { Color = C.Cream, Material = NEON, CastShadow = false })
 	make("PointLight", { Color = color, Range = 18, Brightness = 1.2, Shadows = false }, top)
 end
 
 -- A bench with a velvet seat.
 local function bench(parent: Instance, cframe: CFrame)
-	part(parent, { Size = Vector3.new(6, 1, 2.4), CFrame = cframe * CFrame.new(0, 1.2, 0), Color = C.Velvet, Material = FABRIC })
-	part(parent, { Size = Vector3.new(6, 2.4, 0.6), CFrame = cframe * CFrame.new(0, 2.3, 1), Color = C.Velvet, Material = FABRIC })
-	part(parent, { Size = Vector3.new(6.2, 0.7, 2.6), CFrame = cframe * CFrame.new(0, 0.35, 0), Color = C.Gold, Material = METAL })
+	part(
+		parent,
+		{ Size = Vector3.new(6, 1, 2.4), CFrame = cframe * CFrame.new(0, 1.2, 0), Color = C.Velvet, Material = FABRIC }
+	)
+	part(
+		parent,
+		{ Size = Vector3.new(6, 2.4, 0.6), CFrame = cframe * CFrame.new(0, 2.3, 1), Color = C.Velvet, Material = FABRIC }
+	)
+	part(
+		parent,
+		{ Size = Vector3.new(6.2, 0.7, 2.6), CFrame = cframe * CFrame.new(0, 0.35, 0), Color = C.Gold, Material = METAL }
+	)
 end
 
 -- A dressmaker's dummy on a stand.
 local function mannequin(parent: Instance, cframe: CFrame, dress: Color3, trim: Color3)
-	part(parent, { Size = Vector3.new(0.3, 3, 0.3), CFrame = cframe * CFrame.new(0, 1.5, 0), Color = C.Gold, Material = METAL })
+	part(
+		parent,
+		{ Size = Vector3.new(0.3, 3, 0.3), CFrame = cframe * CFrame.new(0, 1.5, 0), Color = C.Gold, Material = METAL }
+	)
 	disc(parent, (cframe * CFrame.new(0, 0.15, 0)).Position, 1, 0.3, { Color = C.Gold, Material = METAL })
 	local body = part(parent, {
 		Size = Vector3.new(1.8, 2.2, 1.1),
@@ -195,15 +221,30 @@ local function mannequin(parent: Instance, cframe: CFrame, dress: Color3, trim: 
 		CanCollide = false,
 	})
 	make("SpecialMesh", { MeshType = Enum.MeshType.Sphere }, skirt)
-	disc(parent, (cframe * CFrame.new(0, 3.3, 0)).Position, 0.95, 0.2, { Color = trim, Material = NEON, CanCollide = false })
+	disc(
+		parent,
+		(cframe * CFrame.new(0, 3.3, 0)).Position,
+		0.95,
+		0.2,
+		{ Color = trim, Material = NEON, CanCollide = false }
+	)
 	ball(parent, (cframe * CFrame.new(0, 5.8, 0)).Position, 0.6, { Color = C.Cream, Material = SMOOTH })
 end
 
 -- A rack of hanging clothes.
 local function rack(parent: Instance, cframe: CFrame, colors: { Color3 })
-	part(parent, { Size = Vector3.new(0.3, 5, 0.3), CFrame = cframe * CFrame.new(-3, 2.5, 0), Color = C.Gold, Material = METAL })
-	part(parent, { Size = Vector3.new(0.3, 5, 0.3), CFrame = cframe * CFrame.new(3, 2.5, 0), Color = C.Gold, Material = METAL })
-	part(parent, { Size = Vector3.new(6.4, 0.25, 0.25), CFrame = cframe * CFrame.new(0, 5, 0), Color = C.Gold, Material = METAL })
+	part(
+		parent,
+		{ Size = Vector3.new(0.3, 5, 0.3), CFrame = cframe * CFrame.new(-3, 2.5, 0), Color = C.Gold, Material = METAL }
+	)
+	part(
+		parent,
+		{ Size = Vector3.new(0.3, 5, 0.3), CFrame = cframe * CFrame.new(3, 2.5, 0), Color = C.Gold, Material = METAL }
+	)
+	part(
+		parent,
+		{ Size = Vector3.new(6.4, 0.25, 0.25), CFrame = cframe * CFrame.new(0, 5, 0), Color = C.Gold, Material = METAL }
+	)
 	for index = 0, 6 do
 		local x = -2.4 + index * 0.8
 		part(parent, {
@@ -217,7 +258,14 @@ local function rack(parent: Instance, cframe: CFrame, colors: { Color3 })
 end
 
 -- A walled hall with an open archway in one end wall.
-local function hall(parent: Instance, bounds: { MinX: number, MaxX: number, MinZ: number, MaxZ: number, Height: number }, doorZ: number, doorWidth: number, doorHeight: number, wall: Color3)
+local function hall(
+	parent: Instance,
+	bounds: { MinX: number, MaxX: number, MinZ: number, MaxZ: number, Height: number },
+	doorZ: number,
+	doorWidth: number,
+	doorHeight: number,
+	wall: Color3
+)
 	local width = bounds.MaxX - bounds.MinX
 	local depth = bounds.MaxZ - bounds.MinZ
 	local centreX = (bounds.MinX + bounds.MaxX) / 2
@@ -570,7 +618,9 @@ local function buildRunway(root: Instance, refs: Refs)
 			Name = `Podium{place}`,
 			Size = Vector3.new(4.6, height, 4.6),
 			Position = Vector3.new(x, stage.Top + height / 2, -95),
-			Color = if place == "First" then C.Gold else if place == "Second" then Color3.fromRGB(210, 214, 230) else Color3.fromRGB(220, 150, 100),
+			Color = if place == "First"
+				then C.Gold
+				else if place == "Second" then Color3.fromRGB(210, 214, 230) else Color3.fromRGB(220, 150, 100),
 			Material = METAL,
 			Reflectance = 0.2,
 		})
@@ -645,7 +695,14 @@ local function buildRunway(root: Instance, refs: Refs)
 			Kit.spot(lights, CFrame.lookAt(Vector3.new(x, 21, z), target), C.Pink, 40, 35, 3)
 		end
 	end
-	Kit.spot(lights, CFrame.lookAt(Vector3.new(0, 24, -82), Vector3.new(0, stage.Top, -100)), Color3.new(1, 1, 1), 50, 30, 4)
+	Kit.spot(
+		lights,
+		CFrame.lookAt(Vector3.new(0, 24, -82), Vector3.new(0, stage.Top, -100)),
+		Color3.new(1, 1, 1),
+		50,
+		30,
+		4
+	)
 
 	-- Audience tiers on both sides, with velvet rails.
 	for _, sideSign in { -1, 1 } do
@@ -678,8 +735,14 @@ local function buildRunway(root: Instance, refs: Refs)
 	-- Cheering fans on the back rows (they bob on the clients).
 	local fans = Kit.folder("Fans", hallFolder)
 	refs.Fans = fans
-	local shirtColors = { C.Pink, C.Aqua, C.Violet, C.Gold, Color3.fromRGB(255, 120, 90), Color3.fromRGB(120, 230, 140) }
-	local skins = { Color3.fromRGB(255, 220, 190), Color3.fromRGB(214, 160, 112), Color3.fromRGB(150, 98, 64), Color3.fromRGB(96, 62, 42) }
+	local shirtColors =
+		{ C.Pink, C.Aqua, C.Violet, C.Gold, Color3.fromRGB(255, 120, 90), Color3.fromRGB(120, 230, 140) }
+	local skins = {
+		Color3.fromRGB(255, 220, 190),
+		Color3.fromRGB(214, 160, 112),
+		Color3.fromRGB(150, 98, 64),
+		Color3.fromRGB(96, 62, 42),
+	}
 	local count = 0
 	for _, sideSign in { -1, 1 } do
 		for z = -152, -108, 4 do
@@ -695,11 +758,18 @@ local function buildRunway(root: Instance, refs: Refs)
 				Material = FABRIC,
 				CanCollide = false,
 			})
-			ball(fan, (base * CFrame.new(0, 2.9, 0)).Position, 1.3, { Name = "Head", Color = skins[count % #skins + 1], Material = SMOOTH })
+			ball(
+				fan,
+				(base * CFrame.new(0, 2.9, 0)).Position,
+				1.3,
+				{ Name = "Head", Color = skins[count % #skins + 1], Material = SMOOTH }
+			)
 			local stick = part(fan, {
 				Name = "Glowstick",
 				Size = Vector3.new(0.3, 1.6, 0.3),
-				CFrame = base * CFrame.new(if count % 2 == 0 then 1.1 else -1.1, 3, -0.2) * CFrame.Angles(0, 0, math.rad(if count % 2 == 0 then -20 else 20)),
+				CFrame = base
+					* CFrame.new(if count % 2 == 0 then 1.1 else -1.1, 3, -0.2)
+					* CFrame.Angles(0, 0, math.rad(if count % 2 == 0 then -20 else 20)),
 				Color = shirtColors[(count + 2) % #shirtColors + 1],
 				Material = NEON,
 				CanCollide = false,
@@ -749,9 +819,32 @@ local function buildRunway(root: Instance, refs: Refs)
 	local judgeHair = { Color3.fromRGB(20, 20, 30), Color3.fromRGB(255, 80, 200), Color3.fromRGB(235, 235, 240) }
 	for index, seat in Layout.Judges do
 		local judge = Kit.model(`Judge{index}`, hallFolder)
-		part(judge, { Name = "Chair", Size = Vector3.new(3, 5, 1), CFrame = seat * CFrame.new(0, 2.5, 1.4), Color = C.Gold, Material = METAL })
-		part(judge, { Name = "Body", Size = Vector3.new(2, 2.4, 1.2), CFrame = seat * CFrame.new(0, 3.2, 0.4), Color = judgeColors[index], Material = FABRIC })
-		local head = ball(judge, (seat * CFrame.new(0, 5.1, 0.4)).Position, 1.5, { Name = "Head", Color = skins[index + 1], Material = SMOOTH })
+		part(
+			judge,
+			{
+				Name = "Chair",
+				Size = Vector3.new(3, 5, 1),
+				CFrame = seat * CFrame.new(0, 2.5, 1.4),
+				Color = C.Gold,
+				Material = METAL,
+			}
+		)
+		part(
+			judge,
+			{
+				Name = "Body",
+				Size = Vector3.new(2, 2.4, 1.2),
+				CFrame = seat * CFrame.new(0, 3.2, 0.4),
+				Color = judgeColors[index],
+				Material = FABRIC,
+			}
+		)
+		local head = ball(
+			judge,
+			(seat * CFrame.new(0, 5.1, 0.4)).Position,
+			1.5,
+			{ Name = "Head", Color = skins[index + 1], Material = SMOOTH }
+		)
 		local hair = part(judge, {
 			Name = "Hair",
 			Size = Vector3.new(1.7, 1.1, 1.7),
@@ -781,7 +874,12 @@ local function buildRunway(root: Instance, refs: Refs)
 
 	-- Ceiling glitter balls.
 	for _, z in { -150, -128, -106 } do
-		local glitter = ball(hallFolder, Vector3.new(0, 27, z), 4, { Color = Color3.fromRGB(230, 230, 245), Material = Enum.Material.Foil, Reflectance = 0.5 })
+		local glitter = ball(
+			hallFolder,
+			Vector3.new(0, 27, z),
+			4,
+			{ Color = Color3.fromRGB(230, 230, 245), Material = Enum.Material.Foil, Reflectance = 0.5 }
+		)
 		glitter.Name = "GlitterBall"
 		make("PointLight", { Color = C.Violet, Range = 30, Brightness = 1, Shadows = false }, glitter)
 	end
@@ -806,12 +904,8 @@ local function buildBackstage(root: Instance, refs: Refs)
 		"BACKSTAGE",
 		{ Back = C.Pink, Text = Color3.new(1, 1, 1), Stroke = C.Velvet }
 	)
-	refs.BackstageScreen = screen(
-		folder,
-		CFrame.new(0, 15, bounds.MaxZ - 0.8),
-		Vector3.new(24, 8, 0.4),
-		"BackstageScreen"
-	)
+	refs.BackstageScreen =
+		screen(folder, CFrame.new(0, 15, bounds.MaxZ - 0.8), Vector3.new(24, 8, 0.4), "BackstageScreen")
 
 	-- The dressing booths: a glowing mirror, a rug and vanity bulbs each.
 	for index, booth in Layout.Booths do
@@ -879,7 +973,11 @@ local function buildBackstage(root: Instance, refs: Refs)
 	bench(folder, CFrame.new(0, 0.4, 136) * CFrame.Angles(0, math.rad(180), 0))
 	for _, z in { 90, 115, 140 } do
 		local lamp = ball(folder, Vector3.new(0, 21, z), 2.4, { Color = C.Cream, Material = NEON })
-		make("PointLight", { Color = Color3.fromRGB(255, 230, 240), Range = 34, Brightness = 1.4, Shadows = false }, lamp)
+		make(
+			"PointLight",
+			{ Color = Color3.fromRGB(255, 230, 240), Range = 34, Brightness = 1.4, Shadows = false },
+			lamp
+		)
 	end
 end
 
@@ -909,7 +1007,10 @@ local function buildSides(root: Instance, refs: Refs)
 		Transparency = 0.5,
 	})
 	for _, z in { -34.5, 34.5 } do
-		part(folder, { Size = Vector3.new(26, 16, 1), Position = Vector3.new(66, 8, z), Color = C.Wall, Material = SMOOTH })
+		part(
+			folder,
+			{ Size = Vector3.new(26, 16, 1), Position = Vector3.new(66, 8, z), Color = C.Wall, Material = SMOOTH }
+		)
 	end
 	part(folder, {
 		Size = Vector3.new(0.6, 0.6, 70),
@@ -1004,7 +1105,9 @@ local function buildSides(root: Instance, refs: Refs)
 		Material = NEON,
 		CanCollide = false,
 	})
-	for _, offset in { Vector3.new(-12, 0, -17), Vector3.new(-12, 0, 17), Vector3.new(12, 0, -17), Vector3.new(12, 0, 17) } do
+	for _, offset in
+		{ Vector3.new(-12, 0, -17), Vector3.new(-12, 0, 17), Vector3.new(12, 0, -17), Vector3.new(12, 0, 17) }
+	do
 		part(folder, {
 			Size = Vector3.new(2, floorY, 2),
 			Position = lounge.Centre + offset - Vector3.new(0, floorY / 2, 0),

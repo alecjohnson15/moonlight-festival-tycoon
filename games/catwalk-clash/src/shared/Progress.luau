@@ -54,7 +54,13 @@ function Progress.addXp(state: PassState, season: SeasonInfo, amount: number, no
 end
 
 -- Whether a tier's reward on a track ("Free" or "Premium") may be claimed.
-function Progress.canClaim(state: PassState, season: SeasonInfo, tier: any, track: any, hasPremium: boolean): (boolean, string?)
+function Progress.canClaim(
+	state: PassState,
+	season: SeasonInfo,
+	tier: any,
+	track: any,
+	hasPremium: boolean
+): (boolean, string?)
 	if type(tier) ~= "number" or tier % 1 ~= 0 or tier < 1 or tier > #season.Tiers then
 		return false, "NoTier"
 	end

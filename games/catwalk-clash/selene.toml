@@ -1,1 +1,5 @@
 std = "roblox"
+
+[lints]
+# Wardrobe shapes are { kind, key = value } on purpose (Config/Wardrobe).
+mixed_table = "allow"

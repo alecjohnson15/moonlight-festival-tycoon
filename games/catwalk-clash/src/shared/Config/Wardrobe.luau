@@ -91,7 +91,16 @@ local function cap(extra: { Shape }): { Shape }
 end
 
 -- A pair of wings on the back, mirrored left and right.
-local function wings(size: { number }, x: number, y: number, tilt: number, spread: number, paint: string, finish: string?, t: number?): { Shape }
+local function wings(
+	size: { number },
+	x: number,
+	y: number,
+	tilt: number,
+	spread: number,
+	paint: string,
+	finish: string?,
+	t: number?
+): { Shape }
 	return {
 		{ "Egg", s = size, p = { -x, y, 0.45 }, r = { 0, -spread, tilt }, c = paint, m = finish, t = t },
 		{ "Egg", s = size, p = { x, y, 0.45 }, r = { 0, spread, -tilt }, c = paint, m = finish, t = t },
@@ -465,7 +474,15 @@ Wardrobe.Pieces = {
 		Shapes = {
 			{ "Ring", rad = 0.64, n = 10, s = { 0.3, 0.3, 0.3 }, p = { 0, -0.06, 0 } },
 			{ "Ring", rad = 0.66, n = 10, s = { 0.14, 0.14, 0.14 }, p = { 0, 0.06, 0 }, c = "Accent" },
-			{ "Ring", rad = 0.62, n = 10, s = { 0.22, 0.08, 0.3 }, p = { 0, -0.14, 0 }, c = "Emerald", arc = { 18, 342 } },
+			{
+				"Ring",
+				rad = 0.62,
+				n = 10,
+				s = { 0.22, 0.08, 0.3 },
+				p = { 0, -0.14, 0 },
+				c = "Emerald",
+				arc = { 18, 342 },
+			},
 		},
 	},
 	{
@@ -538,7 +555,15 @@ Wardrobe.Pieces = {
 		Accent = "Hot Pink",
 		Finish = "Satin",
 		Shapes = {
-			{ "Ring", rad = 0.72, n = 9, s = { 0.16, 0.16, 0.22 }, p = { 0, -0.62, 0 }, r = { 0, 0, 90 }, arc = { 0, 180 } },
+			{
+				"Ring",
+				rad = 0.72,
+				n = 9,
+				s = { 0.16, 0.16, 0.22 },
+				p = { 0, -0.62, 0 },
+				r = { 0, 0, 90 },
+				arc = { 0, 180 },
+			},
 			{ "Cyl", s = { 0.26, 0.62, 0.62 }, p = { -0.7, -0.66, 0 } },
 			{ "Cyl", s = { 0.26, 0.62, 0.62 }, p = { 0.7, -0.66, 0 } },
 			{ "Cyl", s = { 0.06, 0.44, 0.44 }, p = { -0.85, -0.66, 0 }, c = "Accent", m = "Glow" },
@@ -713,7 +738,16 @@ Wardrobe.Pieces = {
 		Shapes = {
 			{ "Disc", rad = 0.6, h = 0.24, p = { 0, 0.1, 0 } },
 			{ "Ball", s = { 0.5, 0.5, 0.5 }, p = { 0, 0.6, 0 }, c = "Accent", m = "Glow" },
-			{ "Ring", rad = 0.82, n = 18, s = { 0.08, 0.08, 0.08 }, p = { 0, 0.6, 0 }, r = { 18, 0, 12 }, c = "Accent", m = "Glow" },
+			{
+				"Ring",
+				rad = 0.82,
+				n = 18,
+				s = { 0.08, 0.08, 0.08 },
+				p = { 0, 0.6, 0 },
+				r = { 18, 0, 12 },
+				c = "Accent",
+				m = "Glow",
+			},
 		},
 		Light = { Color = "Accent", Range = 8, Brightness = 1 },
 	},
@@ -826,8 +860,24 @@ Wardrobe.Pieces = {
 		Finish = "Metal",
 		Shapes = {
 			{ "Ring", rad = 0.17, n = 10, s = { 0.05, 0.05, 0.05 }, p = { 0.24, 0.1, -0.06 }, r = { 90, 0, 0 } },
-			{ "Cyl", s = { 0.02, 0.3, 0.3 }, p = { 0.24, 0.1, -0.06 }, r = { 0, 90, 0 }, c = "Accent", m = "Glass", t = 0.5 },
-			{ "Ring", rad = 0.3, n = 6, s = { 0.03, 0.03, 0.03 }, p = { 0.42, -0.25, 0.02 }, r = { 0, 90, 90 }, arc = { 90, 250 } },
+			{
+				"Cyl",
+				s = { 0.02, 0.3, 0.3 },
+				p = { 0.24, 0.1, -0.06 },
+				r = { 0, 90, 0 },
+				c = "Accent",
+				m = "Glass",
+				t = 0.5,
+			},
+			{
+				"Ring",
+				rad = 0.3,
+				n = 6,
+				s = { 0.03, 0.03, 0.03 },
+				p = { 0.42, -0.25, 0.02 },
+				r = { 0, 90, 90 },
+				arc = { 90, 250 },
+			},
 		},
 	},
 	{
@@ -918,7 +968,14 @@ Wardrobe.Pieces = {
 		Shapes = {
 			{ "Ring", rad = 0.5, n = 10, s = { 0.38, 0.32, 0.38 }, p = { 0, 0.05, 0 } },
 			{ "Block", s = { 0.36, 0.95, 0.14 }, p = { 0.3, -0.5, -0.56 }, r = { 0, 0, -6 } },
-			{ "Block", s = { 0.37, 0.12, 0.15 }, p = { 0.33, -0.84, -0.56 }, r = { 0, 0, -6 }, c = "Accent", m = "Matte" },
+			{
+				"Block",
+				s = { 0.37, 0.12, 0.15 },
+				p = { 0.33, -0.84, -0.56 },
+				r = { 0, 0, -6 },
+				c = "Accent",
+				m = "Matte",
+			},
 		},
 	},
 	{
@@ -961,7 +1018,15 @@ Wardrobe.Pieces = {
 		Finish = "Satin",
 		Shapes = {
 			{ "Ring", rad = 0.68, n = 12, s = { 0.27, 0.27, 0.27 }, p = { 0, -0.26, 0 }, r = { -20, 0, 0 } },
-			{ "Ring", rad = 0.7, n = 12, s = { 0.12, 0.12, 0.12 }, p = { 0, -0.16, -0.04 }, r = { -20, 0, 0 }, c = "Accent" },
+			{
+				"Ring",
+				rad = 0.7,
+				n = 12,
+				s = { 0.12, 0.12, 0.12 },
+				p = { 0, -0.16, -0.04 },
+				r = { -20, 0, 0 },
+				c = "Accent",
+			},
 		},
 	},
 	{
@@ -1273,7 +1338,16 @@ Wardrobe.Pieces = {
 		Finish = "Sequin",
 		Shapes = {
 			{ "Block", s = { 2.14, 1.64, 1.14 }, p = { 0, 0, 0.5 } },
-			{ "Ring", rad = 0.62, n = 9, s = { 0.12, 0.12, 0.12 }, p = { 0, 0.62, 0.5 }, c = "Accent", m = "Metal", arc = { -80, 80 } },
+			{
+				"Ring",
+				rad = 0.62,
+				n = 9,
+				s = { 0.12, 0.12, 0.12 },
+				p = { 0, 0.62, 0.5 },
+				c = "Accent",
+				m = "Metal",
+				arc = { -80, 80 },
+			},
 			{ "Egg", s = { 0.9, 0.5, 1.1 }, p = { -1.18, 0.6, 0.5 }, c = "Accent", m = "Metal" },
 			{ "Egg", s = { 0.9, 0.5, 1.1 }, p = { 1.18, 0.6, 0.5 }, c = "Accent", m = "Metal" },
 		},
@@ -1498,7 +1572,16 @@ Wardrobe.Pieces = {
 		Finish = "Shiny",
 		Shapes = {
 			{ "Egg", s = { 1.5, 1.4, 0.5 }, p = { 0, -0.1, 0.3 } },
-			{ "Ring", rad = 0.55, n = 5, s = { 0.16, 1.2, 0.1 }, p = { 0, -0.1, 0.56 }, r = { 90, 0, 0 }, c = "Accent", arc = { -60, 60 } },
+			{
+				"Ring",
+				rad = 0.55,
+				n = 5,
+				s = { 0.16, 1.2, 0.1 },
+				p = { 0, -0.1, 0.56 },
+				r = { 90, 0, 0 },
+				c = "Accent",
+				arc = { -60, 60 },
+			},
 		},
 	},
 	{
@@ -1547,7 +1630,16 @@ Wardrobe.Pieces = {
 		Finish = "Sequin",
 		Shapes = {
 			{ "Block", s = { 2.2, 3.6, 0.1 }, p = { 0, -1.1, 0.24 }, r = { 9, 0, 0 } },
-			{ "Ring", rad = 0.9, n = 7, s = { 0.14, 0.14, 0.14 }, p = { 0, -1.6, 0.6 }, r = { 90, 0, 0 }, c = "Accent", m = "Glow" },
+			{
+				"Ring",
+				rad = 0.9,
+				n = 7,
+				s = { 0.14, 0.14, 0.14 },
+				p = { 0, -1.6, 0.6 },
+				r = { 90, 0, 0 },
+				c = "Accent",
+				m = "Glow",
+			},
 		},
 		Effects = { { Kind = "Sparkle", Color = "Accent" } },
 	},
@@ -1776,7 +1868,16 @@ Wardrobe.Pieces = {
 		Shapes = {
 			{ "Egg", s = { 3.0, 2.4, 2.8 }, p = { 0, -1.1, 0 } },
 			{ "Ring", rad = 1.36, n = 10, s = { 0.1, 0.1, 0.1 }, p = { 0, -0.8, 0 }, c = "Accent", m = "Glow" },
-			{ "Ring", rad = 1.5, n = 12, s = { 0.1, 0.1, 0.1 }, p = { 0, -1.4, 0 }, c = "Accent", m = "Glow", arc = { 15, 345 } },
+			{
+				"Ring",
+				rad = 1.5,
+				n = 12,
+				s = { 0.1, 0.1, 0.1 },
+				p = { 0, -1.4, 0 },
+				c = "Accent",
+				m = "Glow",
+				arc = { 15, 345 },
+			},
 		},
 		Effects = { { Kind = "Sparkle", Color = "Accent" } },
 	},
@@ -1955,7 +2056,17 @@ Wardrobe.Pieces = {
 		Finish = "Shiny",
 		Shapes = {
 			{ "Block", s = { 0.8, 0.62, 0.32 }, p = { 0, -0.7, 0 } },
-			{ "Ring", rad = 0.26, n = 7, s = { 0.06, 0.06, 0.06 }, p = { 0, -0.36, 0 }, r = { 90, 0, 0 }, c = "Accent", m = "Metal", arc = { 90, 270 } },
+			{
+				"Ring",
+				rad = 0.26,
+				n = 7,
+				s = { 0.06, 0.06, 0.06 },
+				p = { 0, -0.36, 0 },
+				r = { 90, 0, 0 },
+				c = "Accent",
+				m = "Metal",
+				arc = { 90, 270 },
+			},
 			{ "Block", s = { 0.2, 0.12, 0.05 }, p = { 0, -0.6, -0.18 }, c = "Accent", m = "Metal" },
 		},
 	},
@@ -2029,7 +2140,15 @@ Wardrobe.Pieces = {
 		Accent = "Gold",
 		Finish = "Satin",
 		Shapes = {
-			{ "Ring", rad = 0.4, n = 7, s = { 0.14, 0.8, 0.04 }, p = { 0, 0, -0.1 }, r = { 90, 0, 0 }, arc = { 120, 240 } },
+			{
+				"Ring",
+				rad = 0.4,
+				n = 7,
+				s = { 0.14, 0.8, 0.04 },
+				p = { 0, 0, -0.1 },
+				r = { 90, 0, 0 },
+				arc = { 120, 240 },
+			},
 			{ "Ball", s = { 0.1, 0.1, 0.1 }, p = { 0, 0, -0.1 }, c = "Accent", m = "Metal" },
 		},
 	},
@@ -2140,7 +2259,16 @@ Wardrobe.Pieces = {
 		Shapes = {
 			{ "Block", s = { 0.8, 0.9, 0.3 }, p = { 0, -0.85, 0 } },
 			{ "Block", s = { 0.7, 0.8, 0.3 }, p = { 0.2, -0.8, 0.3 }, c = "Accent" },
-			{ "Ring", rad = 0.22, n = 6, s = { 0.05, 0.05, 0.05 }, p = { 0, -0.36, 0 }, r = { 90, 0, 0 }, c = "Black", arc = { 90, 270 } },
+			{
+				"Ring",
+				rad = 0.22,
+				n = 6,
+				s = { 0.05, 0.05, 0.05 },
+				p = { 0, -0.36, 0 },
+				r = { 90, 0, 0 },
+				c = "Black",
+				arc = { 90, 270 },
+			},
 		},
 	},
 	{
@@ -2185,7 +2313,15 @@ Wardrobe.Pieces = {
 		Finish = "Metal",
 		Shapes = {
 			{ "Cyl", s = { 2.0, 0.1, 0.1 }, p = { 0, 0.6, 0 }, r = { 0, 0, 90 } },
-			{ "Ring", rad = 0.36, n = 8, s = { 0.14, 0.14, 0.14 }, p = { 0, 1.85, 0 }, r = { 90, 0, 0 }, arc = { 40, 320 } },
+			{
+				"Ring",
+				rad = 0.36,
+				n = 8,
+				s = { 0.14, 0.14, 0.14 },
+				p = { 0, 1.85, 0 },
+				r = { 90, 0, 0 },
+				arc = { 40, 320 },
+			},
 			{ "Ball", s = { 0.3, 0.3, 0.3 }, p = { 0, 1.85, 0 }, c = "Accent", m = "Glow" },
 		},
 		Light = { Color = "Accent", Range = 8, Brightness = 1 },

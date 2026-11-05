@@ -20,6 +20,7 @@ local Progress = require(Shared.Progress)
 local StyleScore = require(Shared.StyleScore)
 local DataService = require(script.Parent.DataService)
 local PurchaseService = require(script.Parent.PurchaseService)
+local PlayerHooks = require(script.Parent.Parent.Lib.PlayerHooks)
 
 local Remotes = ReplicatedStorage.Remotes
 local ProfileRemote = Remotes.Profile :: RemoteEvent
@@ -214,13 +215,23 @@ function ProfileService.addXp(player: Player, amount: number)
 	data.Pass = Progress.passFor(data.Pass, Season)
 	local reached = Progress.addXp(data.Pass, Season, amount, os.time())
 	for _, tier in reached do
-		ProfileService.notify(player, "Tier", `Style Pass tier {tier} reached! Claim it on the pass board.`, { Tier = tier })
+		ProfileService.notify(
+			player,
+			"Tier",
+			`Style Pass tier {tier} reached! Claim it on the pass board.`,
+			{ Tier = tier }
+		)
 	end
 	ProfileService.push(player)
 end
 
 -- Pays out a reward table ({ Sparkles, Xp }) times a multiplier.
-function ProfileService.reward(player: Player, reward: { Sparkles: number?, Xp: number? }, multiplier: number?, reason: string?)
+function ProfileService.reward(
+	player: Player,
+	reward: { Sparkles: number?, Xp: number? },
+	multiplier: number?,
+	reason: string?
+)
 	local scale = multiplier or 1
 	local sparkles = math.floor((reward.Sparkles or 0) * scale)
 	local xp = math.floor((reward.Xp or 0) * scale)
@@ -335,11 +346,9 @@ function ProfileService.init()
 		end
 		ProfileService.refresh(player)
 	end)
-	Players.PlayerAdded:Connect(function(player)
-		player.CharacterAdded:Connect(function(character)
-			character:WaitForChild("Head", 10)
-			updateTag(player)
-		end)
+	PlayerHooks.eachCharacter(function(player, character)
+		character:WaitForChild("Head", 10)
+		updateTag(player)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		pushQueued[player] = nil
