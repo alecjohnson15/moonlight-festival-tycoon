@@ -3,9 +3,25 @@
 -- { X, Z } in studs on flat ground (Y = 0), with the hearth at the middle
 -- and north toward -Z. shared/World/Town builds the town from this; the
 -- server reads it to place monsters, prompts and objectives, and the tests
--- check that nothing overlaps (tests/Map.spec).
+-- check that nothing overlaps (tests/World.spec).
 
 export type Point = { number }
+
+-- How a landmark's radio part is freed (with Config/Features.LandmarkTrials
+-- on; off, every part is a plain "break the ice"). shared/Radio applies it.
+--   Saw: hold the prompt Times times (anyone can take a turn).
+--   Melt: hold for Seconds with a fire tool in hand.
+--   Bring: hand over Amount of a Resource from your own backpack.
+export type Trial = {
+	Kind: "Saw" | "Melt" | "Bring",
+	Times: number?,
+	Seconds: number?,
+	Resource: string?,
+	Amount: number?,
+	-- The prompt's words, and the hint the guide gives before you get there.
+	Action: string,
+	Hint: string,
+}
 
 export type Landmark = {
 	Id: string,
@@ -16,6 +32,7 @@ export type Landmark = {
 	PartName: string,
 	-- Clear ground around it, where no trees grow.
 	Clear: number,
+	Trial: Trial,
 }
 
 local Map = {}
@@ -45,6 +62,13 @@ Map.Landmarks = {
 		Part = "Generator",
 		PartName = "Generator",
 		Clear = 40,
+		Trial = {
+			Kind = "Saw",
+			Times = 3,
+			Seconds = 1.5,
+			Action = "Saw the frozen logs",
+			Hint = "It's jammed under frozen logs: saw them three times. Friends can take turns.",
+		},
 	},
 	{
 		Id = "IceCave",
@@ -53,6 +77,12 @@ Map.Landmarks = {
 		Part = "Battery",
 		PartName = "Big Battery",
 		Clear = 38,
+		Trial = {
+			Kind = "Melt",
+			Seconds = 5,
+			Action = "Melt the ice",
+			Hint = "The cave ice is thick: hold your torch (or any fire tool) out to melt it.",
+		},
 	},
 	{
 		Id = "Lighthouse",
@@ -61,6 +91,14 @@ Map.Landmarks = {
 		Part = "Lamp",
 		PartName = "Signal Lamp",
 		Clear = 30,
+		Trial = {
+			Kind = "Bring",
+			Resource = "Wood",
+			Amount = 6,
+			Seconds = 1,
+			Action = "Light the lighthouse fire",
+			Hint = "Bring 6 wood in your backpack to light the lighthouse fire and thaw it out.",
+		},
 	},
 	{
 		Id = "Depot",
@@ -69,6 +107,14 @@ Map.Landmarks = {
 		Part = "Antenna",
 		PartName = "Antenna",
 		Clear = 40,
+		Trial = {
+			Kind = "Bring",
+			Resource = "Scrap",
+			Amount = 4,
+			Seconds = 1,
+			Action = "Pry the crate open",
+			Hint = "It's in a frozen crate: bring 4 scrap to pry it open. There's junk to dig nearby.",
+		},
 	},
 } :: { Landmark }
 

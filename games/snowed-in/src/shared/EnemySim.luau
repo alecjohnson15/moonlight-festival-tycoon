@@ -12,6 +12,7 @@
 -- warmth off a player, health off a building, flame off the hearth.
 
 local Enemies = require(script.Parent.Config.Enemies)
+local Features = require(script.Parent.Config.Features)
 local Structures = require(script.Parent.Config.Structures)
 
 export type Enemy = {
@@ -25,8 +26,9 @@ export type Enemy = {
 	Cooldown: number,
 	-- Facing, in radians about Y (0 faces -Z).
 	Heading: number,
-	-- What the client should show: "Walk", "Attack" or "Idle".
-	Action: "Walk" | "Attack" | "Idle",
+	-- What the client should show: "Walk", "Attack" or "Idle", and for
+	-- bosses "Windup" (a slam is coming) and "Tired" (out of breath).
+	Action: "Walk" | "Attack" | "Idle" | "Windup" | "Tired",
 	-- Seconds the Attack pose is held for.
 	ActionTime: number,
 	-- Guards stay within Leash of Home unless chasing.
@@ -36,6 +38,13 @@ export type Enemy = {
 	-- Seconds of slowness left (from the cold-resist-free Blaze Blower) and
 	-- the speed multiplier while slowed.
 	SlowTime: number,
+	-- Bosses: seconds left winding up a slam and where it will land,
+	-- seconds left out of breath, and how many roars it has done.
+	Windup: number,
+	WindX: number,
+	WindZ: number,
+	Tired: number,
+	Roared: number,
 }
 
 export type Structure = {
@@ -72,7 +81,7 @@ export type World = {
 }
 
 export type Event = {
-	Type: "Hit" | "Smash" | "Douse" | "Slam" | "Shoot" | "Down" | "Burn" | "Turret",
+	Type: "Hit" | "Smash" | "Douse" | "Slam" | "Shoot" | "Down" | "Burn" | "Turret" | "Telegraph" | "Roar",
 	Enemy: number?,
 	Kind: string?,
 	Player: any?,
@@ -133,6 +142,11 @@ function EnemySim.spawn(world: World, kind: string, x: number, z: number, health
 		Action = "Walk",
 		ActionTime = 0,
 		SlowTime = 0,
+		Windup = 0,
+		WindX = x,
+		WindZ = z,
+		Tired = 0,
+		Roared = 0,
 	}
 	world.Enemies[enemy.Id] = enemy
 	return enemy
@@ -247,21 +261,90 @@ local function strike(enemy: Enemy)
 	enemy.ActionTime = ATTACK_POSE
 end
 
--- A boss's slam hits every player and building within its radius.
-local function slam(world: World, enemy: Enemy, events: { Event })
+-- Whether this monster uses the boss phases (wind-up, tired, roars).
+local function phased(enemy: Enemy): boolean
+	return Features.BossPhases and enemy.Def.Boss == true and enemy.Def.Windup ~= nil
+end
+
+-- A boss's slam hits every player and building within its radius of a
+-- spot (and the hearth, if the spot is at the hearth's edge).
+local function slamAt(world: World, enemy: Enemy, x: number, z: number, events: { Event }, douse: boolean)
 	local def = enemy.Def
 	local radius = def.Slam :: number
-	table.insert(events, { Type = "Slam", Enemy = enemy.Id, X = enemy.X, Z = enemy.Z, Radius = radius })
+	table.insert(events, { Type = "Slam", Enemy = enemy.Id, X = x, Z = z, Radius = radius })
 	for key, player in world.Players do
-		if not player.Frozen and distance(enemy.X, enemy.Z, player.X, player.Z) <= radius + def.Reach * 0.5 then
+		if not player.Frozen and distance(x, z, player.X, player.Z) <= radius + def.Reach * 0.5 then
 			table.insert(events, { Type = "Hit", Enemy = enemy.Id, Player = key, Amount = def.Hit })
 		end
 	end
 	for _, structure in world.Structures do
-		if EnemySim.distanceToStructure(structure, enemy.X, enemy.Z) <= radius then
+		if EnemySim.distanceToStructure(structure, x, z) <= radius then
 			table.insert(events, { Type = "Smash", Enemy = enemy.Id, Structure = structure.Id, Amount = def.Smash })
 		end
 	end
+	if douse and distance(x, z, world.HearthX, world.HearthZ) <= world.HearthRadius + def.Reach + 1 then
+		table.insert(events, { Type = "Douse", Enemy = enemy.Id, Amount = def.Douse })
+	end
+end
+
+local function slam(world: World, enemy: Enemy, events: { Event })
+	if phased(enemy) then
+		-- Wind up first: the slam lands where the boss stands now, after
+		-- Windup seconds, so players can see it coming and step out.
+		enemy.Windup = enemy.Def.Windup :: number
+		enemy.WindX, enemy.WindZ = enemy.X, enemy.Z
+		enemy.Action = "Windup"
+		table.insert(events, {
+			Type = "Telegraph",
+			Enemy = enemy.Id,
+			X = enemy.X,
+			Z = enemy.Z,
+			Radius = enemy.Def.Slam,
+			Amount = enemy.Windup,
+		})
+		return
+	end
+	slamAt(world, enemy, enemy.X, enemy.Z, events, false)
+end
+
+-- A boss's turn while it winds up, is out of breath or roars. Returns true
+-- if that took its whole turn.
+local function bossTurn(world: World, enemy: Enemy, dt: number, events: { Event }): boolean
+	if not phased(enemy) then
+		return false
+	end
+	local def = enemy.Def
+	local roars = def.Roars or {}
+	local next = roars[enemy.Roared + 1]
+	if next and enemy.Health / enemy.MaxHealth <= next then
+		enemy.Roared += 1
+		table.insert(events, {
+			Type = "Roar",
+			Enemy = enemy.Id,
+			Kind = def.Summon,
+			X = enemy.X,
+			Z = enemy.Z,
+			Amount = def.SummonCount or 0,
+		})
+	end
+	if enemy.Windup > 0 then
+		enemy.Windup -= dt
+		enemy.Action = "Windup"
+		if enemy.Windup <= 0 then
+			enemy.Windup = 0
+			slamAt(world, enemy, enemy.WindX, enemy.WindZ, events, true)
+			enemy.Tired = def.Tired or 0
+			enemy.Action = "Tired"
+			enemy.Cooldown = math.max(enemy.Cooldown, enemy.Tired)
+		end
+		return true
+	end
+	if enemy.Tired > 0 then
+		enemy.Tired = math.max(0, enemy.Tired - dt)
+		enemy.Action = if enemy.Tired > 0 then "Tired" else "Idle"
+		return true
+	end
+	return false
 end
 
 local function hitPlayer(world: World, enemy: Enemy, key: any, player: Player, events: { Event })
@@ -300,6 +383,10 @@ local function hitHearth(world: World, enemy: Enemy, events: { Event })
 	strike(enemy)
 	if enemy.Def.Slam then
 		slam(world, enemy, events)
+		if phased(enemy) then
+			-- The douse lands with the slam.
+			return
+		end
 	end
 	table.insert(events, { Type = "Douse", Enemy = enemy.Id, Amount = enemy.Def.Douse })
 end
@@ -344,6 +431,9 @@ local function think(world: World, enemy: Enemy, dt: number, events: { Event })
 	enemy.SlowTime = math.max(0, enemy.SlowTime - dt)
 	if enemy.ActionTime > 0 then
 		enemy.ActionTime -= dt
+	end
+	if bossTurn(world, enemy, dt, events) then
+		return
 	end
 	local ready = enemy.Cooldown <= 0
 	local speed = def.Speed * (if enemy.SlowTime > 0 then 0.6 else 1)
@@ -458,11 +548,14 @@ local function separate(world: World)
 end
 
 -- Damages a monster. When it runs out of health it is removed and a Down
--- event names who knocked it out.
+-- event names who knocked it out. A boss out of breath takes double.
 function EnemySim.damage(world: World, id: number, amount: number, by: any, events: { Event }): boolean
 	local enemy = world.Enemies[id]
 	if not enemy or amount <= 0 then
 		return false
+	end
+	if enemy.Tired > 0 then
+		amount *= 2
 	end
 	enemy.Health -= amount
 	if enemy.Health <= 0 then

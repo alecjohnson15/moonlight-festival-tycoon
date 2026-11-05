@@ -15,7 +15,9 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Map = require(Shared.Config.Map)
 local Resources = require(Shared.Config.Resources)
 local Weapons = require(Shared.Config.Weapons)
+local Corner = require(script.Parent.Corner)
 local MonsterView = require(script.Parent.MonsterView)
+local Settings = require(script.Parent.Settings)
 local Sounds = require(script.Parent.Sounds)
 local UI = require(script.Parent.UI)
 
@@ -41,6 +43,9 @@ local bossOut = false
 -- A burst of particles at a spot.
 function Effects.burst(position: Vector3, color: Color3, count: number, options: { [string]: any }?)
 	local opts = options or {}
+	if Settings.reduceMotion() then
+		count = math.max(1, math.floor(count * 0.35))
+	end
 	local holder = Instance.new("Attachment")
 	holder.WorldPosition = position
 	holder.Parent = Workspace.Terrain
@@ -164,6 +169,9 @@ end
 
 -- Shakes the camera a little (more when bigger).
 function Effects.shake(amount: number)
+	if Settings.reduceMotion() then
+		return
+	end
 	shake = math.max(shake, amount)
 end
 
@@ -376,6 +384,59 @@ handlers.Slam = function(data)
 	if camera and (camera.CFrame.Position - at).Magnitude < 80 then
 		Effects.shake(0.6)
 	end
+end
+
+-- A boss winding up a slam: a ring on the snow shows where it will land,
+-- filling in until it does. Everyone sees it, reduced motion or not.
+handlers.Telegraph = function(data)
+	local radius = (data.Radius or 10) + 2
+	local seconds = math.max(0.2, data.Seconds or 1)
+	local at = ground(data.X, data.Z, 0.25)
+	local edge = Instance.new("Part")
+	edge.Anchored = true
+	edge.CanCollide = false
+	edge.CanQuery = false
+	edge.CanTouch = false
+	edge.Shape = Enum.PartType.Cylinder
+	edge.Material = Enum.Material.Neon
+	edge.Color = Color3.fromRGB(255, 90, 90)
+	edge.Transparency = 0.55
+	edge.Size = Vector3.new(0.2, radius * 2, radius * 2)
+	edge.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.pi / 2)
+	edge.Parent = Workspace
+	local fill = edge:Clone()
+	fill.Transparency = 0.35
+	fill.Size = Vector3.new(0.3, 1, 1)
+	fill.Parent = Workspace
+	TweenService:Create(fill, TweenInfo.new(seconds, Enum.EasingStyle.Linear), {
+		Size = Vector3.new(0.3, radius * 2, radius * 2),
+	}):Play()
+	Sounds.at("Roar", at, 200, 1.4)
+	task.delay(seconds + 0.1, function()
+		edge:Destroy()
+		fill:Destroy()
+	end)
+end
+
+handlers.Roar = function(data)
+	Sounds.play("Roar", 0.9)
+	Effects.shake(0.7)
+	local at = ground(data.X, data.Z, 4)
+	Effects.ring(at, 30, ICE_COLOR, 0.9)
+	Effects.burst(at, SNOW_COLOR, 40, { Size = 3, Speed = 22 })
+end
+
+handlers.Milestone = function(data)
+	if type(data.Text) == "string" then
+		Corner.note(`★ {data.Text}`, "Good")
+		Sounds.play("Unlock")
+	end
+end
+
+-- A turn at freeing a radio part (a log sawn, say) that didn't free it yet.
+handlers.Trial = function(data)
+	Sounds.at("Chop", data.Position, 120, 0.8)
+	Effects.burst(data.Position, ICE_COLOR, 14, { Size = 1, Speed = 12 })
 end
 
 handlers.IceShard = function(data)

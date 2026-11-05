@@ -9,7 +9,7 @@ local Enemies = require(script.Parent.Config.Enemies)
 export type Entry = {
 	Id: number,
 	Kind: string,
-	Action: "Walk" | "Attack" | "Idle",
+	Action: "Walk" | "Attack" | "Idle" | "Windup" | "Tired",
 	X: number,
 	Z: number,
 	-- 0 to 1 of its full health.
@@ -20,8 +20,8 @@ export type Entry = {
 local Codec = {}
 
 local SIZE = 14
-local ACTIONS = { "Walk", "Attack", "Idle" }
-local ACTION_CODE = { Walk = 1, Attack = 2, Idle = 3 }
+local ACTIONS = { "Walk", "Attack", "Idle", "Windup", "Tired" }
+local ACTION_CODE = { Walk = 1, Attack = 2, Idle = 3, Windup = 4, Tired = 5 }
 local TAU = 2 * math.pi
 
 function Codec.encode(entries: { Entry }): buffer

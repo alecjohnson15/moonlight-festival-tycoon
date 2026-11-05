@@ -220,6 +220,16 @@ local function step()
 			local swing = math.max(0, math.sin(clock * 7))
 			forward = swing * 1.4
 			pitch = -swing * 0.25
+		elseif view.Action == "Windup" then
+			-- Rearing up for a slam.
+			y += 1.2 + math.sin(clock * 20) * 0.15
+			pitch = 0.35
+			forward = -1
+		elseif view.Action == "Tired" then
+			-- Out of breath: slumped and swaying.
+			y -= 0.4
+			pitch = -0.3
+			heading += math.sin(clock * 3) * 0.2
 		else
 			y += math.sin(clock * 2) * 0.12
 		end
@@ -266,7 +276,10 @@ local function step()
 		local def = Enemies.ById[boss.Kind]
 		bossBar.Visible = true
 		bossFill.Size = UDim2.fromScale(boss.Health, 1)
-		bossWords.Text = `{def.Name}`
+		bossWords.Text = if boss.Action == "Tired"
+			then `{def.Name}: out of breath! Hit it now!`
+			elseif boss.Action == "Windup" then `{def.Name}: SLAM coming, get out of the ring!`
+			else `{def.Name}`
 	else
 		bossBar.Visible = false
 	end

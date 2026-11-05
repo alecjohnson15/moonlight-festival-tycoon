@@ -11,11 +11,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Recipes = require(ReplicatedStorage.Shared.Config.Recipes)
+local Assist = require(ReplicatedStorage.Shared.Assist)
 local Resources = require(ReplicatedStorage.Shared.Config.Resources)
 local Stock = require(ReplicatedStorage.Shared.Stock)
 local Lib = script.Parent.Parent.Lib
+local Analytics = require(Lib.Analytics)
+local Celebrate = require(Lib.Celebrate)
 local Net = require(Lib.Net)
 local RateLimiter = require(Lib.RateLimiter)
+local RunStats = require(Lib.RunStats)
 local GameLoop = require(script.Parent.GameLoop)
 local WorldService = require(script.Parent.WorldService)
 
@@ -195,6 +199,8 @@ local function onFeed(player: Player)
 	end
 	if TeamService.spend(cost) then
 		TeamService.setFlame(flame + gain)
+		RunStats.add(player, "Fed", gain)
+		Analytics.step(player, "FedHearth")
 		Net.fx("Feed", { By = player.UserId })
 	end
 end
@@ -217,6 +223,7 @@ local function onUpgradeHearth(player: Player)
 	publishHearth()
 	Net.notice(nil, `{player.DisplayName} built up the hearth! The blizzard pulls back.`, "Big")
 	Net.fx("HearthUp", { Level = level })
+	Celebrate.milestone("HearthUp")
 	refreshPrompts()
 end
 
@@ -267,7 +274,7 @@ function TeamService.start()
 			local burn = if GameLoop.isNight()
 				then Balance.Hearth.BurnPerSecondNight
 				else Balance.Hearth.BurnPerSecondDay
-			TeamService.setFlame(flame - burn)
+			TeamService.setFlame(flame - burn * Assist.burn(#Players:GetPlayers()))
 		end
 	end
 end

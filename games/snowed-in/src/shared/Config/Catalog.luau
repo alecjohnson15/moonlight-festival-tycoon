@@ -1,9 +1,13 @@
 --!strict
 -- Robux items, all game passes, each bought once with its contents stated
--- up front. No random rewards, no loot boxes, no currency packs, and nothing
--- that makes a run easier to win: the two role passes unlock a role that
--- anyone can also earn with snowflakes from playing, and everything else is
--- something to wear or to put on your cabin.
+-- up front. No random rewards, no loot boxes, no currency packs. The two
+-- role passes are early access: they unlock the Ranger or the Medic, which
+-- anyone can also earn with 600 snowflakes from playing (about three to five
+-- runs). Those roles do help a team a little (the Ranger hits about a third
+-- harder, the Medic thaws friends fast); tools/RunModel puts the effect on
+-- a team of four's hardest night at about 5 to 7%, and a team of free roles
+-- wins every modelled run without them (tests/Pacing.spec). Everything else
+-- is something to wear or to put on your cabin.
 --
 -- PassId 0 means the pass isn't made on Roblox yet: the shop shows "Coming
 -- soon" and the server never prompts for it. docs/launch.md lists each pass

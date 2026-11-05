@@ -18,6 +18,7 @@
         "Shop": { "$className": "RemoteEvent" },
         "Equip": { "$className": "RemoteEvent" },
         "Decorate": { "$className": "RemoteEvent" },
+        "Settings": { "$className": "RemoteEvent" },
         "RequestPurchase": { "$className": "RemoteEvent" },
         "Notice": { "$className": "RemoteEvent" },
         "Fx": { "$className": "RemoteEvent" },

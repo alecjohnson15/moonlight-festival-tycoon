@@ -15,6 +15,7 @@ local Roles = require(ReplicatedStorage.Shared.Config.Roles)
 local Gear = require(ReplicatedStorage.Shared.World.Gear)
 local Wearables = require(ReplicatedStorage.Shared.World.Wearables)
 local Lib = script.Parent.Parent.Lib
+local Analytics = require(Lib.Analytics)
 local Net = require(Lib.Net)
 local RateLimiter = require(Lib.RateLimiter)
 local DataService = require(script.Parent.DataService)
@@ -69,6 +70,8 @@ local function summary(player: Player, save: Profile.Save)
 		Stats = save.Stats,
 		Trophies = save.Trophies,
 		LastRole = save.LastRole,
+		Settings = save.Settings,
+		NextGoal = Profile.nextGoal(save, g),
 	}
 end
 
@@ -111,18 +114,24 @@ function ProfileService.rememberRole(player: Player, roleId: string)
 	end
 end
 
--- Pays a player for a finished run and saves straight away. Returns the
--- snowflakes earned and the pass rewards it unlocked.
-function ProfileService.finishRun(player: Player, stats: Profile.RunStats, beatYeti: boolean): (number, { string })
+-- Pays a player for a finished run (once per runId) and saves straight
+-- away. Returns the snowflakes earned, the pass rewards it unlocked and the
+-- next thing to play for.
+function ProfileService.finishRun(
+	player: Player,
+	stats: Profile.RunStats,
+	beatYeti: boolean,
+	runId: string
+): (number, { string }, string)
 	local save = DataService.get(player)
 	if not save then
-		return 0, {}
+		return 0, {}, ""
 	end
-	local flakes = Profile.finishRun(save, stats, beatYeti)
+	local flakes = Profile.finishRun(save, stats, beatYeti, runId)
 	local given = Profile.claim(save, grants(player).Premium)
 	DataService.saveNow(player)
 	sync(player)
-	return flakes, given
+	return flakes, given, Profile.nextGoal(save, grants(player))
 end
 
 -- Dresses a character in the player's hat, back item and trail; the pet is
@@ -218,6 +227,16 @@ local function onDecorate(player: Player, spot: unknown, id: unknown)
 	end
 end
 
+local function onSettings(player: Player, key: unknown, value: unknown)
+	if typeof(key) ~= "string" or not limiter:allow(player) then
+		return
+	end
+	local save = DataService.get(player)
+	if save and Profile.setSetting(save, key, value) then
+		sync(player)
+	end
+end
+
 local function refresh(player: Player)
 	local save = DataService.get(player)
 	if not save or not PassService.ready(player) then
@@ -237,7 +256,9 @@ function ProfileService.init()
 	Net.remote("Shop").OnServerEvent:Connect(onShop)
 	Net.remote("Equip").OnServerEvent:Connect(onEquip)
 	Net.remote("Decorate").OnServerEvent:Connect(onDecorate)
-	DataService.onLoaded(function(player)
+	Net.remote("Settings").OnServerEvent:Connect(onSettings)
+	DataService.onLoaded(function(player, save)
+		Analytics.joined(player, save.Stats.Runs == 0)
 		refresh(player)
 	end)
 	PassService.onChanged(refresh)

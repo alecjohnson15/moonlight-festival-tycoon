@@ -11,7 +11,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Balance = require(Shared.Config.Balance)
 local Map = require(Shared.Config.Map)
+local Radio = require(Shared.Radio)
 local Corner = require(script.Parent.Corner)
 local UI = require(script.Parent.UI)
 
@@ -224,11 +226,16 @@ function Guide.goal(): Goal?
 	if phase == "Dusk" or phase == "Night" then
 		local radius = State:GetAttribute("HearthRadius") or 30
 		local far = (Vector3.new(from.X, 0, from.Z) - HEARTH).Magnitude > radius + 30
+		local tip = State:GetAttribute("TonightTip")
+		local name = State:GetAttribute("TonightName")
+		local fight = if touch
+			then "Stay near the hearth and tap to swing at monsters before they put out the fire."
+			else "Stay near the hearth and click to swing at monsters before they put out the fire."
 		return {
-			Title = if phase == "Dusk" then "Night is coming!" else `Survive night {night}!`,
-			Text = if touch
-				then "Stay near the hearth and tap to swing at monsters before they put out the fire."
-				else "Stay near the hearth and click to swing at monsters before they put out the fire.",
+			Title = if phase == "Dusk"
+				then (if type(name) == "string" and name ~= "" then `Tonight: {name}` else "Night is coming!")
+				else `Survive night {night}!`,
+			Text = if type(tip) == "string" and tip ~= "" then tip else fight,
 			Target = if far then HEARTH else nil,
 			Place = "Hearth",
 		}
@@ -260,6 +267,44 @@ function Guide.goal(): Goal?
 			Place = name,
 		}
 	end
+	-- The first day's team goal: the first hearth upgrade, which pushes the
+	-- blizzard back (a milestone a few minutes in).
+	local level = State:GetAttribute("HearthLevel") or 1
+	local nextLevel = Balance.Hearth.Levels[level + 1]
+	if level == 1 and nextLevel and night <= 1 then
+		local needWood = (nextLevel.Cost.Wood or 0) - stock("Wood")
+		local needStone = (nextLevel.Cost.Stone or 0) - stock("Stone")
+		local needs =
+			`The team needs {math.max(0, needWood)} more wood and {math.max(0, needStone)} more stone to grow the hearth.`
+		if needWood > pack("Wood") then
+			return {
+				Title = "Grow the hearth: wood",
+				Text = `{hold} on a pine tree. {needs}`,
+				Target = nearestNode("Pine", from),
+				Place = "Pine",
+			}
+		elseif needStone > pack("Stone") then
+			return {
+				Title = "Grow the hearth: stone",
+				Text = `{hold} on a boulder (most are at the quarry). {needs}`,
+				Target = nearestNode("Rock", from),
+				Place = "Boulder",
+			}
+		elseif needWood > 0 or needStone > 0 then
+			return {
+				Title = "Drop it off",
+				Text = "Empty your backpack at the stockpile: that's enough to grow the hearth!",
+				Target = STOCKPILE,
+				Place = "Stockpile",
+			}
+		end
+		return {
+			Title = "Grow the hearth!",
+			Text = `{hold} on "Build up the hearth" at the hearth. It pushes the blizzard back and warms a wider circle.`,
+			Target = HEARTH,
+			Place = "Hearth",
+		}
+	end
 	if stock("Wood") < 15 and fuel < 25 then
 		return {
 			Title = "Chop some wood",
@@ -269,10 +314,11 @@ function Guide.goal(): Goal?
 		}
 	end
 	local landmark = frozenPart(from)
-	if landmark and (night >= 1 or fed) then
+	local help = State:GetAttribute("RadioHelp") == true
+	if landmark and (night >= 1 or fed or help) then
 		return {
 			Title = `Find the {landmark.PartName}`,
-			Text = `It's frozen in ice at the {landmark.Name}. Monsters guard it, so go together!`,
+			Text = `At the {landmark.Name}. {Radio.hint(landmark)}`,
 			Target = at(landmark.At),
 			Place = landmark.Name,
 		}

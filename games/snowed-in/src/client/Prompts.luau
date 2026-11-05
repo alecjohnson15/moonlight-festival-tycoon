@@ -1,13 +1,18 @@
--- Makes gathering feel right for this player's role: a Scout holds the
--- prompt on pines, rocks and the rest for less time (their Gather Speed).
--- The server allows for it (services/GatherService), so this is only the
--- length of the hold this player sees.
+-- Makes gathering feel right for this player's role and team: a Scout
+-- holds the prompt on pines, rocks and the rest for less time (their Gather
+-- Speed), and so does a team of one or two (shared/Assist). The server
+-- allows for both (services/GatherService), so this is only the length of
+-- the hold this player sees. It also hides "Take down" on structures this
+-- player doesn't own (the server checks too).
 
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
-local Roles = require(ReplicatedStorage:WaitForChild("Shared").Config.Roles)
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Assist = require(Shared.Assist)
+local Roles = require(Shared.Config.Roles)
 local Sounds = require(script.Parent.Sounds)
 
 local Prompts = {}
@@ -27,10 +32,37 @@ local function adjust(prompt: ProximityPrompt)
 	if not base[prompt] then
 		base[prompt] = prompt.HoldDuration
 	end
-	prompt.HoldDuration = base[prompt] * (1 - speed())
+	prompt.HoldDuration = base[prompt] * Assist.holdScale(speed(), #Players:GetPlayers())
+end
+
+-- A structure's "Take down" prompt shows only to its owner, or to everyone
+-- once the owner has left (Owner 0).
+local function ownerOnly(prompt: ProximityPrompt)
+	local function refresh()
+		local owner = prompt:GetAttribute("Owner")
+		prompt.Enabled = owner == 0 or owner == player.UserId
+	end
+	prompt:GetAttributeChangedSignal("Owner"):Connect(refresh)
+	refresh()
+end
+
+local function watchBuilt(folder: Instance)
+	for _, descendant in folder:GetDescendants() do
+		if descendant:IsA("ProximityPrompt") and descendant.Name == "TakeDown" then
+			ownerOnly(descendant)
+		end
+	end
+	folder.DescendantAdded:Connect(function(descendant)
+		if descendant:IsA("ProximityPrompt") and descendant.Name == "TakeDown" then
+			ownerOnly(descendant)
+		end
+	end)
 end
 
 function Prompts.start()
+	task.spawn(function()
+		watchBuilt(Workspace:WaitForChild("Built"))
+	end)
 	ProximityPromptService.PromptShown:Connect(function(prompt)
 		adjust(prompt)
 	end)

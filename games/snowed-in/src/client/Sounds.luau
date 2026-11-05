@@ -2,8 +2,10 @@
 -- the screen, or from a spot in the world so they are heard only nearby),
 -- the music for the time of day (cosy by day, tense by night, big while a
 -- yeti is out) crossfading as it changes, and the wind on a loop under it
--- all. The player can turn the music and wind off (Settings). A sound with
--- no id plays its fallback, or nothing (Config/Sounds).
+-- all. The player can turn the music and wind off and set how loud the
+-- effects are (client/Settings): music plays through a Music sound group
+-- and everything else through an Effects one. A sound with no id plays its
+-- fallback, or nothing (Config/Sounds).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -16,9 +18,16 @@ local FADE = TweenInfo.new(2.5, Enum.EasingStyle.Sine)
 
 local Sounds = {}
 
+local MUSIC = { MusicDay = true, MusicNight = true, MusicBoss = true, Wind = true }
+
 local made: { [string]: Sound } = {}
 local musicOn = true
 local song: string? = nil
+local groups: { Music: SoundGroup?, Effects: SoundGroup? } = {}
+
+local function group(name: string): SoundGroup?
+	return if MUSIC[name] then groups.Music else groups.Effects
+end
 
 local function id(name: string): string?
 	local spec = Config[name]
@@ -44,6 +53,7 @@ local function get(name: string): Sound?
 	sound.Name = name
 	sound.SoundId = soundId
 	sound.Volume = Config[name].Volume
+	sound.SoundGroup = group(name)
 	sound.Parent = SoundService
 	made[name] = sound
 	return sound
@@ -79,6 +89,7 @@ function Sounds.at(name: string, position: Vector3, reach: number?, pitch: numbe
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = far / 8
 	sound.RollOffMaxDistance = far
+	sound.SoundGroup = groups.Effects
 	sound.Parent = holder
 	sound:Play()
 	sound.Ended:Connect(function()
@@ -162,7 +173,21 @@ function Sounds.hasMusic(): boolean
 	return false
 end
 
+-- How loud the effects are, 0 to 1.
+function Sounds.setEffects(volume: number)
+	if groups.Effects then
+		groups.Effects.Volume = math.clamp(volume, 0, 1)
+	end
+end
+
 function Sounds.start()
+	for _, name in { "Music", "Effects" } do
+		local soundGroup = Instance.new("SoundGroup")
+		soundGroup.Name = name
+		soundGroup.Volume = 1
+		soundGroup.Parent = SoundService
+		groups[name] = soundGroup
+	end
 	Sounds.setMusic(true)
 end
 

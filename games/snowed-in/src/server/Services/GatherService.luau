@@ -11,9 +11,11 @@ local ServerStorage = game:GetService("ServerStorage")
 local Workspace = game:GetService("Workspace")
 
 local Resources = require(ReplicatedStorage.Shared.Config.Resources)
+local Assist = require(ReplicatedStorage.Shared.Assist)
 local Stock = require(ReplicatedStorage.Shared.Stock)
 local Props = require(ReplicatedStorage.Shared.World.Props)
 local Lib = script.Parent.Parent.Lib
+local Analytics = require(Lib.Analytics)
 local Net = require(Lib.Net)
 local RunStats = require(Lib.RunStats)
 local GameLoop = require(script.Parent.GameLoop)
@@ -70,7 +72,9 @@ local function onGather(state: NodeState, player: Player)
 	-- However the prompt was held, gathering can't go faster than the
 	-- quickest role could hold it.
 	local role = PlayerService.role(player)
-	local quickest = state.Def.HoldSeconds * (1 - (role and role.GatherSpeed or 0)) * 0.8
+	local quickest = state.Def.HoldSeconds
+		* Assist.holdScale(role and role.GatherSpeed or 0, #Players:GetPlayers())
+		* 0.8
 	local time = os.clock()
 	if time - (lastGather[player] or 0) < quickest then
 		return
@@ -83,6 +87,7 @@ local function onGather(state: NodeState, player: Player)
 	end
 	local moved = PlayerService.carry(player, { [state.Def.Gives] = yieldFor(state.Def) })
 	local amount = moved[state.Def.Gives] or 0
+	Analytics.step(player, "Gathered")
 	state.Uses -= 1
 	local depleted = state.Uses <= 0
 	Net.fx("Gather", {
@@ -197,6 +202,8 @@ local function onDeposit(player: Player)
 	end
 	TeamService.add(pack)
 	RunStats.team().Gathered += total
+	RunStats.add(player, "Gathered", total)
+	Analytics.step(player, "DroppedOff")
 	Net.fx("Deposit", { By = player.UserId, Amount = total })
 	Net.notice(player, `Dropped off {Stock.describe(pack)}.`, "Good")
 end

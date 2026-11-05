@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Balance = require(Shared.Config.Balance)
+local Features = require(Shared.Config.Features)
 local Map = require(Shared.Config.Map)
 local Resources = require(Shared.Config.Resources)
 local Roles = require(Shared.Config.Roles)
@@ -150,9 +151,22 @@ local function refreshCards()
 			else UI.Colors.Card
 	end
 	local count = Workspace:GetAttribute("Structures") or 0
+	local status = `Built {count}/{Balance.Build.MaxStructures}`
+	if Features.BuildShare then
+		local mine = 0
+		local built = Workspace:FindFirstChild("Built")
+		if built then
+			for _, model in built:GetChildren() do
+				if model:GetAttribute("Owner") == player.UserId then
+					mine += 1
+				end
+			end
+		end
+		status ..= ` (yours {mine}/{Grid.share(#Players:GetPlayers())})`
+	end
 	hint.Text = if UI.touch()
-		then `Built {count}/{Balance.Build.MaxStructures}. Aim with the camera, then Place.`
-		else `Built {count}/{Balance.Build.MaxStructures} · Click to build · R to turn · B to close`
+		then `{status}. Aim with the camera, then Place.`
+		else `{status} · Click to build · R to turn · X takes yours down · B to close`
 end
 
 local function choose(kind: string?)

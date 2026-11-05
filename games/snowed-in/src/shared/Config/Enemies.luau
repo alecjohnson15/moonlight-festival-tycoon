@@ -33,6 +33,15 @@ export type Enemy = {
 	-- Bosses only: hits land on everything within this radius.
 	Slam: number?,
 	Boss: boolean?,
+	-- Bosses with Config/Features.BossPhases: seconds a slam winds up
+	-- (players see a ring where it will land), seconds the boss is out of
+	-- breath afterwards (it takes double damage then), the health shares at
+	-- which it roars, and the monsters each roar calls in.
+	Windup: number?,
+	Tired: number?,
+	Roars: { number }?,
+	Summon: string?,
+	SummonCount: number?,
 	-- How big the client draws it.
 	Scale: number,
 }
@@ -130,6 +139,11 @@ Enemies.List = {
 		From = 99,
 		Slam = 10,
 		Boss = true,
+		Windup = 1.2,
+		Tired = 2,
+		Roars = { 0.66, 0.33 },
+		Summon = "Frostling",
+		SummonCount = 3,
 		Scale = 1,
 	},
 	{
@@ -150,6 +164,11 @@ Enemies.List = {
 		From = 99,
 		Slam = 12,
 		Boss = true,
+		Windup = 1,
+		Tired = 1.6,
+		Roars = { 0.75, 0.5, 0.25 },
+		Summon = "SnowHound",
+		SummonCount = 2,
 		Scale = 1.35,
 	},
 } :: { Enemy }

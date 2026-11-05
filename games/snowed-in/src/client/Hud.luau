@@ -57,6 +57,8 @@ local frost: { Frame } = {}
 local buffWords: TextLabel
 local playerPanel: Frame
 local lastWarmth = 100
+-- Warmth a second ago, for the "freezes in" estimate.
+local sampleWarmth, sampleTime, drain = 100, 0, 0
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -65,6 +67,15 @@ end
 local function clockText(seconds: number): string
 	seconds = math.max(0, math.ceil(seconds))
 	return string.format("%d:%02d", seconds // 60, seconds % 60)
+end
+
+-- Tonight's theme, from the morning before (MonsterService's forecast).
+local function tonight(): string
+	local name = State:GetAttribute("TonightName")
+	if type(name) == "string" and name ~= "" then
+		return ` · Tonight: {name}`
+	end
+	return ""
 end
 
 -- The words at the top: which night, and what the clock is counting to.
@@ -85,9 +96,9 @@ local function phaseWords(): (string, string)
 			then "DAY 1"
 			elseif overtime then `OVERTIME · DAY {night + 1}`
 			else `DAY {night + 1}`
-		return title, `Night falls in {left}`
+		return title, `Night falls in {left}{tonight()}`
 	elseif phase == "Dusk" then
-		return `NIGHT {night + 1} OF {nights}`, `The monsters come in {left}`
+		return `NIGHT {night + 1} OF {nights}`, `The monsters come in {left}{tonight()}`
 	elseif phase == "Night" then
 		return count, `Dawn in {left}`
 	elseif phase == "Dawn" then
@@ -120,11 +131,14 @@ local function buildClock()
 	})
 	clockTime = UI.label(panel, "", {
 		TextSize = 13,
+		TextScaled = true,
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Position = UDim2.fromOffset(0, 27),
-		Size = UDim2.new(1, 0, 0, 16),
+		Position = UDim2.fromOffset(8, 27),
+		Size = UDim2.new(1, -16, 0, 16),
 		TextColor3 = UI.Colors.Ice,
 	})
+	-- Tonight's theme can make the line long: shrink to fit, never past 13.
+	UI.new("UITextSizeConstraint", { MaxTextSize = 13, MinTextSize = 8 }, clockTime)
 	local _, fill, words = UI.bar(panel, UI.Colors.Ember, {
 		Position = UDim2.fromOffset(12, 46),
 		Size = UDim2.new(1, -24, 0, 15),
@@ -415,7 +429,17 @@ local function step()
 		then UI.Colors.Ice
 		elseif warmth < 60 then Color3.fromRGB(255, 220, 140)
 		else UI.Colors.Warm
-	warmthWords.Text = `{if warmth < 30 then "🥶" else "🌡️"} Warmth {math.floor(warmth)}`
+	-- How fast warmth is falling, measured over the last second, so the
+	-- panel can say how long until a freeze.
+	local clock = os.clock()
+	if clock - sampleTime >= 1 then
+		local rate = (warmth - sampleWarmth) / math.max(0.5, clock - sampleTime)
+		drain = if rate < 0 then drain * 0.4 + -rate * 0.6 else 0
+		sampleWarmth, sampleTime = warmth, clock
+	end
+	local freezesIn = if drain > 0.05 then warmth / drain else math.huge
+	local warning = if freezesIn < 60 and warmth > 0 then ` · freezes in {math.ceil(freezesIn)}s` else ""
+	warmthWords.Text = `{if warmth < 30 then "🥶" else "🌡️"} Warmth {math.floor(warmth)}{warning}`
 	local cold = math.clamp((45 - warmth) / 45, 0, 1)
 	for _, frame in frost do
 		frame.BackgroundTransparency = 1 - cold * 0.75
@@ -445,6 +469,9 @@ local function step()
 	end
 	if (player:GetAttribute("SpeedUntil") or 0) > now() then
 		table.insert(buffs, "💨 Quick")
+	end
+	if (player:GetAttribute("GraceUntil") or 0) > now() then
+		table.insert(buffs, "✨ Just thawed")
 	end
 	local volley = player:GetAttribute("Volley") or 0
 	if volley > 0 then

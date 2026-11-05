@@ -23,6 +23,8 @@ local WeaponConfig = require(Shared.Config.Weapons)
 local Profile = require(Shared.Profile)
 local Stock = require(Shared.Stock)
 local Wearables = require(Shared.World.Wearables)
+local Diagnostics = require(script.Parent.Diagnostics)
+local Settings = require(script.Parent.Settings)
 local Sounds = require(script.Parent.Sounds)
 local UI = require(script.Parent.UI)
 
@@ -642,18 +644,49 @@ end
 
 -- Settings and stats --------------------------------------------------------
 
+local SFX_STEPS = { 1, 0.5, 0 }
+
 local function drawSettings()
 	local window = windows.Settings
 	local list = body(window)
+	local values = Settings.get()
 	local _, music = row(list, 1, "🎵", "Music and wind", "The songs and the blizzard's howl.", "")
 	setButton(
 		music,
-		if Sounds.musicOn() then "On" else "Off",
+		if values.Music then "On" else "Off",
 		true,
-		if Sounds.musicOn() then UI.Colors.Good else UI.Colors.Locked
+		if values.Music then UI.Colors.Good else UI.Colors.Locked
 	)
 	music.Activated:Connect(function()
-		Sounds.setMusic(not Sounds.musicOn())
+		Settings.set("Music", not values.Music)
+		drawSettings()
+	end)
+	local _, sfx = row(list, 2, "🔊", "Effects volume", "Chops, hits, horns and everything else.", "")
+	setButton(
+		sfx,
+		`{math.floor(values.Sfx * 100 + 0.5)}%`,
+		true,
+		if values.Sfx > 0 then UI.Colors.Good else UI.Colors.Locked
+	)
+	sfx.Activated:Connect(function()
+		local index = 1
+		for at, step in SFX_STEPS do
+			if math.abs(step - values.Sfx) < 0.05 then
+				index = at
+			end
+		end
+		Settings.set("Sfx", SFX_STEPS[index % #SFX_STEPS + 1])
+		drawSettings()
+	end)
+	local _, motion = row(list, 3, "🌀", "Reduce motion", "No camera shake, fewer particles and gentler flashes.", "")
+	setButton(
+		motion,
+		if values.ReduceMotion then "On" else "Off",
+		true,
+		if values.ReduceMotion then UI.Colors.Good else UI.Colors.Locked
+	)
+	motion.Activated:Connect(function()
+		Settings.set("ReduceMotion", not values.ReduceMotion)
 		drawSettings()
 	end)
 	local stats = profile and profile.Stats
@@ -661,13 +694,14 @@ local function drawSettings()
 		note(
 			list,
 			`Runs: {stats.Runs}  ·  Rescued: {stats.Wins}  ·  Best night: {stats.BestNight}  ·  Monsters bopped: {stats.Knockouts}  ·  Radio parts: {stats.Parts}`,
-			2
+			4
 		)
 	end
 	local keys = if UI.touch()
 		then "Tap the ability button for your role's power. Hold on things in town to use them."
-		else "WASD move · Hold E use · Click swing · Q ability · G eat · B build · R turn while building"
-	note(list, keys, 3)
+		else "WASD move · Hold E use · Click swing · Q ability · G eat · B build · R turn while building · X take down your build"
+	note(list, keys, 5)
+	note(list, Diagnostics.line(), 6)
 end
 
 -- The column of buttons ------------------------------------------------------

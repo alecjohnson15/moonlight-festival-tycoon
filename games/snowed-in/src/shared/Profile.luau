@@ -31,6 +31,10 @@ export type Save = {
 	ClaimedPremium: number,
 	BonusClaimed: number,
 	LastRole: string,
+	-- The last run paid out, so a run is never paid twice.
+	LastRunId: string,
+	-- The player's settings (Profile.setSetting checks them).
+	Settings: { Music: boolean, Sfx: number, ReduceMotion: boolean },
 	Stats: {
 		Runs: number,
 		Wins: number,
@@ -113,6 +117,16 @@ function Profile.howToGet(item: any): string
 	return ""
 end
 
+-- What a player who was there for present nights of a run gets credit
+-- for: the win (and its trophy) only after Balance.Rewards.WinMinNights
+-- nights, and the team's radio parts after one night. Someone who drops in
+-- for the train still gets their nights and their knockouts.
+function Profile.credit(present: number, won: boolean, parts: number): (boolean, number)
+	local wonCredit = won and present >= Balance.Rewards.WinMinNights
+	local partsCredit = if present >= 1 then parts else 0
+	return wonCredit, partsCredit
+end
+
 -- Snowflakes for one run. Everyone who was there shares the team's nights
 -- and radio parts; knockouts are their own.
 function Profile.runFlakes(stats: RunStats): number
@@ -175,8 +189,15 @@ function Profile.claim(save: Save, premium: boolean): { string }
 end
 
 -- Records a finished run in the save: snowflakes, XP, trophies and stats.
--- Returns the snowflakes earned.
-function Profile.finishRun(save: Save, stats: RunStats, beatYeti: boolean): number
+-- Returns the snowflakes earned. A run already paid (the same runId as the
+-- last one) pays nothing again.
+function Profile.finishRun(save: Save, stats: RunStats, beatYeti: boolean, runId: string?): number
+	if runId and runId ~= "" then
+		if save.LastRunId == runId then
+			return 0
+		end
+		save.LastRunId = runId
+	end
 	local flakes = Profile.runFlakes(stats)
 	save.Flakes += flakes
 	save.Xp += flakes * Balance.Rewards.XpPerFlake
@@ -192,6 +213,55 @@ function Profile.finishRun(save: Save, stats: RunStats, beatYeti: boolean): numb
 		save.Trophies.Yeti = true
 	end
 	return flakes
+end
+
+-- The next thing to play for, in words, for the results screen: the
+-- cheapest role still locked, then the next pass tier, then the trophies.
+function Profile.nextGoal(save: Save, grants: Grants): string
+	local cheapest = nil
+	for _, role in Roles.List do
+		if not Profile.ownsRole(save, grants, role.Id) and (not cheapest or role.Price < cheapest.Price) then
+			cheapest = role
+		end
+	end
+	if cheapest then
+		local short = cheapest.Price - save.Flakes
+		if short <= 0 then
+			return `You can unlock the {cheapest.Name} now! Open the shop.`
+		end
+		return `{short} more snowflakes to unlock the {cheapest.Name}.`
+	end
+	local tier = Profile.tier(save.Xp)
+	if tier < #Expedition.Tiers then
+		local need = (tier + 1) * Expedition.TierXp - save.Xp
+		return `{need} more XP to Expedition Pass tier {tier + 1}.`
+	end
+	if not save.Trophies.Rescue then
+		return "Catch the rescue train to earn the Rescue trophy."
+	end
+	if not save.Trophies.Yeti then
+		return "Beat the Old Yeti on night 5 to earn its trophy."
+	end
+	return "Every reward is yours. Try for a run where nobody freezes!"
+end
+
+-- Changes one setting. Returns false for an unknown setting or a bad value.
+function Profile.setSetting(save: Save, key: string, value: any): boolean
+	local settings = save.Settings
+	if key == "Music" or key == "ReduceMotion" then
+		if type(value) ~= "boolean" then
+			return false
+		end
+		settings[key] = value
+		return true
+	elseif key == "Sfx" then
+		if type(value) ~= "number" or value ~= value then
+			return false
+		end
+		settings.Sfx = math.clamp(math.floor(value * 10 + 0.5) / 10, 0, 1)
+		return true
+	end
+	return false
 end
 
 -- Buys a shop item or a role with snowflakes. Returns false and why if it

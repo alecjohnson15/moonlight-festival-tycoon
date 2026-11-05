@@ -34,6 +34,8 @@ local function template(): Save
 		ClaimedPremium = 0,
 		BonusClaimed = 0,
 		LastRole = "Scout",
+		LastRunId = "",
+		Settings = { Music = true, Sfx = 1, ReduceMotion = false },
 		Stats = { Runs = 0, Wins = 0, BestNight = 0, Knockouts = 0, Parts = 0, Thaws = 0 },
 		Receipts = { Ids = {}, Order = {} },
 	}

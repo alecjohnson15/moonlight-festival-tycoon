@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
+local Features = require(ReplicatedStorage.Shared.Config.Features)
 local Recipes = require(ReplicatedStorage.Shared.Config.Recipes)
 local Resources = require(ReplicatedStorage.Shared.Config.Resources)
 local Roles = require(ReplicatedStorage.Shared.Config.Roles)
@@ -20,6 +21,7 @@ local Stock = require(ReplicatedStorage.Shared.Stock)
 local Warmth = require(ReplicatedStorage.Shared.Warmth)
 local Gear = require(ReplicatedStorage.Shared.World.Gear)
 local Lib = script.Parent.Parent.Lib
+local Analytics = require(Lib.Analytics)
 local Heat = require(Lib.Heat)
 local Net = require(Lib.Net)
 local RateLimiter = require(Lib.RateLimiter)
@@ -43,6 +45,8 @@ type Survivor = {
 	Shield: number,
 	Volley: number,
 	JoinedAt: number,
+	-- Server time until which monsters can't chill them (just thawed).
+	GraceUntil: number,
 }
 
 local survivors: { [Player]: Survivor } = {}
@@ -69,6 +73,7 @@ local function survivor(player: Player): Survivor
 			Shield = 0,
 			Volley = 0,
 			JoinedAt = now(),
+			GraceUntil = 0,
 		}
 		survivors[player] = entry
 	end
@@ -114,6 +119,22 @@ function PlayerService.carry(player: Player, counts: Stock.Counts): Stock.Counts
 	local moved = Stock.fill(entry.Pack, PlayerService.packSize(player), counts)
 	publishPack(player)
 	return moved
+end
+
+-- A copy of what is in the backpack.
+function PlayerService.pack(player: Player): Stock.Counts
+	return table.clone(survivor(player).Pack)
+end
+
+-- Takes things out of the backpack (to hand in at a landmark). Returns
+-- false, taking nothing, if they aren't all there.
+function PlayerService.takeFromPack(player: Player, counts: Stock.Counts): boolean
+	local entry = survivor(player)
+	if not Stock.spend(entry.Pack, counts) then
+		return false
+	end
+	publishPack(player)
+	return true
 end
 
 function PlayerService.packFull(player: Player): boolean
@@ -252,9 +273,14 @@ end
 
 local freeze: (Player) -> ()
 
+-- Whether a player was thawed a moment ago and can't be chilled yet.
+function PlayerService.inGrace(player: Player): boolean
+	return Features.ThawGrace and survivor(player).GraceUntil > now()
+end
+
 -- A monster's hit: warmth off, less for well-wrapped players.
 function PlayerService.chill(player: Player, amount: number)
-	if PlayerService.isFrozen(player) or not GameLoop.isPlaying() then
+	if PlayerService.isFrozen(player) or not GameLoop.isPlaying() or PlayerService.inGrace(player) then
 		return
 	end
 	local root = Net.root(player)
@@ -369,6 +395,10 @@ function thaw(player: Player, by: Player?)
 	end
 	player:SetAttribute("Frozen", false)
 	player:SetAttribute("WakeAt", 0)
+	if Features.ThawGrace then
+		entry.GraceUntil = now() + Balance.Warmth.ThawGraceSeconds
+		player:SetAttribute("GraceUntil", entry.GraceUntil)
+	end
 	setMovement(player, false)
 	local root = Net.root(player)
 	if by then
@@ -466,6 +496,7 @@ function PlayerService.setRole(player: Player, roleId: string)
 	ProfileService.rememberRole(player, roleId)
 	publishPack(player)
 	PlayerService.refreshSpeed(player)
+	Analytics.step(player, "PickedRole")
 end
 
 local function onPickRole(player: Player, roleId: unknown)
@@ -519,6 +550,7 @@ local function resetPlayer(player: Player)
 	player:SetAttribute("Volley", 0)
 	player:SetAttribute("ShieldUntil", 0)
 	player:SetAttribute("SpeedUntil", 0)
+	player:SetAttribute("GraceUntil", 0)
 	player:SetAttribute("Knockouts", 0)
 	PlayerService.setWarmth(player, Balance.Warmth.Max)
 	publishPack(player)
@@ -590,6 +622,12 @@ function PlayerService.init()
 		if entry and entry.Ice then
 			entry.Ice:Destroy()
 		end
+		-- Someone leaving mid-run leaves their backpack at the stockpile, so
+		-- the team doesn't lose what they gathered.
+		if entry and GameLoop.isPlaying() and Stock.total(entry.Pack) > 0 then
+			TeamService.add(entry.Pack)
+		end
+		Analytics.forget(player)
 		survivors[player] = nil
 		eatLimiter:forget(player)
 		roleLimiter:forget(player)

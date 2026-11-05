@@ -8,15 +8,18 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Balance = require(ReplicatedStorage.Shared.Config.Balance)
 local Enemies = require(ReplicatedStorage.Shared.Config.Enemies)
+local Features = require(ReplicatedStorage.Shared.Config.Features)
 local Weapons = require(ReplicatedStorage.Shared.Config.Weapons)
 local Codec = require(ReplicatedStorage.Shared.Codec)
 local Combat = require(ReplicatedStorage.Shared.Combat)
 local EnemySim = require(ReplicatedStorage.Shared.EnemySim)
 local Waves = require(ReplicatedStorage.Shared.Waves)
 local Lib = script.Parent.Parent.Lib
+local Celebrate = require(Lib.Celebrate)
 local Net = require(Lib.Net)
 local RunStats = require(Lib.RunStats)
 local Sim = require(Lib.Sim)
@@ -30,7 +33,11 @@ local MonsterService = {}
 
 local TICK = 0.1
 
+local State = ReplicatedStorage.State :: Configuration
+
 local pending: { Waves.Spawn } = {}
+-- Each run's nights get their themes from a new seed.
+local plan: { [number]: Waves.Theme } = {}
 local spawnPoints: { Vector3 } = {}
 local lastShot: { [Player]: { [string]: number } } = {}
 local random = Random.new()
@@ -39,6 +46,8 @@ local snapshot: RemoteEvent
 local function roll(): number
 	return random:NextNumber()
 end
+
+local roar: (EnemySim.Event) -> ()
 
 local function credit(by: any): Player?
 	if typeof(by) == "Instance" and by:IsA("Player") then
@@ -61,6 +70,10 @@ local function apply(events: { EnemySim.Event })
 			Net.fx("Douse", { Enemy = event.Enemy })
 		elseif kind == "Slam" then
 			Net.fx("Slam", { X = event.X, Z = event.Z, Radius = event.Radius })
+		elseif kind == "Telegraph" then
+			Net.fx("Telegraph", { X = event.X, Z = event.Z, Radius = event.Radius, Seconds = event.Amount })
+		elseif kind == "Roar" then
+			roar(event)
 		elseif kind == "Shoot" then
 			Net.fx("IceShard", { X = event.X, Z = event.Z, ToX = event.ToX, ToZ = event.ToZ })
 		elseif kind == "Turret" then
@@ -74,7 +87,8 @@ local function apply(events: { EnemySim.Event })
 			local def = Enemies.ById[event.Kind :: string]
 			if def and def.Boss then
 				if event.Kind == "Yeti" then
-					RunStats.team().BeatYeti = true
+					RunStats.yetiDown(Players:GetPlayers())
+					Celebrate.milestone("Yeti")
 				end
 				Net.notice(nil, `{def.Name} ran off into the blizzard!`, "Big")
 				Net.fx("BossDown", { X = event.X, Z = event.Z })
@@ -84,6 +98,26 @@ local function apply(events: { EnemySim.Event })
 	if #downs > 0 then
 		Net.fx("Down", { List = downs })
 	end
+end
+
+-- A boss roars for help: a few of its kind's helpers come running from
+-- around it, more for a bigger team, never past the monster cap.
+function roar(event: EnemySim.Event)
+	local boss = Sim.Enemies[event.Enemy :: number]
+	local kind = event.Kind
+	if not boss or not kind or not Enemies.ById[kind] then
+		return
+	end
+	local count = (event.Amount or 0) + math.floor(#Players:GetPlayers() / 3)
+	for index = 1, count do
+		if EnemySim.count(Sim) >= Balance.Waves.MaxAlive then
+			break
+		end
+		local angle = index / count * math.pi * 2
+		EnemySim.spawn(Sim, kind, boss.X + math.cos(angle) * 14, boss.Z + math.sin(angle) * 14)
+	end
+	Net.notice(nil, `{boss.Def.Name} roars for help! It's out of breath after a slam: hit it then!`, "Bad")
+	Net.fx("Roar", { Enemy = boss.Id, X = boss.X, Z = boss.Z })
 end
 
 local function spawnAt(kind: string, point: number)
@@ -100,20 +134,34 @@ end
 
 local function planNight(night: number)
 	local count = math.max(1, #Players:GetPlayers())
-	local list = Waves.compose(night, count, roll)
+	local list = Waves.forNight(night, count, roll, plan[night])
 	pending = Waves.schedule(list, Waves.boss(night), Balance.Phases.Night, roll)
 end
 
+-- Tells everyone what tonight will bring, from the morning before
+-- (attributes "Tonight", "TonightName" and "TonightTip" on State).
+local function forecast(night: number)
+	local theme = if Features.NightThemes then plan[night] else nil
+	local boss = Waves.boss(night)
+	local name = if theme then theme.Name else ""
+	local tip = if theme then theme.Tip else ""
+	if boss then
+		local def = Enemies.ById[boss]
+		name = if name ~= "" then `{name} + {def.Name}` else def.Name
+		tip = `{def.Name} comes too! Watch for the ring where it slams, and hit it while it's out of breath. {tip}`
+	end
+	State:SetAttribute("Tonight", if theme then theme.Id else "")
+	State:SetAttribute("TonightName", name)
+	State:SetAttribute("TonightTip", tip)
+end
+
 -- Spawns a landmark's guards at a spot (ObjectiveService calls this each
--- morning for the landmarks whose radio part is still there).
-function MonsterService.guard(position: Vector3, night: number)
-	local count = Balance.Waves.GuardsPerLandmark + math.floor(night / 3)
-	for index = 1, count do
-		local angle = index / count * math.pi * 2
-		local kind = if index == 1 and night >= 3
-			then "SnowBrute"
-			elseif index % 2 == 0 and night >= 2 then "SnowHound"
-			else "Frostling"
+-- morning for the landmarks whose radio part is still there, with fewer
+-- set to 1 when the team is behind on the radio).
+function MonsterService.guard(position: Vector3, night: number, fewer: number?)
+	local kinds = Waves.guards(night, fewer)
+	for index, kind in kinds do
+		local angle = index / #kinds * math.pi * 2
 		EnemySim.spawnGuard(Sim, kind, position.X + math.cos(angle) * 9, position.Z + math.sin(angle) * 9, 34)
 	end
 end
@@ -225,7 +273,12 @@ function MonsterService.init()
 	end
 	Net.remote("Fire").OnServerEvent:Connect(onFire)
 	GameLoop.onPhase(function(phase, night)
-		if phase == "Night" then
+		if phase == "Day" then
+			if night == 0 then
+				plan = Waves.plan(random:NextInteger(1, 2147483646))
+			end
+			forecast(night + 1)
+		elseif phase == "Night" then
 			planNight(night)
 		elseif phase == "Dawn" then
 			table.clear(pending)
@@ -233,6 +286,9 @@ function MonsterService.init()
 		elseif phase == "Intermission" or phase == "Won" or phase == "Lost" or phase == "Waiting" then
 			table.clear(pending)
 			melt(false)
+			State:SetAttribute("Tonight", "")
+			State:SetAttribute("TonightName", "")
+			State:SetAttribute("TonightTip", "")
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
@@ -242,6 +298,8 @@ end
 
 function MonsterService.start()
 	local sinceSnapshot = 0
+	-- The step's cost, averaged over a second, for the diagnostics line.
+	local spent, steps, sinceReport = 0, 0, 0
 	while true do
 		local dt = task.wait(TICK)
 		dt = math.min(dt, 0.25)
@@ -253,8 +311,17 @@ function MonsterService.start()
 					spawnAt(spawn.Kind, spawn.Point)
 				end
 			end
+			local started = os.clock()
 			updatePlayers()
 			apply(EnemySim.step(Sim, dt))
+			spent += os.clock() - started
+			steps += 1
+		end
+		sinceReport += dt
+		if sinceReport >= 1 then
+			Workspace:SetAttribute("SimMs", if steps > 0 then spent / steps * 1000 else 0)
+			Workspace:SetAttribute("Monsters", EnemySim.count(Sim))
+			spent, steps, sinceReport = 0, 0, 0
 		end
 		sinceSnapshot += dt
 		if sinceSnapshot >= 0.099 then

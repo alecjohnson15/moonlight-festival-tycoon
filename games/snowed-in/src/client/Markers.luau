@@ -1,7 +1,8 @@
 -- Signs that show through the blizzard: an ice cube over every frozen
 -- friend (so they get thawed), a radio over whoever is carrying a part,
 -- and the four radio parts' landmarks once the team has made Signal
--- Flares. A Scout's flare lights up every monster, radio part and supply
+-- Flares, or while the radio is behind and sends out its faint signal
+-- ("RadioHelp", from ObjectiveService). A Scout's flare lights up every monster, radio part and supply
 -- crate near them for a few seconds, for everyone.
 
 local CollectionService = game:GetService("CollectionService")
@@ -89,7 +90,7 @@ local function refreshPlayers()
 end
 
 local function refreshLandmarks()
-	local flares = State:GetAttribute("Upgrade_SignalFlares") == true
+	local flares = State:GetAttribute("Upgrade_SignalFlares") == true or State:GetAttribute("RadioHelp") == true
 	for _, landmark in Map.Landmarks do
 		local state = State:GetAttribute(`Part_{landmark.Part}`) or "Frozen"
 		local want = flares and state == "Frozen"
@@ -162,7 +163,7 @@ function Markers.start()
 	folder.Name = "Markers"
 	folder.Parent = Workspace
 	State.AttributeChanged:Connect(function(name)
-		if name:sub(1, 5) == "Part_" or name == "Upgrade_SignalFlares" then
+		if name:sub(1, 5) == "Part_" or name == "Upgrade_SignalFlares" or name == "RadioHelp" then
 			refreshLandmarks()
 		end
 	end)

@@ -82,6 +82,35 @@ Balance.Warmth = {
 	RespawnFlameCost = 4,
 	-- Warmth from standing still beside the warm things players build.
 	StructureGain = 4,
+	-- Seconds after a thaw when monsters can't chill the player again
+	-- (Config/Features.ThawGrace), so nobody is frozen over and over on
+	-- the spot.
+	ThawGraceSeconds = 4,
+}
+
+-- Small teams have fewer hands, not just fewer monsters: with one or two
+-- players (Config/Features.SoloAssist) gathering holds are this much
+-- quicker and the hearth burns this share of its usual rate. The pacing
+-- model (tools/RunModel.luau) and tests/Pacing.spec check the numbers.
+Balance.SoloAssist = {
+	UpToPlayers = 2,
+	GatherSpeed = { [1] = 0.3, [2] = 0.15 },
+	Burn = { [1] = 0.8, [2] = 0.9 },
+}
+
+-- The rescue radio (shared/Radio).
+Balance.Radio = {
+	-- A part left lying loose this long (dropped by a carrier who froze,
+	-- left or fell) goes back to its landmark, unfrozen, so it can never be
+	-- lost somewhere nobody can reach.
+	LooseReturnSeconds = 90,
+	-- The plain "break the ice" when Config/Features.LandmarkTrials is off.
+	BreakSeconds = 4,
+	-- Catch-up (Config/Features.RadioCatchUp): from night CatchUpFrom, a
+	-- team should have fitted one part every CatchUpEvery nights. A team
+	-- behind that gets the missing parts marked and one guard fewer at each.
+	CatchUpFrom = 4,
+	CatchUpEvery = 2,
 }
 
 Balance.Backpack = 20
@@ -94,6 +123,12 @@ Balance.Build = {
 	Grid = 4,
 	-- Most structures a run may hold, to keep the part count down.
 	MaxStructures = 60,
+	-- With Config/Features.BuildShare, one player may own at most this
+	-- many, or an even share of the cap if that is more, so no one player
+	-- can spend the whole base. Taking down your own build gives back
+	-- RefundShare of what it cost.
+	PerPlayerMin = 15,
+	RefundShare = 0.5,
 	-- Space kept clear around the hearth and the base's stations.
 	ClearRadius = 12,
 }
@@ -134,6 +169,10 @@ Balance.Rewards = {
 	-- One snowflake per this many monsters a player knocks out.
 	KnockoutsPerFlake = 5,
 	XpPerFlake = 10,
+	-- Someone who joined late shares the win bonus and the rescue trophy
+	-- only if they were there for at least this many nights, and the radio
+	-- parts only if they saw at least one night.
+	WinMinNights = 3,
 }
 
 -- How long the server waits for a player to choose a role before giving

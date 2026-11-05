@@ -75,4 +75,25 @@ function Grid.check(rect: Rect, rules: Rules): (boolean, string?)
 	return true, nil
 end
 
+-- The most structures one player may own in a run with this many players
+-- (Config/Features.BuildShare): an even share of the cap, or PerPlayerMin
+-- if that is more, so one player can never spend the whole base.
+function Grid.share(players: number): number
+	local build = Balance.Build
+	return math.max(build.PerPlayerMin, math.ceil(build.MaxStructures / math.max(1, players)))
+end
+
+-- What taking down your own build gives back: RefundShare of each part of
+-- its cost, rounded down.
+function Grid.refund(cost: { [string]: number }): { [string]: number }
+	local back = {}
+	for id, amount in cost do
+		local share = math.floor(amount * Balance.Build.RefundShare)
+		if share > 0 then
+			back[id] = share
+		end
+	end
+	return back
+end
+
 return Grid

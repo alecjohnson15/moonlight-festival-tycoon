@@ -9,6 +9,7 @@
 
 local Balance = require(script.Parent.Config.Balance)
 local Enemies = require(script.Parent.Config.Enemies)
+local Features = require(script.Parent.Config.Features)
 
 export type Spawn = {
 	Kind: string,
@@ -18,7 +19,66 @@ export type Spawn = {
 	Point: number,
 }
 
+-- A night's theme (Config/Features.NightThemes): what tonight's wave is
+-- mostly made of, and the tip players see from the morning before, so each
+-- night asks for something different. Weights share out the budget among
+-- the kinds that have arrived; kinds a theme doesn't name still turn up a
+-- little (Background).
+export type Theme = {
+	Id: string,
+	Name: string,
+	Tip: string,
+	-- The first night it can be picked: when its main monster arrives.
+	From: number,
+	Weights: { [string]: number },
+}
+
 local Waves = {}
+
+Waves.Background = 0.3
+
+Waves.Themes = {
+	{
+		Id = "Crowd",
+		Name = "Frostling Crowd",
+		Tip = "Lots of little ones walk straight at the fire: swing your torch, and turrets mow them down.",
+		From = 1,
+		Weights = { Frostling = 4, SnowHound = 1 },
+	},
+	{
+		Id = "Pack",
+		Name = "Hound Pack",
+		Tip = "Fast hounds hunt players, not the fire: stay together inside the warm circle.",
+		From = 2,
+		Weights = { SnowHound = 4, Frostling = 1.5 },
+	},
+	{
+		Id = "Siege",
+		Name = "Brute Siege",
+		Tip = "Brutes smash walls first: keep wood in the stockpile for repairs, and ember traps slow them down.",
+		From = 3,
+		Weights = { SnowBrute = 3, Frostling = 2 },
+	},
+	{
+		Id = "Swarm",
+		Name = "Wisp Swarm",
+		Tip = "Wisps fly over walls and throw ice from afar: slings, flares and turrets reach them.",
+		From = 4,
+		Weights = { IceWisp = 3, SnowHound = 1, Frostling = 1.5 },
+	},
+	{
+		Id = "Whiteout",
+		Name = "Whiteout",
+		Tip = "A bit of everything out of the storm: feed the hearth before dark and hold the line.",
+		From = 5,
+		Weights = { Frostling = 1, SnowHound = 1, SnowBrute = 1, IceWisp = 1 },
+	},
+} :: { Theme }
+
+Waves.ThemeById = {} :: { [string]: Theme }
+for _, theme in Waves.Themes do
+	Waves.ThemeById[theme.Id] = theme
+end
 
 -- How much the waves and the bosses' health scale with the number of
 -- players in the run.
@@ -88,6 +148,102 @@ function Waves.compose(night: number, players: number, roll: () -> number): { st
 	return list
 end
 
+-- The kind a theme is built round: its heaviest weight.
+function Waves.signature(theme: Theme): string
+	local best, weight = "Frostling", -1
+	for kind, value in theme.Weights do
+		if value > weight or (value == weight and kind < best) then
+			best, weight = kind, value
+		end
+	end
+	return best
+end
+
+-- Every night's theme for a run, from the run's seed, the same every time
+-- for the same seed. The first night is always the gentle crowd, a new
+-- monster's first night is its own theme (so it gets introduced), and no
+-- theme comes two nights running.
+function Waves.plan(seed: number): { [number]: Theme }
+	local plan = {}
+	local state = seed % 2147483647
+	if state <= 0 then
+		state += 2147483646
+	end
+	local function roll(): number
+		state = (state * 48271) % 2147483647
+		return state / 2147483647
+	end
+	local previous = ""
+	for night = 1, Balance.LastNight do
+		local pick: Theme? = nil
+		for _, theme in Waves.Themes do
+			if theme.From == night then
+				pick = theme
+			end
+		end
+		if not pick then
+			local options = {}
+			for _, theme in Waves.Themes do
+				if theme.From <= night and theme.Id ~= previous then
+					table.insert(options, theme)
+				end
+			end
+			pick = options[1 + math.min(#options - 1, math.floor(roll() * #options))]
+		end
+		local chosen = pick :: Theme
+		plan[night] = chosen
+		previous = chosen.Id
+	end
+	return plan
+end
+
+-- A night's monsters shaped by its theme: the budget is shared out by the
+-- theme's weights among the kinds that have arrived (unnamed kinds get the
+-- Background weight). Spends the budget exactly, since a frostling costs 1.
+function Waves.themed(night: number, players: number, roll: () -> number, theme: Theme): { string }
+	local budget = Waves.budget(night, players)
+	local kinds = Waves.kinds(night)
+	local list = {}
+	local spent = 0
+	while spent < budget do
+		local left = budget - spent
+		local total = 0
+		for _, kind in kinds do
+			if kind.Points <= left then
+				total += theme.Weights[kind.Id] or Waves.Background
+			end
+		end
+		if total <= 0 then
+			break
+		end
+		local pick = roll() * total
+		local choice = nil
+		for _, kind in kinds do
+			if kind.Points <= left then
+				local weight = theme.Weights[kind.Id] or Waves.Background
+				choice = kind
+				if pick < weight then
+					break
+				end
+				pick -= weight
+			end
+		end
+		local chosen = choice :: Enemies.Enemy
+		table.insert(list, chosen.Id)
+		spent += chosen.Points
+	end
+	return list
+end
+
+-- The night's monsters: themed when the night has a theme (and
+-- Config/Features.NightThemes is on), otherwise the plain mix.
+function Waves.forNight(night: number, players: number, roll: () -> number, theme: Theme?): { string }
+	if theme and Features.NightThemes then
+		return Waves.themed(night, players, roll, theme)
+	end
+	return Waves.compose(night, players, roll)
+end
+
 -- The boss for this night, if it is a boss night.
 function Waves.boss(night: number): string?
 	return Balance.Bosses[night]
@@ -115,6 +271,24 @@ function Waves.schedule(list: { string }, boss: string?, nightSeconds: number, r
 		return a.At < b.At
 	end)
 	return spawns
+end
+
+-- The guards at a landmark whose radio part is still there, on a night:
+-- more as the nights go on, a brute leading from night 3 and hounds from
+-- night 2, and one fewer for each of fewer (catch-up), never none.
+function Waves.guards(night: number, fewer: number?): { string }
+	local count = math.max(1, Balance.Waves.GuardsPerLandmark + math.floor(night / 3) - (fewer or 0))
+	local list = {}
+	for index = 1, count do
+		table.insert(
+			list,
+			if index == 1 and night >= 3
+				then "SnowBrute"
+				elseif index % 2 == 0 and night >= 2 then "SnowHound"
+				else "Frostling"
+		)
+	end
+	return list
 end
 
 -- A boss's health in a run with this many players.

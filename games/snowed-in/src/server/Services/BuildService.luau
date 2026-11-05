@@ -1,14 +1,16 @@
 -- Building: walls, lanterns, traps, campfires and turrets around the hearth
 -- (Config/Structures). The client shows a preview and asks; the server
--- checks the spot (shared/Grid), the role, the hearth level and the
--- stockpile, then builds it, puts it in the monster world so monsters stop
--- at it and turrets shoot from it, and gives it a Repair prompt. Monsters'
--- hits come back here through damage().
+-- checks the spot (shared/Grid), the role, the hearth level, the player's
+-- share of the base and the stockpile, then builds it, puts it in the
+-- monster world so monsters stop at it and turrets shoot from it, and gives
+-- it a Repair prompt and a Take down prompt for its owner (half the cost
+-- back). Monsters' hits come back here through damage().
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Features = require(ReplicatedStorage.Shared.Config.Features)
 local Structures = require(ReplicatedStorage.Shared.Config.Structures)
 local EnemySim = require(ReplicatedStorage.Shared.EnemySim)
 local Grid = require(ReplicatedStorage.Shared.Grid)
@@ -39,6 +41,9 @@ type Built = {
 	Kind: string,
 	Model: Model,
 	Rect: Grid.Rect,
+	-- The builder's user id (0 once they have left) and what they paid.
+	Owner: number,
+	Cost: Stock.Counts,
 }
 
 local built: { [number]: Built } = {}
@@ -46,6 +51,17 @@ local nextId = 0
 local folder: Folder
 local buildLimiter = RateLimiter.new(0.3)
 local repairLimiter = RateLimiter.new(0.5)
+
+-- How many structures a player owns now.
+local function owned(userId: number): number
+	local count = 0
+	for _, entry in built do
+		if entry.Owner == userId then
+			count += 1
+		end
+	end
+	return count
+end
 
 local function healthScale(): number
 	return if TeamService.hasUpgrade("IronBraces") then 1.5 else 1
@@ -181,7 +197,49 @@ local function addRepairPrompt(entry: Built)
 		end
 		local role = PlayerService.role(player)
 		heal(entry.Id, Structures.RepairShare * (1 + (role and role.RepairBonus or 0)))
+		RunStats.add(player, "Repaired", 1)
 		Net.fx("Repair", { Position = entry.Model:GetPivot().Position })
+	end)
+end
+
+-- The owner (or anyone, once the owner has left) can take a build down and
+-- get half of what it cost back in the stockpile.
+local function addTakeDownPrompt(entry: Built)
+	local root = entry.Model.PrimaryPart
+	if not root or not Features.BuildShare then
+		return
+	end
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "TakeDown"
+	prompt.ActionText = "Take down"
+	prompt.ObjectText = `Gives back {Stock.describe(Grid.refund(entry.Cost))}`
+	prompt.HoldDuration = 1.2
+	prompt.MaxActivationDistance = 10
+	prompt.RequiresLineOfSight = false
+	prompt.KeyboardKeyCode = Enum.KeyCode.X
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonY
+	prompt.UIOffset = Vector2.new(0, 60)
+	prompt:SetAttribute("Owner", entry.Owner)
+	prompt.Parent = root
+	prompt.Triggered:Connect(function(player)
+		if not built[entry.Id] or not GameLoop.isPlaying() or PlayerService.isFrozen(player) then
+			return
+		end
+		if entry.Owner ~= 0 and entry.Owner ~= player.UserId then
+			return
+		end
+		local back = Grid.refund(entry.Cost)
+		local structure = Sim.Structures[entry.Id]
+		if structure and structure.Health < structure.MaxHealth * 0.5 then
+			-- A badly broken build gives back nothing, so taking down a
+			-- wall mid-fight isn't a free repair.
+			back = {}
+		end
+		local at = entry.Model:GetPivot().Position
+		remove(entry.Id, false)
+		TeamService.add(back)
+		Net.fx("Broken", { Position = at, Kind = entry.Kind })
+		Net.notice(player, `Taken down. {Stock.describe(back)} went back to the stockpile.`, "Info")
 	end)
 end
 
@@ -214,6 +272,17 @@ local function onBuild(player: Player, kind: unknown, x: unknown, z: unknown, tu
 		Net.notice(player, reason or "You can't build there.", "Bad")
 		return
 	end
+	if Features.BuildShare then
+		local share = Grid.share(#Players:GetPlayers())
+		if owned(player.UserId) >= share then
+			Net.notice(
+				player,
+				`You've built your share ({share}). Take one of yours down, or let a teammate build.`,
+				"Bad"
+			)
+			return
+		end
+	end
 	local cost = BuildService.cost(player, kind)
 	if not TeamService.spend(cost) then
 		local missing = Stock.missing(TeamService.stock(), cost)
@@ -236,7 +305,8 @@ local function onBuild(player: Player, kind: unknown, x: unknown, z: unknown, tu
 			end
 		end
 	end
-	local entry = { Id = id, Kind = kind, Model = model, Rect = rect }
+	model:SetAttribute("Owner", player.UserId)
+	local entry = { Id = id, Kind = kind, Model = model, Rect = rect, Owner = player.UserId, Cost = cost }
 	built[id] = entry
 	EnemySim.addStructure(Sim, id, kind, rect.X, rect.Z, turn, healthScale())
 	if def.Warmth then
@@ -244,7 +314,9 @@ local function onBuild(player: Player, kind: unknown, x: unknown, z: unknown, tu
 	end
 	publish(entry)
 	addRepairPrompt(entry)
+	addTakeDownPrompt(entry)
 	RunStats.team().Built += 1
+	RunStats.add(player, "Built", 1)
 	Workspace:SetAttribute("Structures", #rules().Built)
 	Net.fx("Built", { Position = at.Position, Kind = kind, By = player.UserId })
 end
@@ -281,6 +353,18 @@ function BuildService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		buildLimiter:forget(player)
 		repairLimiter:forget(player)
+		-- A leaver's builds stay up, and anyone may now take them down.
+		for _, entry in built do
+			if entry.Owner == player.UserId then
+				entry.Owner = 0
+				entry.Model:SetAttribute("Owner", 0)
+				local root = entry.Model.PrimaryPart
+				local prompt = root and root:FindFirstChild("TakeDown")
+				if prompt then
+					prompt:SetAttribute("Owner", 0)
+				end
+			end
+		end
 	end)
 end
 
