@@ -255,3 +255,154 @@ describe("warmth", function()
 		assert(seconds > 240, `a full warmth bar lasts {seconds} seconds by day`)
 	end)
 end)
+
+describe("night themes", function()
+	local Features = RobloxLoader.require("src/shared/Config/Features")
+
+	it("spends a themed night's budget exactly, on kinds that have arrived", function()
+		for night = 1, Balance.LastNight do
+			for _, theme in Waves.Themes do
+				if theme.From <= night then
+					local list = Waves.themed(night, 4, roller(night * 31 + #theme.Id), theme)
+					local spent = 0
+					for _, kind in list do
+						local enemy = Enemies.ById[kind]
+						assert(enemy.From <= night, `{kind} came on night {night} before it arrives`)
+						assert(not enemy.Boss, "bosses come on their own")
+						spent += enemy.Points
+					end
+					expect(spent).toBe(Waves.budget(night, 4))
+				end
+			end
+		end
+	end)
+
+	it("makes a theme's monster the biggest share of its night", function()
+		for _, theme in Waves.Themes do
+			if theme.Id ~= "Whiteout" then
+				local night = math.max(theme.From, 6)
+				local signature = Waves.signature(theme)
+				local points = {}
+				for seed = 1, 20 do
+					for _, kind in Waves.themed(night, 4, roller(seed), theme) do
+						points[kind] = (points[kind] or 0) + Enemies.ById[kind].Points
+					end
+				end
+				for kind, total in points do
+					if kind ~= signature then
+						assert(points[signature] > total, `{theme.Id}: {signature} outweighs {kind}`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("plans the same nights from the same seed", function()
+		local a, b = Waves.plan(12345), Waves.plan(12345)
+		for night = 1, Balance.LastNight do
+			expect(a[night].Id).toBe(b[night].Id)
+		end
+		local differs = false
+		for seed = 1, 10 do
+			local other = Waves.plan(seed * 7919)
+			for night = 1, Balance.LastNight do
+				differs = differs or other[night].Id ~= a[night].Id
+			end
+		end
+		expect(differs).toBe(true)
+	end)
+
+	it("opens gently, introduces each monster on its own night, and never repeats a night", function()
+		for seed = 1, 200 do
+			local plan = Waves.plan(seed)
+			expect(plan[1].Id).toBe("Crowd")
+			for night = 1, Balance.LastNight do
+				local theme = plan[night]
+				assert(theme.From <= night, `seed {seed}: {theme.Id} before night {theme.From}`)
+				if night > 1 then
+					assert(theme.Id ~= plan[night - 1].Id, `seed {seed}: {theme.Id} twice running`)
+				end
+			end
+			for _, theme in Waves.Themes do
+				expect(plan[theme.From].Id).toBe(theme.Id)
+			end
+		end
+	end)
+
+	it("has a tip for every theme", function()
+		for _, theme in Waves.Themes do
+			assert(#theme.Tip > 30 and #theme.Name > 3, `{theme.Id} needs a name and tip`)
+		end
+	end)
+
+	it("goes back to the plain mix with the switch off", function()
+		Features.NightThemes = false
+		local ok, err = pcall(function()
+			local plain = Waves.forNight(3, 4, roller(9), Waves.ThemeById.Siege)
+			local expected = Waves.compose(3, 4, roller(9))
+			expect(#plain).toBe(#expected)
+			for index, kind in plain do
+				expect(kind).toBe(expected[index])
+			end
+		end)
+		Features.NightThemes = true
+		assert(ok, err)
+	end)
+end)
+
+describe("boss poses in snapshots", function()
+	it("round-trips the windup and tired poses", function()
+		local entries = Codec.decode(Codec.encode({
+			{ Id = 1, Kind = "Yeti", Action = "Windup", X = 0, Z = 0, Health = 1, Heading = 0 },
+			{ Id = 2, Kind = "ElderYeti", Action = "Tired", X = 0, Z = 0, Health = 0.4, Heading = 0 },
+		}))
+		expect(entries[1].Action).toBe("Windup")
+		expect(entries[2].Action).toBe("Tired")
+	end)
+end)
+
+describe("building shares", function()
+	it("gives each player a fair share of the cap, never too small", function()
+		local build = Balance.Build
+		expect(Grid.share(1)).toBe(build.MaxStructures)
+		expect(Grid.share(4)).toBe(math.ceil(build.MaxStructures / 4))
+		expect(Grid.share(8)).toBe(build.PerPlayerMin)
+		for players = 1, 8 do
+			assert(Grid.share(players) * players >= build.MaxStructures, "the team can still fill the cap")
+		end
+	end)
+
+	it("gives half back, rounded down, so taking down is never a profit", function()
+		local back = Grid.refund({ Wood = 7, Stone = 1, Scrap = 4 })
+		expect(back.Wood).toBe(3)
+		expect(back.Stone).toBe(nil)
+		expect(back.Scrap).toBe(2)
+	end)
+end)
+
+describe("small-team assist", function()
+	local Assist = RobloxLoader.require("src/shared/Assist")
+	local Features = RobloxLoader.require("src/shared/Config/Features")
+
+	it("helps one or two players and nobody else", function()
+		assert(Assist.gatherSpeed(1) > Assist.gatherSpeed(2), "solo gets the most help")
+		assert(Assist.gatherSpeed(2) > 0, "a pair gets some")
+		expect(Assist.gatherSpeed(3)).toBe(0)
+		assert(Assist.burn(1) < Assist.burn(2), "a solo hearth burns slowest")
+		expect(Assist.burn(4)).toBe(1)
+	end)
+
+	it("stacks with a role's speed without ever making a hold instant", function()
+		local scale = Assist.holdScale(0.4, 1)
+		assert(scale > 0.3 and scale < 0.6, `scale {scale}`)
+		expect(Assist.holdScale(0, 6)).toBe(1)
+	end)
+
+	it("turns off with its switch", function()
+		Features.SoloAssist = false
+		local gather, burn = Assist.gatherSpeed(1), Assist.burn(1)
+		Features.SoloAssist = true
+		expect(gather).toBe(0)
+		expect(burn).toBe(1)
+	end)
+end)

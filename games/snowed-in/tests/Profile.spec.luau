@@ -151,3 +151,82 @@ describe("save migrations", function()
 		expect(Migrations.isFuture({ SchemaVersion = Migrations.CURRENT_VERSION + 1 })).toBe(true)
 	end)
 end)
+
+describe("fair run rewards", function()
+	it("pays the win bonus only to players there for enough nights", function()
+		local need = Balance.Rewards.WinMinNights
+		local won, parts = Profile.credit(need, true, 4)
+		expect(won).toBe(true)
+		expect(parts).toBe(4)
+		won, parts = Profile.credit(need - 1, true, 4)
+		expect(won).toBe(false)
+		expect(parts).toBe(4)
+		won, parts = Profile.credit(0, true, 4)
+		expect(won).toBe(false)
+		expect(parts).toBe(0)
+		won = Profile.credit(10, false, 2)
+		expect(won).toBe(false)
+	end)
+
+	it("pays a run once, even if the finish is sent twice", function()
+		local save = fresh()
+		local stats = { Nights = 10, Parts = 4, Won = true, Knockouts = 10 }
+		local first = Profile.finishRun(save, stats, false, "job:1")
+		assert(first > 0, "the first finish pays")
+		local flakes, runs = save.Flakes, save.Stats.Runs
+		expect(Profile.finishRun(save, stats, false, "job:1")).toBe(0)
+		expect(save.Flakes).toBe(flakes)
+		expect(save.Stats.Runs).toBe(runs)
+		assert(Profile.finishRun(save, stats, false, "job:2") > 0, "the next run pays")
+	end)
+end)
+
+describe("next goal", function()
+	it("points at the cheapest locked role first", function()
+		local save = fresh()
+		local goal = Profile.nextGoal(save, Profile.noGrants())
+		assert(string.find(goal, "snowflakes to unlock"), goal)
+		save.Flakes = 100000
+		assert(string.find(Profile.nextGoal(save, Profile.noGrants()), "now"), "says when it can be bought")
+	end)
+
+	it("moves on to the pass and the trophies once every role is owned", function()
+		local Roles = RobloxLoader.require("src/shared/Config/Roles")
+		local save = fresh()
+		for _, role in Roles.List do
+			save.Roles[role.Id] = true
+		end
+		assert(string.find(Profile.nextGoal(save, Profile.noGrants()), "Expedition Pass"), "the pass")
+		save.Xp = Expedition.TierXp * #Expedition.Tiers
+		assert(string.find(Profile.nextGoal(save, Profile.noGrants()), "Rescue"), "the rescue trophy")
+		save.Trophies.Rescue = true
+		assert(string.find(Profile.nextGoal(save, Profile.noGrants()), "Yeti"), "the yeti trophy")
+		save.Trophies.Yeti = true
+		assert(#Profile.nextGoal(save, Profile.noGrants()) > 0, "always something")
+	end)
+end)
+
+describe("settings", function()
+	it("keeps only known settings with sensible values", function()
+		local save = fresh()
+		expect(Profile.setSetting(save, "Music", false)).toBe(true)
+		expect(save.Settings.Music).toBe(false)
+		expect(Profile.setSetting(save, "Music", "no")).toBe(false)
+		expect(Profile.setSetting(save, "ReduceMotion", true)).toBe(true)
+		expect(Profile.setSetting(save, "Sfx", 0.46)).toBe(true)
+		expect(save.Settings.Sfx).toBe(0.5)
+		Profile.setSetting(save, "Sfx", 7)
+		expect(save.Settings.Sfx).toBe(1)
+		expect(Profile.setSetting(save, "Sfx", 0 / 0)).toBe(false)
+		expect(Profile.setSetting(save, "Flakes", 999)).toBe(false)
+		expect(save.Flakes).toBe(0)
+	end)
+
+	it("gives an older save the new fields", function()
+		local save = Migrations.run({ SchemaVersion = 1, Flakes = 5 })
+		expect(save.LastRunId).toBe("")
+		expect(save.Settings.Music).toBe(true)
+		expect(save.Settings.Sfx).toBe(1)
+		expect(save.Settings.ReduceMotion).toBe(false)
+	end)
+end)

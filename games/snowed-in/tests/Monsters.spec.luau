@@ -217,3 +217,129 @@ describe("weapons", function()
 		expect(EnemySim.count(sim)).toBe(0)
 	end)
 end)
+
+describe("boss phases", function()
+	local Features = RobloxLoader.require("src/shared/Config/Features")
+	local Enemies = RobloxLoader.require("src/shared/Config/Enemies")
+
+	-- Steps until an event of this kind turns up; returns it, the seconds
+	-- taken and everything that happened on the way.
+	local function waitFor(sim, kind: string, limit: number)
+		local seen = {}
+		for tick = 1, math.floor(limit * 10) do
+			local found = nil
+			-- Keep the whole step: a slam's hits come right after it.
+			for _, event in EnemySim.step(sim, 0.1) do
+				table.insert(seen, event)
+				if event.Type == kind and not found then
+					found = event
+				end
+			end
+			if found then
+				return found, tick / 10, seen
+			end
+		end
+		return nil, limit, seen
+	end
+
+	it("shows where a slam will land before it lands", function()
+		local sim = world()
+		sim.Players.a = { X = 0, Z = -14, Frozen = false }
+		local yeti = EnemySim.spawn(sim, "Yeti", 0, -22)
+		local telegraph, _, before = waitFor(sim, "Telegraph", 3)
+		assert(telegraph ~= nil, "the yeti winds up")
+		expect(count(before, "Slam")).toBe(0)
+		expect(yeti.Action).toBe("Windup")
+		expect(telegraph.Radius).toBe(Enemies.ById.Yeti.Slam)
+		local slam, seconds = waitFor(sim, "Slam", 3)
+		assert(slam ~= nil, "the slam lands")
+		assert(seconds >= Enemies.ById.Yeti.Windup - 0.05, `it waits the windup ({seconds}s)`)
+		expect(slam.X).toBe(telegraph.X)
+		expect(slam.Z).toBe(telegraph.Z)
+	end)
+
+	it("misses a player who steps out of the ring in time", function()
+		local sim = world()
+		sim.Players.a = { X = 0, Z = -14, Frozen = false }
+		sim.Players.b = { X = 6, Z = -12, Frozen = false }
+		EnemySim.spawn(sim, "Yeti", 0, -22)
+		waitFor(sim, "Telegraph", 3)
+		-- a runs; b stays put.
+		sim.Players.a.X, sim.Players.a.Z = 60, 40
+		local _, _, during = waitFor(sim, "Slam", 3)
+		local hitA, hitB = false, false
+		for _, event in during do
+			if event.Type == "Hit" then
+				hitA = hitA or event.Player == "a"
+				hitB = hitB or event.Player == "b"
+			end
+		end
+		expect(hitA).toBe(false)
+		expect(hitB).toBe(true)
+	end)
+
+	it("stands still out of breath after a slam and takes double damage", function()
+		local sim = world()
+		sim.Players.a = { X = 0, Z = -14, Frozen = false }
+		local yeti = EnemySim.spawn(sim, "Yeti", 0, -22)
+		waitFor(sim, "Slam", 4)
+		expect(yeti.Action).toBe("Tired")
+		local x, z = yeti.X, yeti.Z
+		EnemySim.step(sim, 0.5)
+		expect(yeti.X).toBe(x)
+		expect(yeti.Z).toBe(z)
+		local health = yeti.Health
+		EnemySim.damage(sim, yeti.Id, 10, "a", {})
+		expect(health - yeti.Health).toBe(20)
+		-- Once it has its breath back, hits count normally again.
+		run(sim, Enemies.ById.Yeti.Tired)
+		health = yeti.Health
+		EnemySim.damage(sim, yeti.Id, 10, "a", {})
+		expect(health - yeti.Health).toBe(10)
+	end)
+
+	it("roars for help once at each health mark", function()
+		local sim = world()
+		local yeti = EnemySim.spawn(sim, "Yeti", 0, -120)
+		local roars = Enemies.ById.Yeti.Roars
+		yeti.Health = yeti.MaxHealth * (roars[1] - 0.01)
+		local events = EnemySim.step(sim, 0.1)
+		expect(count(events, "Roar")).toBe(1)
+		for _, event in events do
+			if event.Type == "Roar" then
+				expect(event.Kind).toBe("Frostling")
+				expect(event.Amount).toBe(Enemies.ById.Yeti.SummonCount)
+			end
+		end
+		expect(count(run(sim, 1), "Roar")).toBe(0)
+		yeti.Health = yeti.MaxHealth * (roars[2] - 0.01)
+		expect(count(run(sim, 1), "Roar")).toBe(1)
+		yeti.Health = 1
+		expect(count(run(sim, 1), "Roar")).toBe(0)
+	end)
+
+	it("gives every boss a windup, a tired window and roars", function()
+		for _, enemy in Enemies.List do
+			if enemy.Boss then
+				assert(enemy.Windup and enemy.Windup >= 0.8, `{enemy.Id} telegraphs for long enough`)
+				assert(enemy.Tired and enemy.Tired > 0, `{enemy.Id} has an opening`)
+				assert(enemy.Roars and #enemy.Roars >= 2, `{enemy.Id} has phases`)
+				assert(enemy.Summon and Enemies.ById[enemy.Summon], `{enemy.Id} summons a real monster`)
+			end
+		end
+	end)
+
+	it("slams straight away with the switch off", function()
+		Features.BossPhases = false
+		local ok, err = pcall(function()
+			local sim = world()
+			sim.Players.a = { X = 0, Z = -14, Frozen = false }
+			EnemySim.spawn(sim, "Yeti", 0, -22)
+			local events = run(sim, 2)
+			expect(count(events, "Telegraph")).toBe(0)
+			assert(count(events, "Slam") >= 1, "the old slam")
+		end)
+		Features.BossPhases = true
+		assert(ok, err)
+	end)
+end)
